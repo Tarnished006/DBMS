@@ -52,6 +52,16 @@ export class MarketPriceController {
       next(err);
     }
   }
+
+  async diagnoseApi(req: Request, res: Response, next: NextFunction) {
+    try {
+      const state = req.query.state as string;
+      const result = await marketPriceService.diagnoseApi(state);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const marketPriceController = new MarketPriceController();

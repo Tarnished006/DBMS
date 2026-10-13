@@ -41,9 +41,9 @@ export class MarketPriceService {
   private cache = new Map<string, CacheEntry>();
   private readonly CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
   private readonly DATA_GOV_API_KEY =
-    process.env.DATA_GOV_IN_API_KEY ||
-    ENV.DATA_GOV_IN_API_KEY ||
-    '579b464db66ec23bdd000001545f657fd0f648fd743841900f2cf198';
+    (process.env.DATA_GOV_IN_API_KEY && process.env.DATA_GOV_IN_API_KEY.length > 20)
+      ? process.env.DATA_GOV_IN_API_KEY
+      : '579b464db66ec23bdd000001545f657fd0f648fd743841900f2cf198';
   private readonly DATA_GOV_RESOURCE_ID =
     process.env.DATA_GOV_RESOURCE_ID || '9ef84268-d588-465a-a308-a864a43d0070';
   private readonly DATA_GOV_URL = `https://api.data.gov.in/resource/${this.DATA_GOV_RESOURCE_ID}`;
@@ -242,7 +242,11 @@ export class MarketPriceService {
     try {
       const resp = await axios.get(this.DATA_GOV_URL, {
         params: cleanParams,
-        timeout: 3500,
+        timeout: 8000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          Accept: 'application/json',
+        },
       });
       records = resp.data?.records || [];
     } catch (apiErr) {
@@ -257,7 +261,11 @@ export class MarketPriceService {
       try {
         const retryResp = await axios.get(this.DATA_GOV_URL, {
           params: retryParams,
-          timeout: 3500,
+          timeout: 8000,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            Accept: 'application/json',
+          },
         });
         records = retryResp.data?.records || [];
       } catch (retryErr) {
@@ -584,6 +592,44 @@ export class MarketPriceService {
       priceDate: row.price_date,
       source: 'Database Seed',
     };
+  }
+
+  async diagnoseApi(stateParam?: string): Promise<any> {
+    const key = this.DATA_GOV_API_KEY;
+    const t0 = Date.now();
+    try {
+      const resp = await axios.get(this.DATA_GOV_URL, {
+        params: {
+          'api-key': key,
+          format: 'json',
+          limit: '5',
+          'filters[state]': stateParam || 'Karnataka',
+        },
+        timeout: 10000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          Accept: 'application/json',
+        },
+      });
+      return {
+        status: 'SUCCESS',
+        latencyMs: Date.now() - t0,
+        apiKeyPrefix: key.slice(0, 8) + '...',
+        count: resp.data?.records?.length,
+        total: resp.data?.total,
+        sample: resp.data?.records?.[0],
+      };
+    } catch (err: any) {
+      return {
+        status: 'ERROR',
+        latencyMs: Date.now() - t0,
+        apiKeyPrefix: key ? key.slice(0, 8) + '...' : 'EMPTY',
+        message: err.message,
+        code: err.code,
+        statusHttp: err.response?.status,
+        data: err.response?.data,
+      };
+    }
   }
 }
 
