@@ -87,19 +87,34 @@ export interface InventoryDto {
 export interface ProductDto {
   id: string;
   categoryId: string;
+  category_id?: string;
   categoryName?: string;
+  category_name?: string;
   sellerId: string;
+  seller_id?: string;
+  farmerId?: string;
+  farmer_id?: string;
   sellerName?: string;
+  farmerName?: string;
   name: string;
   description?: string | null;
+  price?: number;
   pricePerUnit: number;
+  price_per_unit?: number;
   unit: string;
+  quantity?: number;
+  availableQuantity?: number;
+  totalQuantity?: number;
   status: 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
-  images: ProductImageDto[];
+  images: (ProductImageDto & { primary?: boolean })[];
   inventory?: InventoryDto;
-  location?: ProductLocationDto;
+  location?: string | ProductLocationDto | any;
+  locationDetails?: ProductLocationDto;
   createdDate: string | Date;
   lastModifiedDate: string | Date;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+  [key: string]: any;
 }
 
 export interface OrderItemDto {

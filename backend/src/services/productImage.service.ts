@@ -29,7 +29,8 @@ export class ProductImageService {
     isAdmin = false
   ): Promise<ProductImageDto> {
     const prod = await productService.getProductById(productId);
-    if (!isAdmin && prod.sellerId !== sellerId) {
+    const productSeller = prod.sellerId || (prod as any).farmerId;
+    if (!isAdmin && productSeller !== sellerId) {
       throw new BusinessException('PRODUCT_ACCESS_DENIED');
     }
 
@@ -68,7 +69,7 @@ export class ProductImageService {
     if (isPostgres()) {
       await db.query(
         `INSERT INTO product_images (
-          id, product_id, image_url, is_primary, display_order, created_date, last_modified_date
+          id, product_id, image_url, is_primary, display_order, created_at, updated_at
         ) VALUES ($1, $2, $3, $4, $5, $6, $6)`,
         [imageId, productId, imageUrl, isFirst, nextOrder, now]
       );
@@ -100,7 +101,8 @@ export class ProductImageService {
     isAdmin = false
   ): Promise<void> {
     const prod = await productService.getProductById(productId);
-    if (!isAdmin && prod.sellerId !== sellerId) {
+    const productSeller = prod.sellerId || (prod as any).farmerId;
+    if (!isAdmin && productSeller !== sellerId) {
       throw new BusinessException('PRODUCT_ACCESS_DENIED');
     }
 
@@ -126,7 +128,8 @@ export class ProductImageService {
     isAdmin = false
   ): Promise<void> {
     const prod = await productService.getProductById(productId);
-    if (!isAdmin && prod.sellerId !== sellerId) {
+    const productSeller = prod.sellerId || (prod as any).farmerId;
+    if (!isAdmin && productSeller !== sellerId) {
       throw new BusinessException('PRODUCT_ACCESS_DENIED');
     }
 
@@ -168,7 +171,8 @@ export class ProductImageService {
     isAdmin = false
   ): Promise<void> {
     const prod = await productService.getProductById(productId);
-    if (!isAdmin && prod.sellerId !== sellerId) {
+    const productSeller = prod.sellerId || (prod as any).farmerId;
+    if (!isAdmin && productSeller !== sellerId) {
       throw new BusinessException('PRODUCT_ACCESS_DENIED');
     }
 

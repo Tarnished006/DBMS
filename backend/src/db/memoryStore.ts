@@ -268,9 +268,11 @@ export async function initMemoryStore(): Promise<void> {
     const prodRecord = {
       id: p.id,
       category_id: p.category_id,
+      farmer_id: p.seller_id,
       seller_id: p.seller_id,
       name: p.name,
       description: p.description,
+      price: p.price_per_unit,
       price_per_unit: p.price_per_unit,
       unit: p.unit,
       status: p.status,
@@ -305,10 +307,13 @@ export async function initMemoryStore(): Promise<void> {
       id: uuidv4(),
       product_id: p.id,
       quantity: p.quantity,
+      total_quantity: p.quantity,
       reserved_quantity: p.reserved,
       last_restocked_at: new Date(),
       created_date: new Date(),
       last_modified_date: new Date(),
+      created_at: new Date(),
+      updated_at: new Date(),
     });
   }
 

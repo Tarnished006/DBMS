@@ -355,16 +355,17 @@ export class OrderService {
         if (isPostgres()) {
           await db.query(
             `UPDATE inventory
-             SET quantity = GREATEST(0, quantity - $1),
+             SET total_quantity = GREATEST(0, total_quantity - $1),
                  reserved_quantity = GREATEST(0, reserved_quantity - $1),
-                 last_modified_date = $2
+                 updated_at = $2
              WHERE product_id = $3`,
             [it.quantity, now, it.productId]
           );
         } else {
           const inv = memoryDb.inventory.find((i) => i.product_id === it.productId);
           if (inv) {
-            inv.quantity = Math.max(0, inv.quantity - it.quantity);
+            inv.quantity = Math.max(0, (inv.quantity ?? inv.total_quantity) - it.quantity);
+            inv.total_quantity = Math.max(0, (inv.total_quantity ?? inv.quantity) - it.quantity);
             inv.reserved_quantity = Math.max(0, inv.reserved_quantity - it.quantity);
           }
         }
@@ -376,7 +377,7 @@ export class OrderService {
           await db.query(
             `UPDATE inventory
              SET reserved_quantity = GREATEST(0, reserved_quantity - $1),
-                 last_modified_date = $2
+                 updated_at = $2
              WHERE product_id = $3`,
             [it.quantity, now, it.productId]
           );

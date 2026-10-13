@@ -32,14 +32,14 @@ export class InventoryService {
       const res = await db.query(
         `SELECT i.* FROM inventory i
          JOIN products p ON p.id = i.product_id
-         WHERE p.seller_id = $1`,
+         WHERE p.farmer_id = $1`,
         [sellerId]
       );
       return res.rows.map(this.mapInventory);
     }
 
     const myProdIds = new Set(
-      memoryDb.products.filter((p) => p.seller_id === sellerId).map((p) => p.id)
+      memoryDb.products.filter((p) => (p.farmer_id || p.seller_id) === sellerId).map((p) => p.id)
     );
     return memoryDb.inventory
       .filter((i) => myProdIds.has(i.product_id))
@@ -53,7 +53,8 @@ export class InventoryService {
     isAdmin = false
   ): Promise<InventoryDto> {
     const prod = await productService.getProductById(productId);
-    if (!isAdmin && prod.sellerId !== sellerId) {
+    const productSeller = prod.sellerId || (prod as any).farmerId;
+    if (!isAdmin && productSeller !== sellerId) {
       throw new BusinessException('PRODUCT_ACCESS_DENIED');
     }
 
@@ -68,7 +69,7 @@ export class InventoryService {
     const now = new Date();
     if (isPostgres()) {
       await db.query(
-        'UPDATE inventory SET quantity = $1, last_restocked_at = $2, last_modified_date = $2 WHERE product_id = $3',
+        'UPDATE inventory SET total_quantity = $1, updated_at = $2 WHERE product_id = $3',
         [newQuantity, now, productId]
       );
       return this.getProductInventory(productId);
@@ -77,8 +78,9 @@ export class InventoryService {
     const mem = memoryDb.inventory.find((i) => i.product_id === productId);
     if (!mem) throw new BusinessException('INVENTORY_NOT_FOUND');
     mem.quantity = newQuantity;
+    mem.total_quantity = newQuantity;
     mem.last_restocked_at = now;
-    mem.last_modified_date = now;
+    mem.updated_at = now;
     return this.mapInventory(mem);
   }
 
@@ -99,15 +101,15 @@ export class InventoryService {
   }
 
   private mapInventory(row: any): InventoryDto {
-    const qty = parseInt(row.quantity, 10);
-    const res = parseInt(row.reserved_quantity, 10);
+    const qty = parseFloat(row.total_quantity ?? row.quantity ?? 0);
+    const res = parseFloat(row.reserved_quantity ?? 0);
     return {
       id: row.id,
       productId: row.product_id,
       quantity: qty,
       reservedQuantity: res,
       availableQuantity: Math.max(0, qty - res),
-      lastRestockedAt: row.last_restocked_at,
+      lastRestockedAt: row.updated_at || row.last_restocked_at,
     };
   }
 }
