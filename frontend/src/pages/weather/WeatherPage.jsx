@@ -45,6 +45,7 @@ export function WeatherPage() {
   const [dailyForecast, setDailyForecast] = useState([]);
   const [hourlyForecast, setHourlyForecast] = useState([]);
   const [weeklyRisk, setWeeklyRisk] = useState(null);
+  const [weatherProvider, setWeatherProvider] = useState('Live OpenWeather & Satellite Feed');
   const [isLoading, setIsLoading] = useState(true);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
@@ -63,6 +64,13 @@ export function WeatherPage() {
       ]);
 
       if (dailyRes.status === 'fulfilled') {
+        const providerName =
+          dailyRes.value?.provider === 'OpenWeatherMap'
+            ? 'Live OpenWeatherMap'
+            : dailyRes.value?.provider === 'Open-Meteo'
+            ? 'Live Satellite Feed'
+            : 'Live Weather Feed';
+        setWeatherProvider(providerName);
         const days =
           dailyRes.value?.dailyForecast ||
           dailyRes.value?.daily_forecast ||
@@ -135,7 +143,7 @@ export function WeatherPage() {
       locationDetails.district ||
       locationDetails.village ||
       'Selected Farm';
-    const stateName = locationDetails.state || 'Karnataka';
+    const stateName = locationDetails.state || '';
 
     setManualLocation(lat, lon, cityName, stateName);
     setIsMapModalOpen(false);
@@ -148,8 +156,8 @@ export function WeatherPage() {
   };
 
   const locationSubtitle = city
-    ? `${city}${state ? `, ${state}` : ''} • Live Open-Meteo`
-    : `${activeLat.toFixed(2)}° N, ${activeLon.toFixed(2)}° E • Live Open-Meteo`;
+    ? `${city}${state ? `, ${state}` : ''} • ${weatherProvider}`
+    : `${activeLat.toFixed(2)}° N, ${activeLon.toFixed(2)}° E • ${weatherProvider}`;
 
   if (geoLoading || (isLoading && dailyForecast.length === 0)) {
     return (
@@ -236,6 +244,7 @@ export function WeatherPage() {
               stateName={state}
               latitude={activeLat}
               longitude={activeLon}
+              provider={weatherProvider}
               isToday={isSelectedToday}
               onOpenLocationSelector={() => setIsLocationModalOpen(true)}
             />

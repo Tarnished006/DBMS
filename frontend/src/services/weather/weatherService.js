@@ -32,4 +32,12 @@ export const weatherService = {
     });
     return response.data;
   },
+
+  // Search locations across India
+  async searchLocation(query) {
+    const response = await apiClient.get('/api/v1/weather/search', {
+      params: { q: query },
+    });
+    return response.data;
+  },
 };

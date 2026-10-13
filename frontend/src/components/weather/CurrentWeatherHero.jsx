@@ -31,6 +31,7 @@ export function CurrentWeatherHero({
   stateName,
   latitude,
   longitude,
+  provider = 'Live Weather Feed',
   isToday = true,
   onOpenLocationSelector,
 }) {
@@ -96,7 +97,7 @@ export function CurrentWeatherHero({
 
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200 shadow-soft-xs">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Open-Meteo Feed</span>
+          <span>{provider}</span>
         </span>
       </div>
 

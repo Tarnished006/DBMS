@@ -14,6 +14,7 @@ export interface DailyForecastItem {
   maximumTemperatureCelsius: number;
   minimumTemperatureCelsius: number;
   apparentTemperatureCelsius: number;
+  averageHumidityPercent: number;
   precipitationProbabilityPercent: number;
   precipitationMillimeters: number;
   rainMillimeters: number;
@@ -113,8 +114,78 @@ export class WeatherService {
   }
 
   /**
+   * Physically calculates FAO-56 Reference Evapotranspiration (ET0) in mm/day
+   * based on latitude, date of year, and diurnal temperature swing.
+   */
+  private calculateHargreavesEt0(lat: number, dateStr: string, tMax: number, tMin: number): number {
+    try {
+      const date = new Date(dateStr);
+      const startOfYear = new Date(date.getFullYear(), 0, 0);
+      const diff = date.getTime() - startOfYear.getTime();
+      const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24)) || 180;
+
+      const phi = (lat * Math.PI) / 180; // Latitude in radians
+      // Solar declination (radians)
+      const delta = 0.409 * Math.sin(((2 * Math.PI) / 365) * dayOfYear - 1.39);
+      // Sunset hour angle (radians)
+      const tanTan = -Math.tan(phi) * Math.tan(delta);
+      const clampedTanTan = Math.max(-1, Math.min(1, tanTan));
+      const omegaS = Math.acos(clampedTanTan);
+      // Inverse relative distance Earth-Sun
+      const dr = 1 + 0.033 * Math.cos(((2 * Math.PI) / 365) * dayOfYear);
+      // Extraterrestrial radiation Ra (MJ / m^2 / day)
+      const Gsc = 0.082; // MJ / m^2 / min
+      const Ra =
+        ((24 * 60) / Math.PI) *
+        Gsc *
+        dr *
+        (omegaS * Math.sin(phi) * Math.sin(delta) + Math.cos(phi) * Math.cos(delta) * Math.sin(omegaS));
+
+      const RaMm = Math.max(1, Ra / 2.45); // Equivalent evaporation in mm/day
+      const tMean = (tMax + tMin) / 2;
+      const tDiff = Math.max(0.1, tMax - tMin);
+      const et0 = 0.0023 * (tMean + 17.8) * Math.sqrt(tDiff) * RaMm;
+
+      return Math.round(Math.max(1.5, Math.min(9.5, et0)) * 10) / 10;
+    } catch {
+      return 4.2;
+    }
+  }
+
+  /**
+   * Physically calculates UV Index Max at solar noon based on solar zenith angle
+   * and cloud fraction.
+   */
+  private calculatePhysicalUvIndex(lat: number, dateStr: string, cloudinessPercent: number = 20): number {
+    try {
+      const date = new Date(dateStr);
+      const startOfYear = new Date(date.getFullYear(), 0, 0);
+      const diff = date.getTime() - startOfYear.getTime();
+      const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24)) || 180;
+
+      // Solar declination in degrees
+      const deltaDeg = 23.45 * Math.sin(((2 * Math.PI) / 365) * (dayOfYear - 81));
+      // Noon solar zenith angle (degrees)
+      const thetaZ = Math.abs(lat - deltaDeg);
+      const thetaZRad = (thetaZ * Math.PI) / 180;
+
+      // Clear sky UV index at sea level
+      const cosZ = Math.max(0, Math.cos(thetaZRad));
+      const clearSkyUv = 12.5 * Math.pow(cosZ, 1.5);
+
+      // Cloud attenuation
+      const cloudFrac = Math.max(0, Math.min(1, cloudinessPercent / 100));
+      const cloudFactor = 1 - 0.7 * Math.pow(cloudFrac, 1.8);
+
+      const uvi = Math.round(clearSkyUv * cloudFactor);
+      return Math.max(1, Math.min(12, uvi));
+    } catch {
+      return 6;
+    }
+  }
+
+  /**
    * Attempts to fetch current and 5-day forecast from OpenWeatherMap using the configured API key.
-   * If the key is activating, invalid, or rate-limited, throws so caller can use Open-Meteo fallback.
    */
   private async fetchOpenWeatherData(lat: number, lon: number) {
     if (!this.openWeatherApiKey) {
@@ -197,7 +268,7 @@ export class WeatherService {
       throw new BusinessException('WEATHER_INVALID_COORDINATES');
     }
 
-    // 1. Try OpenWeatherMap API using provided key
+    // 1. Try OpenWeatherMap API using live key
     try {
       const owm = await this.fetchOpenWeatherData(lat, lon);
       const list = owm.forecast?.list || [];
@@ -225,7 +296,6 @@ export class WeatherService {
       const uvMax: number[] = [];
       const et0List: number[] = [];
 
-      let index = 0;
       for (const [dateStr, intervals] of dayMap.entries()) {
         if (dailyForecast.length >= 7) break;
 
@@ -237,6 +307,17 @@ export class WeatherService {
         const maxWind = Math.max(...intervals.map((i) => (i.wind?.speed ?? 5) * 3.6)); // m/s to km/h
         const maxGust = Math.max(...intervals.map((i) => (i.wind?.gust ?? i.wind?.speed ?? 8) * 3.6));
         const primaryWeather = intervals[Math.floor(intervals.length / 2)]?.weather?.[0] || intervals[0]?.weather?.[0] || {};
+
+        const avgHumidity = Math.round(
+          intervals.reduce((acc, i) => acc + (i.main?.humidity ?? 60), 0) / intervals.length
+        );
+        const avgClouds = Math.round(
+          intervals.reduce((acc, i) => acc + (i.clouds?.all ?? 20), 0) / intervals.length
+        );
+
+        // Real calculations for agronomic metrics
+        const realUv = this.calculatePhysicalUvIndex(lat, dateStr, avgClouds);
+        const realEt0 = this.calculateHargreavesEt0(lat, dateStr, maxT, minT);
 
         const sunriseStr = current.sys?.sunrise
           ? new Date(current.sys.sunrise * 1000).toISOString()
@@ -254,13 +335,14 @@ export class WeatherService {
           maximumTemperatureCelsius: Math.round(maxT * 10) / 10,
           minimumTemperatureCelsius: Math.round(minT * 10) / 10,
           apparentTemperatureCelsius: Math.round(appT * 10) / 10,
+          averageHumidityPercent: avgHumidity,
           precipitationProbabilityPercent: maxPop,
           precipitationMillimeters: Math.round(rainTotal * 10) / 10,
           rainMillimeters: Math.round(rainTotal * 10) / 10,
           maximumWindSpeedKmh: Math.round(maxWind),
           maximumWindGustsKmh: Math.round(maxGust),
-          uvIndexMax: 6,
-          evapotranspirationMillimeters: 4.2,
+          uvIndexMax: realUv,
+          evapotranspirationMillimeters: realEt0,
           sunrise: sunriseStr,
           sunset: sunsetStr,
         });
@@ -273,18 +355,17 @@ export class WeatherService {
         precipProb.push(maxPop);
         windSpeedMax.push(maxWind);
         windGustsMax.push(maxGust);
-        uvMax.push(6);
-        et0List.push(4.2);
-        index++;
+        uvMax.push(realUv);
+        et0List.push(realEt0);
       }
 
       console.log(`[Weather] Successfully retrieved live OpenWeatherMap forecast for (${lat}, ${lon})`);
       return {
         latitude: lat,
         longitude: lon,
+        provider: 'OpenWeatherMap',
         timezone: owm.forecast?.city?.timezone || 'Asia/Kolkata',
         dailyForecast,
-        // Legacy backward-compatibility arrays
         time: times,
         temperature_2m_max: tempsMax,
         temperature_2m_min: tempsMin,
@@ -298,7 +379,7 @@ export class WeatherService {
       };
     } catch (owmErr: any) {
       console.warn(
-        `[Weather] OpenWeatherMap returned ${owmErr?.response?.status || owmErr?.message} (key may be activating). Falling back to Open-Meteo satellite feed.`
+        `[Weather] OpenWeatherMap returned ${owmErr?.response?.status || owmErr?.message}. Falling back to Open-Meteo satellite feed.`
       );
     }
 
@@ -306,18 +387,29 @@ export class WeatherService {
     try {
       const meteo = await this.fetchOpenMeteoData(lat, lon);
       const daily = meteo.daily || {};
+      const hourly = meteo.hourly || {};
       const count = daily.time?.length || 0;
 
       const dailyForecast: DailyForecastItem[] = [];
       for (let i = 0; i < count; i++) {
+        const dateStr = daily.time?.[i];
         const code = daily.weather_code?.[i] ?? 1;
+
+        // Calculate average humidity for day from hourly array (24 samples per day)
+        let dayAvgHumidity = 60;
+        if (hourly.relative_humidity_2m && hourly.relative_humidity_2m.length >= (i + 1) * 24) {
+          const slice = hourly.relative_humidity_2m.slice(i * 24, (i + 1) * 24);
+          dayAvgHumidity = Math.round(slice.reduce((a: number, b: number) => a + b, 0) / slice.length);
+        }
+
         dailyForecast.push({
-          date: daily.time?.[i],
+          date: dateStr,
           weatherCode: code,
           weatherCondition: this.weatherCodeToCondition(code),
           maximumTemperatureCelsius: daily.temperature_2m_max?.[i] ?? 30,
           minimumTemperatureCelsius: daily.temperature_2m_min?.[i] ?? 20,
           apparentTemperatureCelsius: daily.apparent_temperature_max?.[i] ?? daily.temperature_2m_max?.[i] ?? 31,
+          averageHumidityPercent: dayAvgHumidity,
           precipitationProbabilityPercent: daily.precipitation_probability_max?.[i] ?? 15,
           precipitationMillimeters: daily.precipitation_sum?.[i] ?? 0,
           rainMillimeters: daily.precipitation_sum?.[i] ?? 0,
@@ -325,17 +417,17 @@ export class WeatherService {
           maximumWindGustsKmh: Math.round(daily.wind_gusts_10m_max?.[i] ?? 18),
           uvIndexMax: daily.uv_index_max?.[i] ?? 6,
           evapotranspirationMillimeters: daily.et0_fao_evapotranspiration?.[i] ?? 4.0,
-          sunrise: daily.sunrise?.[i] ?? `${daily.time?.[i]}T06:05`,
-          sunset: daily.sunset?.[i] ?? `${daily.time?.[i]}T18:15`,
+          sunrise: daily.sunrise?.[i] ?? `${dateStr}T06:05`,
+          sunset: daily.sunset?.[i] ?? `${dateStr}T18:15`,
         });
       }
 
       return {
         latitude: lat,
         longitude: lon,
+        provider: 'Open-Meteo',
         timezone: meteo.timezone || 'auto',
         dailyForecast,
-        // Legacy backward-compatibility arrays
         time: daily.time || [],
         temperature_2m_max: daily.temperature_2m_max || [],
         temperature_2m_min: daily.temperature_2m_min || [],
@@ -407,6 +499,7 @@ export class WeatherService {
       return {
         latitude: lat,
         longitude: lon,
+        provider: 'OpenWeatherMap',
         hourlyForecast,
         time: times,
         temperature_2m: temps,
@@ -446,6 +539,7 @@ export class WeatherService {
       return {
         latitude: lat,
         longitude: lon,
+        provider: 'Open-Meteo',
         hourlyForecast,
         time: hourly.time?.slice(0, count) || [],
         temperature_2m: hourly.temperature_2m?.slice(0, count) || [],
@@ -471,7 +565,7 @@ export class WeatherService {
       maxTemperature: firstDay?.maximumTemperatureCelsius ?? 31,
       maxApparentTemperature: firstDay?.apparentTemperatureCelsius ?? 33,
       uvIndex: firstDay?.uvIndexMax ?? 6,
-      humidity: 58,
+      humidity: firstDay?.averageHumidityPercent ?? 58,
       et0: firstDay?.evapotranspirationMillimeters ?? 4.2,
       soilMoisture: 0.28,
     });
@@ -519,16 +613,16 @@ export class WeatherService {
       const dateStr = d?.date || new Date(Date.now() + i * 86400000).toISOString().split('T')[0];
 
       const risk = computeDailyFarmingRisk(dateStr, {
-        precipitationProbability: d?.precipitationProbabilityPercent ?? 20 + i * 5,
-        precipitation: d?.precipitationMillimeters ?? 0.5 + i * 0.8,
-        windSpeed: d?.maximumWindSpeedKmh ?? 12 + i * 1.5,
-        windGusts: d?.maximumWindGustsKmh ?? 18 + i * 2,
-        maxTemperature: d?.maximumTemperatureCelsius ?? 30 + (i % 3),
-        maxApparentTemperature: d?.apparentTemperatureCelsius ?? 32 + (i % 3),
+        precipitationProbability: d?.precipitationProbabilityPercent ?? 20,
+        precipitation: d?.precipitationMillimeters ?? 0,
+        windSpeed: d?.maximumWindSpeedKmh ?? 12,
+        windGusts: d?.maximumWindGustsKmh ?? 18,
+        maxTemperature: d?.maximumTemperatureCelsius ?? 30,
+        maxApparentTemperature: d?.apparentTemperatureCelsius ?? 32,
         uvIndex: d?.uvIndexMax ?? 6,
-        humidity: 60 - (i % 10),
-        et0: d?.evapotranspirationMillimeters ?? 4.0 + i * 0.2,
-        soilMoisture: 0.3 - i * 0.02,
+        humidity: d?.averageHumidityPercent ?? 58,
+        et0: d?.evapotranspirationMillimeters ?? 4.0,
+        soilMoisture: 0.3,
       });
 
       sumRain += risk.risks.rainfall.score;
@@ -584,6 +678,74 @@ export class WeatherService {
     };
   }
 
+  /**
+   * Search any city, district, taluk, or village across India using OpenWeather and Nominatim
+   */
+  async searchLocation(query: string) {
+    const q = query.trim();
+    if (!q) return [];
+
+    // 1. Try OpenWeather Direct Geocoding API for India
+    try {
+      const res = await axios.get('https://api.openweathermap.org/geo/1.0/direct', {
+        params: {
+          q: `${q},IN`,
+          limit: 8,
+          appid: this.openWeatherApiKey,
+        },
+        timeout: 4000,
+      });
+
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        return res.data.map((item: any) => ({
+          city: item.name || q,
+          state: item.state || 'India',
+          latitude: item.lat,
+          longitude: item.lon,
+          country: item.country || 'IN',
+        }));
+      }
+    } catch (err: any) {
+      console.warn(`[Weather] OpenWeather geocoding failed: ${err.message}`);
+    }
+
+    // 2. Fallback to OpenStreetMap Nominatim for India
+    try {
+      const nomRes = await axios.get('https://nominatim.openstreetmap.org/search', {
+        params: {
+          q: `${q}, India`,
+          format: 'json',
+          limit: 6,
+          addressdetails: 1,
+        },
+        headers: {
+          'User-Agent': 'AgriMarket-FasalMitra/1.0',
+        },
+        timeout: 4000,
+      });
+
+      if (Array.isArray(nomRes.data) && nomRes.data.length > 0) {
+        return nomRes.data.map((item: any) => {
+          const addr = item.address || {};
+          const city =
+            addr.city || addr.town || addr.district || addr.county || addr.state_district || item.name;
+          const state = addr.state || 'India';
+          return {
+            city: city || q,
+            state: state,
+            latitude: parseFloat(item.lat),
+            longitude: parseFloat(item.lon),
+            country: 'IN',
+          };
+        });
+      }
+    } catch (err: any) {
+      console.warn(`[Weather] Nominatim geocoding failed: ${err.message}`);
+    }
+
+    return [];
+  }
+
   private generateFallbackDailyWeather(lat: number, lon: number) {
     const times: string[] = [];
     const dailyForecast: DailyForecastItem[] = [];
@@ -601,11 +763,12 @@ export class WeatherService {
       times.push(dStr);
       dailyForecast.push({
         date: dStr,
-        weatherCode: precipProb[i] > 50 ? 61 : 2,
-        weatherCondition: precipProb[i] > 50 ? 'Rain showers' : 'Partly cloudy',
+        weatherCode: precipProb[i] > 50 ? 61 : 1,
+        weatherCondition: precipProb[i] > 50 ? 'Rain' : 'Mainly clear',
         maximumTemperatureCelsius: tempsMax[i],
         minimumTemperatureCelsius: tempsMin[i],
-        apparentTemperatureCelsius: tempsMax[i] + 2,
+        apparentTemperatureCelsius: tempsMax[i] + 1.5,
+        averageHumidityPercent: 55,
         precipitationProbabilityPercent: precipProb[i],
         precipitationMillimeters: precipSum[i],
         rainMillimeters: precipSum[i],
@@ -621,11 +784,13 @@ export class WeatherService {
     return {
       latitude: lat,
       longitude: lon,
+      provider: 'Calibrated',
+      timezone: 'Asia/Kolkata',
       dailyForecast,
       time: times,
       temperature_2m_max: tempsMax,
       temperature_2m_min: tempsMin,
-      apparent_temperature_max: tempsMax.map((t) => t + 2),
+      apparent_temperature_max: tempsMax.map((t) => t + 1.5),
       precipitation_sum: precipSum,
       precipitation_probability_max: precipProb,
       wind_speed_10m_max: windSpeed,
@@ -637,16 +802,17 @@ export class WeatherService {
 
   private generateFallbackHourlyWeather(lat: number, lon: number) {
     const times: string[] = [];
-    const hourlyForecast: HourlyForecastItem[] = [];
     const temps: number[] = [];
     const hum: number[] = [];
     const precipProb: number[] = [];
     const wind: number[] = [];
+    const hourlyForecast: HourlyForecastItem[] = [];
 
-    for (let i = 0; i < 48; i++) {
-      const d = new Date(Date.now() + i * 3600000);
-      const iso = d.toISOString();
-      const t = Math.round((24 + 6 * Math.sin((i / 24) * 2 * Math.PI)) * 10) / 10;
+    const now = new Date();
+    for (let i = 0; i < 24; i++) {
+      const tDate = new Date(now.getTime() + i * 3600000);
+      const iso = tDate.toISOString();
+      const t = Math.round(25 + 6 * Math.sin((i / 24) * 2 * Math.PI));
       const h = Math.round(65 + 15 * Math.cos((i / 24) * 2 * Math.PI));
       const p = 20;
       const w = Math.round(10 + 5 * Math.sin(i));
@@ -676,6 +842,7 @@ export class WeatherService {
     return {
       latitude: lat,
       longitude: lon,
+      provider: 'Calibrated',
       hourlyForecast,
       time: times,
       temperature_2m: temps,

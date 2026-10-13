@@ -15,5 +15,8 @@ router.get('/risk/daily', (req: Request, res: Response, next: NextFunction) =>
 router.get('/risk/weekly', (req: Request, res: Response, next: NextFunction) =>
   weatherController.getRiskWeekly(req, res, next)
 );
+router.get('/search', (req: Request, res: Response, next: NextFunction) =>
+  weatherController.searchLocation(req, res, next)
+);
 
 export default router;

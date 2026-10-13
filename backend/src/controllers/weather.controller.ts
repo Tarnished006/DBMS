@@ -45,6 +45,19 @@ export class WeatherController {
       next(err);
     }
   }
+
+  async searchLocation(req: Request, res: Response, next: NextFunction) {
+    try {
+      const q = (req.query.q as string || '').trim();
+      if (!q) {
+        return res.json([]);
+      }
+      const results = await weatherService.searchLocation(q);
+      res.json(results);
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const weatherController = new WeatherController();
