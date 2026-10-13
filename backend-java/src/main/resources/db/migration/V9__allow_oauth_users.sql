@@ -1,5 +1,0 @@
-ALTER TABLE users
-    ALTER COLUMN phone_number DROP NOT NULL;
-
-ALTER TABLE users
-    ALTER COLUMN password DROP NOT NULL;
