@@ -81,7 +81,10 @@ export class MarketPriceService {
     }
 
     // 2. Fallback to local database / memory store
-    const dbPrices = await this.getPricesFromDatabase(filters, commodityName, marketName);
+    let dbPrices = await this.getPricesFromDatabase(filters, commodityName, marketName);
+    if (!dbPrices || dbPrices.length === 0) {
+      dbPrices = memoryDb.market_prices.map(this.mapMemoryPrice);
+    }
     return {
       message: 'Market prices retrieved successfully',
       prices: dbPrices,
