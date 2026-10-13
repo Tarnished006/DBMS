@@ -572,9 +572,17 @@ export class WeatherService {
 
     return {
       date,
+      overallScore: risk.overallScore,
+      overallLevel: risk.overallLevel,
+      overallRiskScore: risk.overallScore,
+      overallRiskLevel: risk.overallLevel,
+      summary: risk.summary,
       farmingRisk: {
         overallScore: risk.overallScore,
         overallLevel: risk.overallLevel,
+        overallRiskScore: risk.overallScore,
+        overallRiskLevel: risk.overallLevel,
+        summary: risk.summary,
         rainfallRisk: risk.risks.rainfall,
         windRisk: risk.risks.wind,
         heatRisk: risk.risks.heat,
@@ -587,10 +595,7 @@ export class WeatherService {
           risk.risks.rainfall.recommendation,
         ].filter(Boolean),
       },
-      overallScore: risk.overallScore,
-      overallLevel: risk.overallLevel,
       risks: risk.risks,
-      summary: risk.summary,
     };
   }
 
@@ -638,6 +643,9 @@ export class WeatherService {
         farmingRisk: {
           overallScore: risk.overallScore,
           overallLevel: risk.overallLevel,
+          overallRiskScore: risk.overallScore,
+          overallRiskLevel: risk.overallLevel,
+          summary: risk.summary,
           rainfallRisk: risk.risks.rainfall,
           windRisk: risk.risks.wind,
           heatRisk: risk.risks.heat,
@@ -655,10 +663,16 @@ export class WeatherService {
 
     const divisor = count || 1;
     const avgOverall = Math.round(sumOverall / divisor);
+    const avgLevel = determineRiskLevel(avgOverall);
 
     return {
       latitude: lat,
       longitude: lon,
+      overallScore: avgOverall,
+      overallLevel: avgLevel,
+      overallRiskScore: avgOverall,
+      overallRiskLevel: avgLevel,
+      summary: `Overall 7-day farm risk index is ${avgOverall}/100 (${avgLevel}).`,
       dailyForecast: riskItems,
       riskBreakdown: {
         rainfallRiskScore: Math.round(sumRain / divisor),
@@ -668,7 +682,7 @@ export class WeatherService {
         sprayingRiskScore: Math.round(sumSpray / divisor),
         irrigationRiskScore: Math.round(sumIrrig / divisor),
         overallRiskScore: avgOverall,
-        overallRiskLevel: determineRiskLevel(avgOverall),
+        overallRiskLevel: avgLevel,
       },
       weeklyInsights: [
         'Favorable daytime windows for pesticide and fertilizer spraying during low wind periods.',

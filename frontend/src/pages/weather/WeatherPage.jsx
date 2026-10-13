@@ -253,9 +253,25 @@ export function WeatherPage() {
 
         <div className="lg:col-span-4">
           <RiskGauge
-            score={selectedDayRisk?.farmingRisk?.overallRiskScore ?? weeklyRisk?.overallRiskScore ?? 0}
-            level={selectedDayRisk?.farmingRisk?.overallRiskLevel || weeklyRisk?.overallRiskLevel || 'LOW'}
-            title="Farming Risk"
+            score={
+              selectedDayRisk?.farmingRisk?.overallScore ??
+              selectedDayRisk?.farmingRisk?.overallRiskScore ??
+              weeklyRisk?.riskBreakdown?.overallRiskScore ??
+              weeklyRisk?.overallScore ??
+              0
+            }
+            level={
+              selectedDayRisk?.farmingRisk?.overallLevel ||
+              selectedDayRisk?.farmingRisk?.overallRiskLevel ||
+              weeklyRisk?.riskBreakdown?.overallRiskLevel ||
+              weeklyRisk?.overallLevel ||
+              'LOW'
+            }
+            title={
+              isSelectedToday
+                ? "Today's Farming Risk"
+                : `${selectedDay?.date || 'Selected Day'} Farming Risk`
+            }
             summary={selectedDayRisk?.farmingRisk?.summary || weeklyRisk?.summary}
             riskBreakdown={selectedDayRisk?.farmingRisk || weeklyRisk?.riskBreakdown}
           />
@@ -269,13 +285,18 @@ export function WeatherPage() {
 
       {/* 3. 7-Day Extended Weather Forecast */}
       <div className="space-y-3 pt-2 border-t border-slate-200/80">
-        <div className="flex items-center justify-between">
-          <h2 className="font-extrabold text-base sm:text-lg text-slate-900 tracking-tight flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-brand-600" />
-            <span>7-Day Forecast</span>
-          </h2>
-          <span className="text-xs text-slate-400 font-medium">
-            Click day to inspect
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h2 className="font-extrabold text-base sm:text-lg text-slate-900 tracking-tight flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-brand-600" />
+              <span>7-Day Weather & Risk Forecast</span>
+            </h2>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Click any card below to inspect its hourly details and agronomic risk assessment
+            </p>
+          </div>
+          <span className="text-xs text-brand-700 bg-brand-50 border border-brand-200/60 px-2.5 py-1 rounded-xl font-bold">
+            Inspecting: {selectedDay ? (isSelectedToday ? 'Today' : selectedDay.date) : 'Today'}
           </span>
         </div>
 

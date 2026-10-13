@@ -99,14 +99,17 @@ export function WeeklyRiskBreakdown({ riskData, selectedDayRisk }) {
     <div className="space-y-5">
       {/* Risk Factors Section */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <h3 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
               <ShieldAlert className="w-5 h-5 text-brand-600" />
-              <span>Risk Factors</span>
+              <span>Agronomic Risk Factors</span>
+              <span className="text-xs font-semibold text-brand-700 bg-brand-50 border border-brand-200/60 px-2 py-0.5 rounded-md">
+                {selectedDayRisk?.date ? (selectedDayRisk.date === riskData?.dailyForecast?.[0]?.date ? 'Today' : selectedDayRisk.date) : 'Weekly Overview'}
+              </span>
             </h3>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Assessed agronomic conditions for farm planning
+              Assessed agronomic conditions for farm planning and operational decisions
             </p>
           </div>
         </div>

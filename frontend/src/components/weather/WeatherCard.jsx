@@ -49,17 +49,26 @@ export function WeatherCard({
   const pop = dailyWeather.precipitationProbabilityPercent ?? 0;
   const windSpeed = Math.round(dailyWeather.maximumWindSpeedKmh ?? 0);
 
-  const rawLevel = farmingRisk?.overallRiskLevel || (pop > 60 || windSpeed > 35 ? 'HIGH' : pop > 35 || windSpeed > 25 ? 'MEDIUM' : 'LOW');
+  const riskScore = farmingRisk?.overallScore ?? farmingRisk?.overallRiskScore ?? null;
+  const rawLevel =
+    farmingRisk?.overallLevel ||
+    farmingRisk?.overallRiskLevel ||
+    (riskScore != null
+      ? (riskScore >= 60 ? 'HIGH' : riskScore >= 30 ? 'MODERATE' : 'LOW')
+      : (pop > 60 || windSpeed > 35 ? 'HIGH' : pop > 35 || windSpeed > 25 ? 'MODERATE' : 'LOW'));
 
-  let riskBadge = 'bg-slate-100 text-slate-600 border-slate-200';
+  let riskBadge = 'bg-emerald-50 text-emerald-700 border-emerald-200';
   let riskLabel = 'Low Risk';
 
   if (rawLevel === 'HIGH' || rawLevel === 'CRITICAL') {
     riskBadge = 'bg-rose-50 text-rose-700 border-rose-200';
-    riskLabel = 'High Risk';
+    riskLabel = rawLevel === 'CRITICAL' ? 'Critical' : 'High Risk';
   } else if (rawLevel === 'MEDIUM' || rawLevel === 'MODERATE') {
     riskBadge = 'bg-amber-50 text-amber-700 border-amber-200';
     riskLabel = 'Moderate';
+  } else {
+    riskBadge = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    riskLabel = 'Low Risk';
   }
 
   const dayTitle = getDayName(dailyWeather.date, isToday);
@@ -85,7 +94,7 @@ export function WeatherCard({
         </div>
 
         <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${riskBadge}`}>
-          {riskLabel}
+          {riskLabel}{riskScore != null ? ` • ${riskScore}` : ''}
         </span>
       </div>
 
