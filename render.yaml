@@ -25,12 +25,10 @@ services:
       - key: CORS_ALLOWED_ORIGINS
         value: https://agrimarket-frontend.onrender.com,http://localhost:5173
 
-  # Frontend React SPA Static Site
+  # Frontend React SPA Static Site (Global CDN - no region needed)
   - type: web
     name: agrimarket-frontend
     env: static
-    plan: free
-    region: oregon
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
