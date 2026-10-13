@@ -286,3 +286,76 @@ export interface MarketPriceTrendDto {
   prices: HistoricalPricePointDto[];
 }
 
+export type NegotiationStatus = 'PENDING' | 'COUNTERED' | 'ACCEPTED' | 'REJECTED' | 'CONVERTED_TO_ORDER';
+
+export interface NegotiationDto {
+  id: string;
+  produceId: string;
+  produceName?: string;
+  producePrice?: number;
+  buyerId: string;
+  buyerName?: string;
+  buyerEmail?: string;
+  farmerId: string;
+  farmerName?: string;
+  quantity: number;
+  unit: string;
+  proposedPrice: number;
+  counterPrice?: number | null;
+  finalPrice?: number | null;
+  status: NegotiationStatus;
+  buyerNotes?: string | null;
+  farmerNotes?: string | null;
+  createdDate: string | Date;
+  lastModifiedDate: string | Date;
+}
+
+export type QualityGrade = 'GRADE_A' | 'GRADE_B' | 'GRADE_C';
+export type DemandStatus = 'OPEN' | 'FULFILLED' | 'CLOSED' | 'EXPIRED';
+
+export interface BuyerDemandDto {
+  id: string;
+  buyerId: string;
+  buyerName?: string;
+  cropName: string;
+  categoryId?: string;
+  quantityNeeded: number;
+  unit: string;
+  targetPricePerUnit: number;
+  qualityGrade: QualityGrade;
+  requiredByDate: string;
+  deliveryTalukId?: string;
+  deliveryCity?: string;
+  deliveryState?: string;
+  description?: string | null;
+  status: DemandStatus;
+  bidsCount?: number;
+  createdDate: string | Date;
+}
+
+export interface DemandBidDto {
+  id: string;
+  demandId: string;
+  farmerId: string;
+  farmerName?: string;
+  offeredQuantity: number;
+  offeredPricePerUnit: number;
+  notes?: string | null;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  createdDate: string | Date;
+}
+
+export interface ProducePoolDto {
+  id: string;
+  cropName: string;
+  talukId?: string;
+  talukName?: string;
+  districtName?: string;
+  totalQuantity: number;
+  unit: string;
+  avgPricePerUnit: number;
+  participatingFarmersCount: number;
+  products: ProductDto[];
+  estimatedFreightSavingsPercentage: number;
+}
+

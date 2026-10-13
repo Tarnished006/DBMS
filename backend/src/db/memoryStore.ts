@@ -33,6 +33,9 @@ export interface MemoryDb {
   payment_transactions: any[];
   deliveries: any[];
   phone_otps: any[];
+  negotiations: any[];
+  buyer_demands: any[];
+  demand_bids: any[];
 }
 
 export const memoryDb: MemoryDb = {
@@ -66,6 +69,9 @@ export const memoryDb: MemoryDb = {
   payment_transactions: [],
   deliveries: [],
   phone_otps: [],
+  negotiations: [],
+  buyer_demands: [],
+  demand_bids: [],
 };
 
 let initialized = false;

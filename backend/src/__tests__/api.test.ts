@@ -246,4 +246,129 @@ describe('AgriMarket Backend API End-to-End Suite', () => {
       expect(res.body.length).toBeGreaterThanOrEqual(2);
     });
   });
+
+  describe('8. Bilateral Farmer-Buyer Negotiation Engine', () => {
+    let testProduceId = '';
+    let negotiationId = '';
+
+    it('POST /api/v1/negotiations should allow buyer to make a proposed price offer', async () => {
+      const catalogRes = await request(app).get('/api/v1/products');
+      testProduceId = catalogRes.body.content[0].id;
+
+      // userToken acts as buyer making offer to farmer (adminToken owns seed products)
+      const res = await request(app)
+        .post('/api/v1/negotiations')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          produceId: testProduceId,
+          quantity: 100,
+          proposedPrice: 28,
+          unit: 'KG',
+          buyerNotes: 'Need 100kg bulk for catering, requesting ₹28/kg',
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.id).toBeDefined();
+      expect(res.body.status).toBe('PENDING');
+      expect(res.body.proposedPrice).toBe(28);
+      negotiationId = res.body.id;
+    });
+
+    it('GET /api/v1/negotiations/buyer should retrieve active negotiations for buyer', async () => {
+      const res = await request(app)
+        .get('/api/v1/negotiations/buyer')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('PATCH /api/v1/negotiations/:id/counter should allow farmer to counter-offer', async () => {
+      const res = await request(app)
+        .patch(`/api/v1/negotiations/${negotiationId}/counter`)
+        .set('Authorization', `Bearer ${adminToken}`) // adminToken is the farmer who owns produce
+        .send({
+          counterPrice: 32,
+          farmerNotes: 'Can do ₹32/kg for farm-gate pickup',
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('COUNTERED');
+      expect(res.body.counterPrice).toBe(32);
+    });
+
+    it('PATCH /api/v1/negotiations/:id/accept should allow buyer to accept counter-offer', async () => {
+      const res = await request(app)
+        .patch(`/api/v1/negotiations/${negotiationId}/accept`)
+        .set('Authorization', `Bearer ${userToken}`); // buyer accepts
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('ACCEPTED');
+      expect(res.body.finalPrice).toBe(32);
+    });
+  });
+
+  describe('9. Buyer Demand Board & Reverse Bidding', () => {
+    let demandId = '';
+
+    it('POST /api/v1/demands should allow bulk buyers to post produce requirements', async () => {
+      const res = await request(app)
+        .post('/api/v1/demands')
+        .set('Authorization', `Bearer ${adminToken}`) // admin acts as restaurant/bulk buyer
+        .send({
+          cropName: 'Grade-A Potatoes',
+          quantityNeeded: 500,
+          unit: 'KG',
+          targetPricePerUnit: 24,
+          qualityGrade: 'GRADE_A',
+          requiredByDate: '2026-10-25',
+          deliveryCity: 'Bengaluru',
+          description: 'Weekly restaurant supply needed, crisp grade-A required.',
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.id).toBeDefined();
+      expect(res.body.status).toBe('OPEN');
+      expect(res.body.targetPricePerUnit).toBe(24);
+      demandId = res.body.id;
+    });
+
+    it('GET /api/v1/demands should list open buyer demands publicly', async () => {
+      const res = await request(app).get('/api/v1/demands');
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('POST /api/v1/demands/:id/bids should allow farmer to place a fulfillment bid', async () => {
+      const res = await request(app)
+        .post(`/api/v1/demands/${demandId}/bids`)
+        .set('Authorization', `Bearer ${userToken}`) // farmer places bid
+        .send({
+          offeredQuantity: 500,
+          offeredPricePerUnit: 25,
+          notes: 'Freshly harvested Hasan potatoes ready for Friday delivery.',
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.status).toBe('PENDING');
+      expect(res.body.offeredPricePerUnit).toBe(25);
+    });
+  });
+
+  describe('10. Village Produce Pooling (Shared Freight)', () => {
+    it('GET /api/v1/pools should calculate consolidated regional produce lots', async () => {
+      const res = await request(app).get('/api/v1/pools');
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      if (res.body.length > 0) {
+        expect(res.body[0].cropName).toBeDefined();
+        expect(res.body[0].totalQuantity).toBeGreaterThan(0);
+        expect(res.body[0].estimatedFreightSavingsPercentage).toBeGreaterThanOrEqual(45);
+      }
+    });
+  });
 });

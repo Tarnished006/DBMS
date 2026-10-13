@@ -40,6 +40,11 @@ import { MarketPriceDetailPage } from '@/pages/market-prices/MarketPriceDetailPa
 import { CropListPage } from '@/pages/crops/CropListPage';
 import { CropDetailPage } from '@/pages/crops/CropDetailPage';
 
+// Demand Board & Pooling Pages
+import { DemandBoardPage } from '@/pages/demands/DemandBoardPage';
+import { ProducePoolingPage } from '@/pages/pools/ProducePoolingPage';
+import { NegotiationsPage } from '@/pages/dashboard/NegotiationsPage';
+
 // Dashboard User Pages
 import { UserDashboardPage } from '@/pages/dashboard/UserDashboardPage';
 import { OrdersPage } from '@/pages/dashboard/OrdersPage';
@@ -124,6 +129,10 @@ export function AppRoutes() {
         <Route path="/crops" element={<CropListPage />} />
         <Route path="/crops/:cropId" element={<CropDetailPage />} />
 
+        {/* Reverse Marketplace & Logistics Pooling */}
+        <Route path="/demands" element={<DemandBoardPage />} />
+        <Route path="/pools" element={<ProducePoolingPage />} />
+
         {/* Order Details & Tracking (Direct routes within Layout) */}
         <Route
           path="/orders"
@@ -166,6 +175,7 @@ export function AppRoutes() {
           <Route index element={<UserDashboardPage />} />
           <Route path="selling" element={<SellingPage />} />
           <Route path="selling/edit/:productId" element={<EditProductPage />} />
+          <Route path="negotiations" element={<NegotiationsPage />} />
           <Route path="inventory" element={<InventoryPage />} />
           <Route path="transactions" element={<TransactionsPage />} />
           <Route path="locations" element={<LocationsPage />} />

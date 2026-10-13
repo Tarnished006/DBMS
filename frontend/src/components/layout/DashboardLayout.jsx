@@ -10,6 +10,7 @@ import {
   User,
   PlusCircle,
   ShieldCheck,
+  Handshake,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
@@ -21,6 +22,7 @@ export function DashboardLayout() {
   const navItems = [
     { to: '/dashboard', label: 'Overview', icon: LayoutDashboard, end: true },
     { to: '/orders', label: 'My Orders', icon: ShoppingBag },
+    { to: '/dashboard/negotiations', label: 'Bargain & Offers', icon: Handshake },
     { to: '/dashboard/selling', label: 'My Listed Products', icon: Layers },
     { to: '/dashboard/inventory', label: 'Stock & Inventory', icon: Boxes },
     { to: '/dashboard/transactions', label: 'Payment History', icon: CreditCard },

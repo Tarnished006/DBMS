@@ -14,9 +14,15 @@ import {
   Sparkles,
   Sprout,
   ArrowLeft,
+  Handshake,
+  Award,
+  X,
 } from 'lucide-react';
 import { productService } from '@/services/product/productService';
 import { inventoryService } from '@/services/inventory/inventoryService';
+import { negotiationService } from '@/services/negotiation/negotiationService';
+import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/context/LanguageContext';
 import { ImageGallery } from '@/components/product/ImageGallery';
 import { ProductCard } from '@/components/product/ProductCard';
 import { Button } from '@/components/common/Button';
@@ -70,6 +76,14 @@ export function ProductDetailPage() {
     }
   }, [productId]);
 
+  const { user, isAuthenticated } = useAuth();
+  const { t } = useLanguage();
+  const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
+  const [offerPrice, setOfferPrice] = useState('');
+  const [offerQty, setOfferQty] = useState('');
+  const [offerNotes, setOfferNotes] = useState('');
+  const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
+
   const maxAvailable = availability?.availableQuantity ?? availability?.available_quantity ?? product?.quantity ?? 0;
   const isAvailable = maxAvailable > 0 && product?.status === 'ACTIVE';
 
@@ -79,6 +93,47 @@ export function ProductDetailPage() {
       return;
     }
     navigate(`/checkout/${productId}?qty=${quantity}`);
+  };
+
+  const handleOpenOfferModal = () => {
+    if (!isAuthenticated) {
+      toast.info('Please sign in to make a counter-offer to the farmer.');
+      navigate(`/login?redirect=/products/${productId}`);
+      return;
+    }
+    setOfferPrice(product?.price ? String(Math.round(product.price * 0.95)) : '');
+    setOfferQty(String(quantity));
+    setIsOfferModalOpen(true);
+  };
+
+  const handleSubmitOffer = async (e) => {
+    e.preventDefault();
+    const p = parseFloat(offerPrice);
+    const q = parseFloat(offerQty);
+    if (!p || p <= 0) {
+      toast.warning('Please enter a valid offer price per unit');
+      return;
+    }
+    if (!q || q <= 0) {
+      toast.warning('Please enter a valid quantity');
+      return;
+    }
+
+    setIsSubmittingOffer(true);
+    try {
+      await negotiationService.initiateNegotiation({
+        productId,
+        proposedPrice: p,
+        proposedQuantity: q,
+        notes: offerNotes.trim() || undefined,
+      });
+      toast.success('Bargain offer sent directly to farmer! Check Bargain & Offers to track.');
+      setIsOfferModalOpen(false);
+    } catch (err) {
+      toast.error(err.message || 'Failed to submit offer');
+    } finally {
+      setIsSubmittingOffer(false);
+    }
   };
 
   const handleShare = () => {
@@ -266,17 +321,30 @@ export function ProductDetailPage() {
                   </button>
                 </div>
 
-                {/* Primary Buy Now Button */}
-                <Button
-                  size="md"
-                  variant="primary"
-                  className="flex-1 justify-center py-2.5 text-sm font-bold shadow-soft-sm"
-                  disabled={!isAvailable}
-                  onClick={handleBuyNow}
-                  icon={ShoppingBag}
-                >
-                  {isAvailable ? `Buy Now — ${formatCurrency(totalPrice)}` : 'Out of Stock'}
-                </Button>
+                {/* Primary Buy Now & Make Offer Buttons */}
+                <div className="flex flex-col sm:flex-row gap-2 flex-1">
+                  <Button
+                    size="md"
+                    variant="primary"
+                    className="flex-1 justify-center py-2.5 text-sm font-bold shadow-soft-sm"
+                    disabled={!isAvailable}
+                    onClick={handleBuyNow}
+                    icon={ShoppingBag}
+                  >
+                    {isAvailable ? `Buy Now — ${formatCurrency(totalPrice)}` : 'Out of Stock'}
+                  </Button>
+
+                  <Button
+                    size="md"
+                    variant="outline"
+                    className="justify-center py-2.5 text-sm font-bold border-brand-300 text-brand-700 hover:bg-brand-50"
+                    disabled={!isAvailable}
+                    onClick={handleOpenOfferModal}
+                    icon={Handshake}
+                  >
+                    Make an Offer
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -288,7 +356,10 @@ export function ProductDetailPage() {
               </div>
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
                 <span className="text-[10px] uppercase font-bold text-slate-400 block">Quality Status</span>
-                <span className="font-bold text-emerald-700">Farmer Verified</span>
+                <span className="font-bold text-emerald-700 flex items-center gap-1">
+                  <Award className="w-3.5 h-3.5 text-emerald-600 inline flex-shrink-0" />
+                  {product.grade ? `Grade ${product.grade} (AGMARKNET Assayed)` : 'Grade A (APMC Certified)'}
+                </span>
               </div>
             </div>
 
@@ -335,6 +406,114 @@ export function ProductDetailPage() {
             {relatedProducts.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Make an Offer / Bargain Modal */}
+      {isOfferModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-soft-2xl border border-slate-100 space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center">
+                  <Handshake className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-900 text-base">Bargain & Make an Offer</h3>
+                  <p className="text-xs text-slate-500">Direct bilateral offer to farmer</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsOfferModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitOffer} className="space-y-4">
+              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 text-xs flex justify-between items-center">
+                <span className="text-slate-600">Listed Farmer Price:</span>
+                <strong className="text-slate-900 font-bold">₹{product.price} / {product.unit}</strong>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Your Offer Price (₹ per {product.unit})
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  step="any"
+                  required
+                  value={offerPrice}
+                  onChange={(e) => setOfferPrice(e.target.value)}
+                  placeholder="e.g. 38"
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 rounded-xl border border-slate-200 focus:border-brand-500 focus:bg-white outline-none font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Quantity ({product.unit})
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max={maxAvailable || undefined}
+                  step="any"
+                  required
+                  value={offerQty}
+                  onChange={(e) => setOfferQty(e.target.value)}
+                  placeholder="e.g. 50"
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 rounded-xl border border-slate-200 focus:border-brand-500 focus:bg-white outline-none font-bold"
+                />
+              </div>
+
+              {Number(offerPrice) > 0 && Number(offerQty) > 0 && (
+                <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs flex justify-between items-center">
+                  <span className="text-emerald-800 font-medium">Proposed Total:</span>
+                  <span className="text-emerald-900 font-extrabold text-sm">
+                    ₹{(Number(offerPrice) * Number(offerQty)).toLocaleString('en-IN')}
+                  </span>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Note to Seller (Optional)
+                </label>
+                <textarea
+                  rows="2"
+                  value={offerNotes}
+                  onChange={(e) => setOfferNotes(e.target.value)}
+                  placeholder="e.g. Prompt payment upon OTP handover, direct pickup available"
+                  className="w-full px-3.5 py-2 text-xs bg-slate-50 rounded-xl border border-slate-200 focus:border-brand-500 focus:bg-white outline-none resize-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="flex-1"
+                  onClick={() => setIsOfferModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  className="flex-1"
+                  disabled={isSubmittingOffer}
+                  icon={Handshake}
+                >
+                  {isSubmittingOffer ? 'Submitting...' : 'Send Counter-Offer'}
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}

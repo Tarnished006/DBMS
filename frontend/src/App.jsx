@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, useLocation } from 'react-router-dom';
 import { AuthProvider } from '@/context/AuthContext';
 import { ToastProvider } from '@/context/ToastContext';
+import { LanguageProvider } from '@/context/LanguageContext';
 import { ErrorBoundary } from '@/components/errors/ErrorBoundary';
 import { AppRoutes } from '@/routes/AppRoutes';
 
@@ -26,9 +27,11 @@ export function App() {
       <BrowserRouter>
         <ScrollToTop />
         <ToastProvider>
-          <AuthProvider>
-            <AppRoutes />
-          </AuthProvider>
+          <LanguageProvider>
+            <AuthProvider>
+              <AppRoutes />
+            </AuthProvider>
+          </LanguageProvider>
         </ToastProvider>
       </BrowserRouter>
     </ErrorBoundary>

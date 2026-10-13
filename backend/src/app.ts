@@ -22,6 +22,9 @@ import cropInfoRoutes from './routes/cropInfo.routes.js';
 import marketPriceRoutes from './routes/marketPrice.routes.js';
 import weatherRoutes from './routes/weather.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import negotiationRoutes from './routes/negotiation.routes.js';
+import demandRoutes from './routes/demand.routes.js';
+import poolRoutes from './routes/pool.routes.js';
 
 export function createApp(): Express {
   const app = express();
@@ -70,6 +73,9 @@ export function createApp(): Express {
         categories: '/api/v1/categories',
         products: '/api/v1/products',
         marketPrices: '/api/v1/market-prices',
+        demands: '/api/v1/demands',
+        negotiations: '/api/v1/negotiations',
+        pools: '/api/v1/pools',
         weather: '/api/v1/weather',
         crops: '/api/v1/crops/info',
       },
@@ -102,6 +108,9 @@ export function createApp(): Express {
   app.use('/api/v1/market-prices', marketPriceRoutes);
   app.use('/api/v1/weather', weatherRoutes);
   app.use('/api/v1/admin', adminRoutes);
+  app.use('/api/v1/negotiations', negotiationRoutes);
+  app.use('/api/v1/demands', demandRoutes);
+  app.use('/api/v1/pools', poolRoutes);
 
   // 6. 404 Resource Not Found Handler
   app.use((_req, res) => {

@@ -17,12 +17,18 @@ import {
   LayoutDashboard,
   Layers,
   Info,
+  Globe,
+  ClipboardList,
+  Truck,
+  Handshake,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/common/Button';
 
 export function Navbar() {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { language, toggleLanguage, t } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -95,11 +101,12 @@ export function Navbar() {
   };
 
   const navLinks = [
-    { to: '/marketplace', label: 'Marketplace', icon: ShoppingBag },
-    { to: '/market-prices', label: 'Mandi Prices', icon: TrendingUp },
-    { to: '/crops', label: 'Crop Guide', icon: BookOpen },
-    { to: '/weather', label: 'Weather', icon: CloudSun },
-    { to: '/about', label: 'About', icon: Info },
+    { to: '/marketplace', label: t('marketplace', 'Marketplace'), icon: ShoppingBag },
+    { to: '/market-prices', label: t('mandiPrices', 'Mandi Prices'), icon: TrendingUp },
+    { to: '/demands', label: t('demandBoard', 'Demand Board'), icon: ClipboardList },
+    { to: '/pools', label: t('producePools', 'Produce Pools'), icon: Truck },
+    { to: '/crops', label: t('cropGuide', 'Crop Guide'), icon: BookOpen },
+    { to: '/weather', label: t('weather', 'Weather'), icon: CloudSun },
   ];
 
   return (
@@ -166,6 +173,17 @@ export function Navbar() {
 
           {/* Right Actions / Auth */}
           <div className="flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
+            {/* Language Toggle Button */}
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200/90 bg-white hover:bg-emerald-50 hover:border-emerald-300 text-xs font-bold text-slate-700 hover:text-emerald-800 transition-all shadow-soft-xs cursor-pointer"
+              title="Switch Language / ಭಾಷೆ ಬದಲಿಸಿ"
+            >
+              <Globe className="w-3.5 h-3.5 text-emerald-600" />
+              <span>{language === 'en' ? 'ಕನ್ನಡ' : 'English'}</span>
+            </button>
+
             {isAuthenticated ? (
               <>
                 {/* User Menu: Small Picture Only, No Name */}
@@ -215,6 +233,15 @@ export function Navbar() {
                         >
                           <ShoppingBag className="w-4 h-4 text-slate-400" />
                           <span>My Orders</span>
+                        </Link>
+
+                        <Link
+                          to="/dashboard/negotiations"
+                          onClick={() => setIsUserDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-brand-50 hover:text-brand-700 rounded-xl transition-colors"
+                        >
+                          <Handshake className="w-4 h-4 text-slate-400" />
+                          <span>{t('bargains', 'Bargain & Offers')}</span>
                         </Link>
 
                         <Link
