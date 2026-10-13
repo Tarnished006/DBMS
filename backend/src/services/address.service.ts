@@ -8,13 +8,15 @@ export class AddressService {
   async getUserAddresses(userId: string): Promise<AddressDto[]> {
     if (isPostgres()) {
       const res = await db.query(
-        `SELECT a.id, a.address_line1, a.address_line2, a.landmark, a.taluk_id, a.pin_code,
+        `SELECT a.id, a.address_line1, a.address_line2,
+                COALESCE(a.city, a.village, '') as landmark,
+                a.taluk_id, a.pincode as pin_code,
                 a.latitude, a.longitude, a.is_default,
                 t.name as taluk_name, d.name as district_name, s.name as state_name
          FROM addresses a
-         JOIN taluks t ON t.id = a.taluk_id
-         JOIN districts d ON d.id = t.district_id
-         JOIN states s ON s.id = d.state_id
+         LEFT JOIN taluks t ON t.id = a.taluk_id
+         LEFT JOIN districts d ON d.id = t.district_id
+         LEFT JOIN states s ON s.id = d.state_id
          WHERE a.user_id = $1
          ORDER BY a.is_default DESC, a.created_date DESC`,
         [userId]
@@ -29,13 +31,15 @@ export class AddressService {
   async getAddressById(userId: string, addressId: string): Promise<AddressDto> {
     if (isPostgres()) {
       const res = await db.query(
-        `SELECT a.id, a.address_line1, a.address_line2, a.landmark, a.taluk_id, a.pin_code,
+        `SELECT a.id, a.address_line1, a.address_line2,
+                COALESCE(a.city, a.village, '') as landmark,
+                a.taluk_id, a.pincode as pin_code,
                 a.latitude, a.longitude, a.is_default,
                 t.name as taluk_name, d.name as district_name, s.name as state_name
          FROM addresses a
-         JOIN taluks t ON t.id = a.taluk_id
-         JOIN districts d ON d.id = t.district_id
-         JOIN states s ON s.id = d.state_id
+         LEFT JOIN taluks t ON t.id = a.taluk_id
+         LEFT JOIN districts d ON d.id = t.district_id
+         LEFT JOIN states s ON s.id = d.state_id
          WHERE a.id = $1 AND a.user_id = $2`,
         [addressId, userId]
       );
@@ -66,7 +70,7 @@ export class AddressService {
     if (isPostgres()) {
       await db.query(
         `INSERT INTO addresses (
-          id, user_id, address_line1, address_line2, landmark, taluk_id, pin_code,
+          id, user_id, address_line1, address_line2, city, taluk_id, pincode,
           latitude, longitude, is_default, created_date, last_modified_date
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11)`,
         [
@@ -74,9 +78,9 @@ export class AddressService {
           userId,
           data.addressLine1.trim(),
           data.addressLine2?.trim() || null,
-          data.landmark?.trim() || null,
-          data.talukId,
-          data.pinCode.trim(),
+          data.landmark?.trim() || data.city?.trim() || null,
+          data.talukId || null,
+          data.pinCode?.trim() || data.pincode?.trim() || '560001',
           data.latitude || null,
           data.longitude || null,
           shouldBeDefault,
@@ -93,7 +97,7 @@ export class AddressService {
       address_line2: data.addressLine2?.trim() || null,
       landmark: data.landmark?.trim() || null,
       taluk_id: data.talukId,
-      pin_code: data.pinCode.trim(),
+      pin_code: data.pinCode?.trim() || data.pincode?.trim() || '560001',
       latitude: data.latitude || null,
       longitude: data.longitude || null,
       is_default: shouldBeDefault,
@@ -120,9 +124,9 @@ export class AddressService {
         `UPDATE addresses SET
           address_line1 = COALESCE($1, address_line1),
           address_line2 = COALESCE($2, address_line2),
-          landmark = COALESCE($3, landmark),
+          city = COALESCE($3, city),
           taluk_id = COALESCE($4, taluk_id),
-          pin_code = COALESCE($5, pin_code),
+          pincode = COALESCE($5, pincode),
           latitude = COALESCE($6, latitude),
           longitude = COALESCE($7, longitude),
           is_default = COALESCE($8, is_default),
@@ -131,9 +135,9 @@ export class AddressService {
         [
           data.addressLine1?.trim() || null,
           data.addressLine2?.trim() || null,
-          data.landmark?.trim() || null,
+          data.landmark?.trim() || data.city?.trim() || null,
           data.talukId || null,
-          data.pinCode?.trim() || null,
+          data.pinCode?.trim() || data.pincode?.trim() || null,
           data.latitude !== undefined ? data.latitude : null,
           data.longitude !== undefined ? data.longitude : null,
           data.isDefault !== undefined ? data.isDefault : null,

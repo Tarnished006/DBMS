@@ -54,6 +54,10 @@ export const ENV = {
   BREVO_URL: process.env.BREVO_URL || 'https://api.brevo.com/v3/smtp/email',
   MSG91_AUTH_KEY: process.env.MSG91_AUTH_KEY || '',
   MSG91_OTP_TEMPLATE_ID: process.env.MSG91_OTP_TEMPLATE_ID || '',
+  DATA_GOV_IN_API_KEY:
+    process.env.DATA_GOV_IN_API_KEY ||
+    process.env.MANDI_API_KEY ||
+    '579b464db66ec23bdd000001545f657fd0f648fd743841900f2cf198',
 
   // Cookies
   COOKIE_SECURE: process.env.COOKIE_SECURE === 'true' || process.env.NODE_ENV === 'production',

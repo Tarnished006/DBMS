@@ -2,6 +2,7 @@ import axios from 'axios';
 import { db, isPostgres } from '../db/dbAdapter.js';
 import { memoryDb } from '../db/memoryStore.js';
 import { BusinessException } from '../errors/BusinessException.js';
+import { ENV } from '../config/env.js';
 import {
   MarketPriceDto,
   MarketPriceResponseDto,
@@ -39,8 +40,13 @@ interface CacheEntry {
 export class MarketPriceService {
   private cache = new Map<string, CacheEntry>();
   private readonly CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
-  private readonly MANDI_API_BASE =
-    process.env.MANDI_API_BASE_URL || 'https://mandi-api.onrender.com/v1';
+  private readonly DATA_GOV_API_KEY =
+    process.env.DATA_GOV_IN_API_KEY ||
+    ENV.DATA_GOV_IN_API_KEY ||
+    '579b464db66ec23bdd000001545f657fd0f648fd743841900f2cf198';
+  private readonly DATA_GOV_RESOURCE_ID =
+    process.env.DATA_GOV_RESOURCE_ID || '9ef84268-d588-465a-a308-a864a43d0070';
+  private readonly DATA_GOV_URL = `https://api.data.gov.in/resource/${this.DATA_GOV_RESOURCE_ID}`;
 
   async getLatestPrices(
     filtersOrCommodityId?: MarketPriceFilter | string,
@@ -54,7 +60,7 @@ export class MarketPriceService {
     const commodityName = this.resolveCommodityName(filters.commodity, filters.commodityId);
     const marketName = this.resolveMarketName(filters.market, filters.marketId);
 
-    // 1. Try external real-time Mandi API first
+    // 1. Try external real-time data.gov.in Mandi API first
     try {
       const livePrices = await this.fetchLiveMandiPrices({
         commodity: commodityName,
@@ -71,7 +77,7 @@ export class MarketPriceService {
         };
       }
     } catch (err) {
-      console.warn('[MarketPrice] Mandi API unavailable or timed out, falling back to local database:', (err as Error).message);
+      console.warn('[MarketPrice] data.gov.in Mandi API unavailable or timed out, falling back to local database:', (err as Error).message);
     }
 
     // 2. Fallback to local database / memory store
@@ -162,21 +168,66 @@ export class MarketPriceService {
     return this.generateHistoricalTrend(commodityName, filters, startDate, endDate);
   }
 
+  private normalizeCommodityName(name?: string): string | undefined {
+    if (!name) return undefined;
+    const trimmed = name.trim();
+    if (!trimmed || trimmed.toLowerCase() === 'all') return undefined;
+    const lower = trimmed.toLowerCase();
+    if (lower === 'tomatoes') return 'Tomato';
+    if (lower === 'potatoes') return 'Potato';
+    if (lower === 'onions') return 'Onion';
+    if (lower === 'apples') return 'Apple';
+    if (lower === 'bananas') return 'Banana';
+    if (lower === 'chillies' || lower === 'chilis' || lower === 'chilli') return 'Green Chilli';
+    return trimmed;
+  }
+
   private async fetchLiveMandiPrices(params: {
     commodity?: string;
     state?: string;
     district?: string;
     market?: string;
     date?: string;
+    limit?: number;
+    offset?: number;
   }): Promise<MarketPriceDto[]> {
-    const cleanParams: Record<string, string> = {};
-    if (params.state) cleanParams.state = params.state;
-    if (params.commodity && params.commodity.toLowerCase() !== 'all') {
-      cleanParams.commodity = params.commodity;
+    const cleanParams: Record<string, string> = {
+      'api-key': this.DATA_GOV_API_KEY,
+      format: 'json',
+      limit: String(params.limit || 200),
+      offset: String(params.offset || 0),
+    };
+
+    if (params.state && params.state.toLowerCase() !== 'all') {
+      cleanParams['filters[state]'] = params.state;
     }
-    if (params.district) cleanParams.district = params.district;
-    if (params.market) cleanParams.market = params.market;
-    if (params.date) cleanParams.date = params.date;
+    if (params.district && params.district.toLowerCase() !== 'all') {
+      cleanParams['filters[district]'] = params.district;
+    }
+
+    const normalizedCmd = this.normalizeCommodityName(params.commodity);
+    if (normalizedCmd) {
+      cleanParams['filters[commodity]'] = normalizedCmd;
+    }
+
+    if (params.market && params.market.toLowerCase() !== 'all') {
+      cleanParams['filters[market]'] = params.market;
+    }
+
+    // Format arrival date if supplied:
+    let dateFilterUsed = false;
+    if (params.date) {
+      if (params.date.includes('-')) {
+        const [y, m, d] = params.date.split('-');
+        if (y && m && d) {
+          cleanParams['filters[arrival_date]'] = `${d}/${m}/${y}`;
+          dateFilterUsed = true;
+        }
+      } else if (params.date.includes('/')) {
+        cleanParams['filters[arrival_date]'] = params.date;
+        dateFilterUsed = true;
+      }
+    }
 
     const cacheKey = JSON.stringify(cleanParams);
     const cached = this.cache.get(cacheKey);
@@ -184,41 +235,76 @@ export class MarketPriceService {
       return cached.data;
     }
 
-    const resp = await axios.get(`${this.MANDI_API_BASE}/prices`, {
-      params: cleanParams,
-      timeout: 6000,
-    });
+    let records: any[] = [];
+    try {
+      const resp = await axios.get(this.DATA_GOV_URL, {
+        params: cleanParams,
+        timeout: 8000,
+      });
+      records = resp.data?.records || [];
+    } catch (apiErr) {
+      console.warn('[MarketPrice] data.gov.in initial query notice:', (apiErr as Error).message);
+    }
 
-    if (!resp.data?.success || !Array.isArray(resp.data?.data)) {
+    // If records is empty and a specific date filter was used, retry once without date filter
+    // to guarantee farmers/buyers get the most recent active prices from APMC Mandis
+    if (records.length === 0 && dateFilterUsed) {
+      const retryParams = { ...cleanParams };
+      delete retryParams['filters[arrival_date]'];
+      try {
+        const retryResp = await axios.get(this.DATA_GOV_URL, {
+          params: retryParams,
+          timeout: 8000,
+        });
+        records = retryResp.data?.records || [];
+      } catch (retryErr) {
+        console.warn('[MarketPrice] Retry without date filter notice:', (retryErr as Error).message);
+      }
+    }
+
+    if (!Array.isArray(records) || records.length === 0) {
       return [];
     }
 
-    const items: any[] = resp.data.data;
-    const mapped: MarketPriceDto[] = items.map((item, idx) => ({
-      id: String(item.id || `mandi-${idx}`),
-      commodity: item.commodity,
-      commodityName: item.commodity,
-      variety: item.variety || 'Local',
-      grade: item.grade || 'FAQ',
-      market: item.market,
-      marketName: item.market,
-      state: item.state,
-      district: item.district,
-      minimum_price: Number(item.min_price || 0),
-      minimumPrice: Number(item.min_price || 0),
-      minPrice: Number(item.min_price || 0),
-      maximum_price: Number(item.max_price || 0),
-      maximumPrice: Number(item.max_price || 0),
-      maxPrice: Number(item.max_price || 0),
-      modal_price: Number(item.modal_price || 0),
-      modalPrice: Number(item.modal_price || 0),
-      unit: 'Quintal',
-      currency: 'INR',
-      arrival_date: item.arrival_date || new Date().toISOString().split('T')[0],
-      arrivalDate: item.arrival_date || new Date().toISOString().split('T')[0],
-      priceDate: item.arrival_date || new Date().toISOString().split('T')[0],
-      source: 'Mandi Price API',
-    }));
+    const mapped: MarketPriceDto[] = records.map((item: any, idx: number) => {
+      const rawMin = Number(item.min_price || 0);
+      const rawMax = Number(item.max_price || 0);
+      const rawModal = Number(item.modal_price || 0);
+
+      let isoDate = item.arrival_date || new Date().toISOString().split('T')[0];
+      if (item.arrival_date && item.arrival_date.includes('/')) {
+        const [d, m, y] = item.arrival_date.split('/');
+        if (d && m && y) {
+          isoDate = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+        }
+      }
+
+      return {
+        id: `gov-${idx}-${item.commodity}-${item.market}`.replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase(),
+        commodity: item.commodity,
+        commodityName: item.commodity,
+        variety: item.variety || 'Local',
+        grade: item.grade || 'FAQ',
+        market: item.market,
+        marketName: item.market,
+        state: item.state,
+        district: item.district,
+        minimum_price: rawMin,
+        minimumPrice: rawMin,
+        minPrice: rawMin,
+        maximum_price: rawMax,
+        maximumPrice: rawMax,
+        maxPrice: rawMax,
+        modal_price: rawModal,
+        modalPrice: rawModal,
+        unit: 'Quintal',
+        currency: 'INR',
+        arrival_date: isoDate,
+        arrivalDate: isoDate,
+        priceDate: isoDate,
+        source: 'data.gov.in (Agmarknet)',
+      };
+    });
 
     this.cache.set(cacheKey, { data: mapped, timestamp: Date.now() });
     return mapped;
@@ -344,7 +430,23 @@ export class MarketPriceService {
     };
 
     const key = (commodity || '').toLowerCase().trim();
-    const rate = baseRates[key] || { min: 2000, max: 3000, modal: 2500 };
+    let liveModal: number | undefined;
+    for (const [, entry] of this.cache.entries()) {
+      const match = entry.data.find(
+        (p) =>
+          p.commodity.toLowerCase().includes(key) ||
+          key.includes(p.commodity.toLowerCase()) ||
+          p.commodityName.toLowerCase().includes(key)
+      );
+      if (match && match.modalPrice > 0) {
+        liveModal = match.modalPrice;
+        break;
+      }
+    }
+
+    const rate = liveModal
+      ? { min: Math.round(liveModal * 0.88), max: Math.round(liveModal * 1.12), modal: liveModal }
+      : baseRates[key] || { min: 2000, max: 3000, modal: 2500 };
 
     const prices: HistoricalPricePointDto[] = [];
     for (let i = 0; i < dayCount; i++) {
