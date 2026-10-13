@@ -10,73 +10,11 @@ import { EmptyState } from '@/components/empty-states/EmptyState';
 import { Spinner } from '@/components/loaders/Spinner';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useAuth } from '@/hooks/useAuth';
-
-// 5 States strictly supported by the Mandi Market provider
-const SUPPORTED_STATES = [
-  'Karnataka',
-  'Maharashtra',
-  'Uttar Pradesh',
-  'Punjab',
-  'Madhya Pradesh',
-];
-
-// Fallback districts for supported states if backend DB does not have them yet
-const FALLBACK_STATE_DISTRICTS = {
-  Karnataka: [
-    'Bagalkote', 'Ballari', 'Belagavi', 'Bengaluru Rural', 'Bengaluru Urban',
-    'Bidar', 'Chamarajanagara', 'Chikkaballapura', 'Chikkamagaluru', 'Chitradurga',
-    'Dakshina Kannada', 'Davanagere', 'Dharwad', 'Gadag', 'Hassan',
-    'Haveri', 'Kalaburagi', 'Kodagu', 'Kolar', 'Koppal',
-    'Mandya', 'Mysuru', 'Raichur', 'Ramanagara', 'Shivamogga',
-    'Tumakuru', 'Udupi', 'Uttara Kannada', 'Vijayanagara', 'Vijayapura', 'Yadgir',
-  ],
-  Maharashtra: [
-    'Ahmednagar', 'Akola', 'Amravati', 'Aurangabad', 'Beed',
-    'Bhandara', 'Buldhana', 'Chandrapur', 'Dhule', 'Gadchiroli',
-    'Gondia', 'Hingoli', 'Jalgaon', 'Jalna', 'Kolhapur',
-    'Latur', 'Mumbai City', 'Mumbai Suburban', 'Nagpur', 'Nanded',
-    'Nandurbar', 'Nashik', 'Osmanabad', 'Palghar', 'Parbhani',
-    'Pune', 'Raigad', 'Ratnagiri', 'Sangli', 'Satara',
-    'Sindhudurg', 'Solapur', 'Thane', 'Wardha', 'Washim', 'Yavatmal',
-  ],
-  'Uttar Pradesh': [
-    'Agra', 'Aligarh', 'Ambedkar Nagar', 'Amethi', 'Amroha',
-    'Auraiya', 'Ayodhya', 'Azamgarh', 'Baghpat', 'Bahraich',
-    'Ballia', 'Balrampur', 'Banda', 'Barabanki', 'Bareilly',
-    'Basti', 'Bhadohi', 'Bijnor', 'Budaun', 'Bulandshahr',
-    'Chandauli', 'Chitoot', 'Deoria', 'Etah', 'Etawah',
-    'Farrukhabad', 'Fatehpur', 'Firozabad', 'Gautam Buddha Nagar', 'Ghaziabad',
-    'Ghazipur', 'Gonda', 'Gorakhpur', 'Hamirpur', 'Hapur',
-    'Hardoi', 'Hathras', 'Jalaun', 'Jaunpur', 'Jhansi',
-    'Kannauj', 'Kanpur Dehat', 'Kanpur Nagar', 'Kasganj', 'Kaushambi',
-    'Kheri', 'Kushinagar', 'Lalitpur', 'Lucknow', 'Maharajganj',
-    'Mahoba', 'Mainpuri', 'Mathura', 'Mau', 'Meerut',
-    'Mirzapur', 'Moradabad', 'Muzaffarnagar', 'Pilibhit', 'Pratapgarh',
-    'Prayagraj', 'Raebareli', 'Rampur', 'Saharanpur', 'Sambhal',
-    'Sant Kabir Nagar', 'Shahjahanpur', 'Shamli', 'Shravasti', 'Siddharthnagar',
-    'Sitapur', 'Sonbhadra', 'Sultanpur', 'Unnao', 'Varanasi',
-  ],
-  Punjab: [
-    'Amritsar', 'Barnala', 'Bathinda', 'Faridkot', 'Fatehgarh Sahib',
-    'Fazilka', 'Ferozepur', 'Gurdaspur', 'Hoshiarpur', 'Jalandhar',
-    'Kapurthala', 'Ludhiana', 'Malerkotla', 'Mansa', 'Moga',
-    'Muktsar', 'Pathankot', 'Patiala', 'Rupnagar', 'Sahibzada Ajit Singh Nagar',
-    'Sangrur', 'Shahid Bhagat Singh Nagar', 'Sri Muktsar Sahib', 'Tarn Taran',
-  ],
-  'Madhya Pradesh': [
-    'Agar Malwa', 'Alirajpur', 'Anuppur', 'Ashoknagar', 'Balaghat',
-    'Barwani', 'Betul', 'Bhind', 'Bhopal', 'Burhanpur',
-    'Chhatarpur', 'Chhindwara', 'Damoh', 'Datia', 'Dewas',
-    'Dhar', 'Dindori', 'Guna', 'Gwalior', 'Harda',
-    'Hoshangabad', 'Indore', 'Jabalpur', 'Jhabua', 'Katni',
-    'Khandwa', 'Khargone', 'Mandla', 'Mandsaur', 'Morena',
-    'Narsinghpur', 'Neemuch', 'Niwari', 'Panna', 'Raisen',
-    'Rajgarh', 'Ratlam', 'Rewa', 'Sagar', 'Satna',
-    'Sehore', 'Seoni', 'Shahdol', 'Shajapur', 'Sheopur',
-    'Shivpuri', 'Sidhi', 'Singrauli', 'Tikamgarh', 'Ujjain',
-    'Umaria', 'Vidisha',
-  ],
-};
+import {
+  ALL_INDIA_STATES,
+  getDistrictsForState,
+  normalizeStateName,
+} from '@/utils/indiaLocations';
 
 const QUICK_COMMODITIES = [
   'All',
@@ -241,11 +179,11 @@ export function MarketPricesPage() {
   const userCity = user?.district || user?.city || geoCity || '';
   const userLocationName = [userCity, userState].filter(Boolean).join(', ');
 
-  // Determine initial state (restricted to supported states, defaulting to Karnataka)
+  // Determine initial state (from URL, or user's detected location, or Karnataka)
   const initialUrlState = searchParams.get('state');
-  const matchedInitialState = SUPPORTED_STATES.find(
+  const matchedInitialState = ALL_INDIA_STATES.find(
     (s) => s.toLowerCase() === (initialUrlState || '').toLowerCase()
-  ) || 'Karnataka';
+  ) || (userState ? normalizeStateName(userState) : 'Karnataka');
 
   const initialUrlCommodity = searchParams.get('commodity') || searchParams.get('q') || '';
   const initialUrlDistrict = searchParams.get('district') || '';
@@ -271,7 +209,7 @@ export function MarketPricesPage() {
   });
 
   const [backendStates, setBackendStates] = useState([]);
-  const [districts, setDistricts] = useState([]);
+  const [districts, setDistricts] = useState(() => getDistrictsForState(matchedInitialState));
   const [prices, setPrices] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -295,11 +233,13 @@ export function MarketPricesPage() {
     };
   }, []);
 
-  // Dynamically load districts from backend location endpoint whenever state changes
+  // Dynamically load districts from master dictionary and backend whenever state changes
   useEffect(() => {
     let isMounted = true;
     async function loadDistrictsForState() {
       const currentState = filterDraft.state || 'Karnataka';
+      const localDistricts = getDistrictsForState(currentState);
+
       try {
         const stateObj = backendStates.find(
           (s) => s.name?.toLowerCase() === currentState.toLowerCase()
@@ -308,7 +248,9 @@ export function MarketPricesPage() {
           const districtData = await locationService.getDistricts(stateObj.id);
           const list = Array.isArray(districtData) ? districtData : (districtData?.content || []);
           if (isMounted && list.length > 0) {
-            setDistricts(list.map((d) => d.name));
+            const dbDistrictNames = list.map((d) => d.name);
+            const merged = Array.from(new Set([...localDistricts, ...dbDistrictNames])).sort();
+            setDistricts(merged);
             return;
           }
         }
@@ -316,9 +258,9 @@ export function MarketPricesPage() {
         console.warn('Backend districts fetch notice for', currentState, err);
       }
 
-      // Fallback districts for supported states if not found in database
-      if (isMounted) {
-        setDistricts(FALLBACK_STATE_DISTRICTS[currentState] || []);
+      // Master India dictionary districts for this state
+      if (isMounted && localDistricts.length > 0) {
+        setDistricts(localDistricts);
       }
     }
 
@@ -332,13 +274,15 @@ export function MarketPricesPage() {
   useEffect(() => {
     const qParam = searchParams.get('commodity') || searchParams.get('q') || '';
     const stParam = searchParams.get('state');
-    const validState = SUPPORTED_STATES.find(
+    const validState = ALL_INDIA_STATES.find(
       (s) => s.toLowerCase() === (stParam || '').toLowerCase()
-    ) || 'Karnataka';
+    ) || (userState ? normalizeStateName(userState) : 'Karnataka');
 
     const dtParam = searchParams.get('district') || '';
     const mkParam = searchParams.get('market') || '';
     const dParam = searchParams.get('date') || todayDate;
+
+    setDistricts(getDistrictsForState(validState));
 
     setFilterDraft({
       commodity: qParam,
@@ -355,7 +299,7 @@ export function MarketPricesPage() {
       market: mkParam,
       date: dParam,
     });
-  }, [searchParams, todayDate]);
+  }, [searchParams, todayDate, userState]);
 
   // Execute search ONLY when activeFilters change (NOT on every keystroke)
   const loadPrices = useCallback(async () => {
@@ -401,6 +345,8 @@ export function MarketPricesPage() {
   // Changing State dropdown immediately updates district options & triggers query for that state
   const handleStateChange = (e) => {
     const newState = e.target.value;
+    const newDistricts = getDistrictsForState(newState);
+    setDistricts(newDistricts);
     setFilterDraft((prev) => ({ ...prev, state: newState, district: '' }));
     setActiveFilters((prev) => ({ ...prev, state: newState, district: '' }));
   };
@@ -426,9 +372,10 @@ export function MarketPricesPage() {
     setActiveFilters((prev) => ({ ...prev, commodity: val }));
   };
 
-  // Reset to default Karnataka state and today's date
+  // Reset to default state and today's date
   const handleReset = () => {
-    const defaultState = 'Karnataka';
+    const defaultState = userState ? normalizeStateName(userState) : 'Karnataka';
+    setDistricts(getDistrictsForState(defaultState));
     setFilterDraft({
       commodity: '',
       state: defaultState,
@@ -533,7 +480,7 @@ export function MarketPricesPage() {
             </div>
           </div>
 
-          {/* State Dropdown (Restricted to Supported States Only, Defaults to Karnataka) */}
+          {/* State Dropdown (All India States & Union Territories) */}
           <div>
             <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">
               State
@@ -544,7 +491,7 @@ export function MarketPricesPage() {
               placeholder=""
               className="rounded-xl text-xs sm:text-sm py-2.5 shadow-soft-xs font-medium"
             >
-              {SUPPORTED_STATES.map((st) => (
+              {ALL_INDIA_STATES.map((st) => (
                 <option key={st} value={st}>
                   {st}
                 </option>
