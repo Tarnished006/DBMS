@@ -42,8 +42,8 @@ export class UserService {
       fullName: user.full_name,
       email: user.email,
       phoneNumber: user.phone_number,
-      emailVerified: !!user.is_email_verified,
-      phoneVerified: !!user.is_phone_verified,
+      emailVerified: user.email_verified !== undefined ? !!user.email_verified : !!user.is_email_verified,
+      phoneVerified: user.phone_verified !== undefined ? !!user.phone_verified : !!user.is_phone_verified,
       profilePictureUrl: user.profile_picture_url,
       addresses,
     };

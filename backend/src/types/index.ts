@@ -214,6 +214,8 @@ export interface CropInfoDto {
   scientificName?: string;
   family?: string;
   category?: string;
+  description?: string | null;
+  imageUrl?: string | null;
   optimalTemperatureMin?: number;
   optimalTemperatureMax?: number;
   rainfallMin?: number;
@@ -226,6 +228,7 @@ export interface CropInfoDto {
   sowingSeason?: string;
   commonDiseases: string[];
   uses: string[];
+  [key: string]: any;
 }
 
 export interface MarketPriceDto {

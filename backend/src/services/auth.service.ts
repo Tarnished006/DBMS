@@ -23,29 +23,35 @@ export class AuthService {
 
       await db.query(
         `INSERT INTO users (
-          id, email, password, full_name, is_active, is_email_verified, is_phone_verified,
-          is_account_non_locked, failed_login_attempts, created_date, last_modified_date, password_updated_at
-        ) VALUES ($1, $2, $3, $4, true, false, false, true, 0, $5, $5, $5)`,
+          id, email, password, full_name, enabled, email_verified, phone_verified,
+          credentials_expired, account_locked, failed_login_attempts, created_date, last_modified_date, password_changed_at
+        ) VALUES ($1, $2, $3, $4, true, false, false, false, false, 0, $5, $5, $5)`,
         [userId, email, passwordHash, data.fullName.trim(), now]
       );
 
-      // Assign ROLE_USER
-      const roleRes = await db.query("SELECT id FROM roles WHERE name = 'ROLE_USER' OR name = 'USER'");
-      if (roleRes.rows.length > 0) {
-        await db.query('INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2)', [
-          userId,
-          roleRes.rows[0].id,
-        ]);
+      // Assign ROLE_USER (seed role dynamically if missing)
+      let roleRes = await db.query("SELECT id FROM roles WHERE name = 'ROLE_USER' OR name = 'USER'");
+      let roleId = roleRes.rows[0]?.id;
+      if (!roleId) {
+        roleId = uuidv4();
+        await db.query(
+          "INSERT INTO roles (id, name, created_date, last_modified_date) VALUES ($1, 'ROLE_USER', $2, $2) ON CONFLICT (name) DO NOTHING",
+          [roleId, now]
+        );
       }
+      await db.query('INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [
+        userId,
+        roleId,
+      ]);
 
-      // Generate verification token
+      // Generate verification token (expires_at)
       const rawToken = generateSecureToken(32);
       const tokenHash = hashToken(rawToken);
       const expiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
       await db.query(
         `INSERT INTO email_verification_tokens (
-          id, user_id, token_hash, expiry_date, used, created_date, last_modified_date
+          id, user_id, token_hash, expires_at, used, created_date, last_modified_date
         ) VALUES ($1, $2, $3, $4, false, $5, $5)`,
         [uuidv4(), userId, tokenHash, expiry, now]
       );
@@ -143,11 +149,13 @@ export class AuthService {
     }
 
     // Check account status
-    if (!user.is_active) {
+    const isActive = user.enabled !== undefined ? !!user.enabled : !!user.is_active;
+    if (!isActive) {
       throw new BusinessException('ERR_USER_DISABLED', 'Your account is disabled');
     }
 
-    if (!user.is_account_non_locked) {
+    const isNonLocked = user.account_locked !== undefined ? !user.account_locked : !!user.is_account_non_locked;
+    if (!isNonLocked) {
       throw new BusinessException('PERMANENT_ACCOUNT_LOCKED', 'Your account is permanently locked');
     }
 
@@ -214,9 +222,9 @@ export class AuthService {
     if (isPostgres()) {
       await db.query(
         `INSERT INTO refresh_token_sessions (
-          id, user_id, token_hash, issued_at, expires_at, revoked, created_date, last_modified_date
-        ) VALUES ($1, $2, $3, $4, $5, false, $4, $4)`,
-        [uuidv4(), user.id, tokenHash, now, expiresAt]
+          id, user_id, token_hash, device_name, expires_at, revoked, created_date, last_modified_date
+        ) VALUES ($1, $2, $3, 'Web Client', $4, false, $5, $5)`,
+        [uuidv4(), user.id, tokenHash, expiresAt, now]
       );
     } else {
       memoryDb.refresh_token_sessions.push({
@@ -343,9 +351,9 @@ export class AuthService {
     if (isPostgres()) {
       await db.query(
         `INSERT INTO refresh_token_sessions (
-          id, user_id, token_hash, issued_at, expires_at, revoked, created_date, last_modified_date
-        ) VALUES ($1, $2, $3, $4, $5, false, $4, $4)`,
-        [uuidv4(), user.id, newTokenHash, now, newExpiresAt]
+          id, user_id, token_hash, device_name, expires_at, revoked, created_date, last_modified_date
+        ) VALUES ($1, $2, $3, 'Web Client', $4, false, $5, $5)`,
+        [uuidv4(), user.id, newTokenHash, newExpiresAt, now]
       );
     } else {
       memoryDb.refresh_token_sessions.push({
@@ -417,12 +425,12 @@ export class AuthService {
       if (tok.used) {
         throw new BusinessException('VERIFICATION_TOKEN_ALREADY_USED', 'The email verification request has already been completed.');
       }
-      if (new Date(tok.expiry_date) < new Date()) {
+      if (new Date(tok.expires_at || tok.expiry_date) < new Date()) {
         throw new BusinessException('VERIFICATION_TOKEN_EXPIRED', 'The email verification request has expired.');
       }
 
-      await db.query('UPDATE email_verification_tokens SET used = true, used_at = $1 WHERE id = $2', [new Date(), tok.id]);
-      await db.query('UPDATE users SET is_email_verified = true WHERE id = $1', [tok.user_id]);
+      await db.query('UPDATE email_verification_tokens SET used = true, last_modified_date = $1 WHERE id = $2', [new Date(), tok.id]);
+      await db.query('UPDATE users SET email_verified = true, last_modified_date = $1 WHERE id = $2', [new Date(), tok.user_id]);
     } else {
       const tok = memoryDb.email_verification_tokens.find((t) => t.token_hash === hashed);
       if (!tok) {
@@ -431,13 +439,16 @@ export class AuthService {
       if (tok.used) {
         throw new BusinessException('VERIFICATION_TOKEN_ALREADY_USED', 'The email verification request has already been completed.');
       }
-      if (new Date(tok.expiry_date) < new Date()) {
+      if (new Date(tok.expires_at || tok.expiry_date) < new Date()) {
         throw new BusinessException('VERIFICATION_TOKEN_EXPIRED', 'The email verification request has expired.');
       }
       tok.used = true;
       tok.used_at = new Date();
       const user = memoryDb.users.find((u) => u.id === tok.user_id);
-      if (user) user.is_email_verified = true;
+      if (user) {
+        user.is_email_verified = true;
+        user.email_verified = true;
+      }
     }
 
     return { message: 'Email verified successfully.' };
@@ -454,7 +465,7 @@ export class AuthService {
       if (res.rows.length > 0) {
         user = res.rows[0];
         await db.query(
-          `INSERT INTO password_reset_tokens (id, user_id, token_hash, expiry_date, used, created_date, last_modified_date)
+          `INSERT INTO password_reset_tokens (id, user_id, token_hash, expires_at, used, created_date, last_modified_date)
            VALUES ($1, $2, $3, $4, false, $5, $5)`,
           [uuidv4(), user.id, tokenHash, expiry, new Date()]
         );
@@ -466,6 +477,7 @@ export class AuthService {
           id: uuidv4(),
           user_id: user.id,
           token_hash: tokenHash,
+          expires_at: expiry,
           expiry_date: expiry,
           used: false,
           created_date: new Date(),
@@ -491,17 +503,17 @@ export class AuthService {
       if (tok.used) {
         throw new BusinessException('PASSWORD_RESET_TOKEN_ALREADY_USED', 'The password reset request has already been used.');
       }
-      if (new Date(tok.expiry_date) < new Date()) {
+      if (new Date(tok.expires_at || tok.expiry_date) < new Date()) {
         throw new BusinessException('PASSWORD_RESET_TOKEN_EXPIRED', 'The password reset request has expired.');
       }
 
       const passHash = await hashPassword(newPass);
-      await db.query('UPDATE users SET password = $1, password_updated_at = $2 WHERE id = $3', [
+      await db.query('UPDATE users SET password = $1, password_changed_at = $2, last_modified_date = $2 WHERE id = $3', [
         passHash,
         new Date(),
         tok.user_id,
       ]);
-      await db.query('UPDATE password_reset_tokens SET used = true, used_at = $1 WHERE id = $2', [
+      await db.query('UPDATE password_reset_tokens SET used = true, used_at = $1, last_modified_date = $1 WHERE id = $2', [
         new Date(),
         tok.id,
       ]);
