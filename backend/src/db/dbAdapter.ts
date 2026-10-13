@@ -5,6 +5,9 @@ import { memoryDb, initMemoryStore } from './memoryStore.js';
 let isUsingPostgres = false;
 
 export async function initDatabase(): Promise<void> {
+  // Always seed in-memory master data so fallbacks are never empty
+  await initMemoryStore();
+
   try {
     console.log('[Database] Testing PostgreSQL connection...');
     const client = await pool.connect();
@@ -16,7 +19,6 @@ export async function initDatabase(): Promise<void> {
     console.warn('[Database] PostgreSQL connection failed or credentials not configured:', err?.message || err);
     console.info('[Database] Switching to in-memory store for high-performance zero-config execution...');
     isUsingPostgres = false;
-    await initMemoryStore();
   }
 }
 
