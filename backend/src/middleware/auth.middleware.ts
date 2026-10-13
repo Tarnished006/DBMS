@@ -71,11 +71,13 @@ export async function authMiddleware(
     }
 
     // Account status checks
-    if (!user.is_active) {
+    const isActive = user.enabled !== undefined ? !!user.enabled : !!user.is_active;
+    if (!isActive) {
       throw new BusinessException('ERR_USER_DISABLED', 'Your account is disabled');
     }
 
-    if (!user.is_account_non_locked) {
+    const isNonLocked = user.account_locked !== undefined ? !user.account_locked : !!user.is_account_non_locked;
+    if (!isNonLocked) {
       throw new BusinessException('PERMANENT_ACCOUNT_LOCKED', 'Your account is permanently locked');
     }
 
