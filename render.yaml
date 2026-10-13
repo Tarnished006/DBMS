@@ -1,0 +1,53 @@
+services:
+  # Backend API Web Service
+  - type: web
+    name: agrimarket-backend
+    env: node
+    plan: free
+    region: oregon
+    rootDir: backend
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8080
+      - key: DATABASE_URL
+        fromDatabase:
+          name: agrimarket-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MANDI_API_BASE_URL
+        value: https://mandi-api.onrender.com/v1
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://agrimarket-frontend.onrender.com,http://localhost:5173
+
+  # Frontend React SPA Static Site
+  - type: web
+    name: agrimarket-frontend
+    env: static
+    plan: free
+    region: oregon
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE_URL
+        fromService:
+          type: web
+          name: agrimarket-backend
+          envVarKey: RENDER_EXTERNAL_URL
+
+databases:
+  - name: agrimarket-db
+    plan: free
+    region: oregon
+    databaseName: agrimarket
+    user: agrimarket_user

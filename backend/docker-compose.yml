@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: agromarket-postgres
+    restart: unless-stopped
+
+    env_file:
+      - ./.env
+
+    environment:
+      POSTGRES_DB: ${DB_NAME:-agrimarket}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+
+    ports:
+      - "${DB_PORT:-5432}:5432"
+
+    volumes:
+      - agromarket_postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_NAME:-agrimarket}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: agromarket-backend
+    restart: unless-stopped
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    env_file:
+      - ./.env
+
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      DATABASE_URL: postgres://${DB_USERNAME:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-agrimarket}
+      JWT_PRIVATE_KEY_PATH: /app/secrets/private_key.pem
+      JWT_PUBLIC_KEY_PATH: /app/secrets/public_key.pem
+
+    ports:
+      - "8080:8080"
+
+    volumes:
+      - ./keys/local-only:/app/secrets:ro
+
+volumes:
+  agromarket_postgres_data:
