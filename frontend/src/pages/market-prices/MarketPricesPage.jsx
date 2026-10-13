@@ -272,34 +272,52 @@ export function MarketPricesPage() {
 
   // Synchronize when searchParams changes (e.g. from Navbar search or external links)
   useEffect(() => {
-    const qParam = searchParams.get('commodity') || searchParams.get('q') || '';
     const stParam = searchParams.get('state');
-    const validState = ALL_INDIA_STATES.find(
-      (s) => s.toLowerCase() === (stParam || '').toLowerCase()
-    ) || (userState ? normalizeStateName(userState) : 'Karnataka');
-
+    const qParam = searchParams.get('commodity') || searchParams.get('q') || '';
     const dtParam = searchParams.get('district') || '';
     const mkParam = searchParams.get('market') || '';
     const dParam = searchParams.get('date') || todayDate;
 
-    setDistricts(getDistrictsForState(validState));
-
-    setFilterDraft({
-      commodity: qParam,
-      state: validState,
-      district: dtParam,
-      market: mkParam,
-      date: dParam,
-    });
-
-    setActiveFilters({
-      commodity: qParam,
-      state: validState,
-      district: dtParam,
-      market: mkParam,
-      date: dParam,
-    });
-  }, [searchParams, todayDate, userState]);
+    if (stParam) {
+      const matched = ALL_INDIA_STATES.find(
+        (s) => s.toLowerCase() === stParam.toLowerCase()
+      );
+      if (matched) {
+        setDistricts(getDistrictsForState(matched));
+        setFilterDraft((prev) => ({
+          ...prev,
+          state: matched,
+          commodity: qParam,
+          district: dtParam,
+          market: mkParam,
+          date: dParam,
+        }));
+        setActiveFilters((prev) => ({
+          ...prev,
+          state: matched,
+          commodity: qParam,
+          district: dtParam,
+          market: mkParam,
+          date: dParam,
+        }));
+      }
+    } else if (qParam || dtParam || mkParam) {
+      setFilterDraft((prev) => ({
+        ...prev,
+        commodity: qParam,
+        district: dtParam,
+        market: mkParam,
+        date: dParam,
+      }));
+      setActiveFilters((prev) => ({
+        ...prev,
+        commodity: qParam,
+        district: dtParam,
+        market: mkParam,
+        date: dParam,
+      }));
+    }
+  }, [searchParams, todayDate]);
 
   // Execute search ONLY when activeFilters change (NOT on every keystroke)
   const loadPrices = useCallback(async () => {
@@ -340,6 +358,18 @@ export function MarketPricesPage() {
       market: filterDraft.market.trim(),
       date: filterDraft.date,
     });
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (filterDraft.state) next.set('state', filterDraft.state);
+      if (filterDraft.district) next.set('district', filterDraft.district);
+      else next.delete('district');
+      if (filterDraft.commodity.trim()) next.set('commodity', filterDraft.commodity.trim());
+      else next.delete('commodity');
+      if (filterDraft.market.trim()) next.set('market', filterDraft.market.trim());
+      else next.delete('market');
+      if (filterDraft.date) next.set('date', filterDraft.date);
+      return next;
+    });
   };
 
   // Changing State dropdown immediately updates district options & triggers query for that state
@@ -349,6 +379,12 @@ export function MarketPricesPage() {
     setDistricts(newDistricts);
     setFilterDraft((prev) => ({ ...prev, state: newState, district: '' }));
     setActiveFilters((prev) => ({ ...prev, state: newState, district: '' }));
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('state', newState);
+      next.delete('district');
+      return next;
+    });
   };
 
   // Changing District dropdown immediately triggers query for that district
@@ -356,6 +392,12 @@ export function MarketPricesPage() {
     const newDistrict = e.target.value;
     setFilterDraft((prev) => ({ ...prev, district: newDistrict }));
     setActiveFilters((prev) => ({ ...prev, district: newDistrict }));
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (newDistrict) next.set('district', newDistrict);
+      else next.delete('district');
+      return next;
+    });
   };
 
   // Changing Date immediately triggers query for that date
@@ -363,6 +405,11 @@ export function MarketPricesPage() {
     const newDate = e.target.value;
     setFilterDraft((prev) => ({ ...prev, date: newDate }));
     setActiveFilters((prev) => ({ ...prev, date: newDate }));
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (newDate) next.set('date', newDate);
+      return next;
+    });
   };
 
   // Quick commodity chip click triggers search immediately
@@ -370,6 +417,12 @@ export function MarketPricesPage() {
     const val = c === 'All' ? '' : c;
     setFilterDraft((prev) => ({ ...prev, commodity: val }));
     setActiveFilters((prev) => ({ ...prev, commodity: val }));
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (val) next.set('commodity', val);
+      else next.delete('commodity');
+      return next;
+    });
   };
 
   // Reset to default state and today's date

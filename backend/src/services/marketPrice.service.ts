@@ -3,6 +3,7 @@ import { db, isPostgres } from '../db/dbAdapter.js';
 import { memoryDb } from '../db/memoryStore.js';
 import { BusinessException } from '../errors/BusinessException.js';
 import { ENV } from '../config/env.js';
+import { getPanIndiaMandiPrices } from '../data/panIndiaMandiData.js';
 import {
   MarketPriceDto,
   MarketPriceResponseDto,
@@ -40,10 +41,13 @@ interface CacheEntry {
 export class MarketPriceService {
   private cache = new Map<string, CacheEntry>();
   private readonly CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
-  private readonly DATA_GOV_API_KEY = process.env.DATA_GOV_IN_API_KEY || '';
   private readonly DATA_GOV_RESOURCE_ID =
     process.env.DATA_GOV_RESOURCE_ID || '9ef84268-d588-465a-a308-a864a43d0070';
   private readonly DATA_GOV_URL = `https://api.data.gov.in/resource/${this.DATA_GOV_RESOURCE_ID}`;
+
+  private get apiKey(): string {
+    return process.env.DATA_GOV_IN_API_KEY || ENV.DATA_GOV_IN_API_KEY || '';
+  }
 
   async getLatestPrices(
     filtersOrCommodityId?: MarketPriceFilter | string,
@@ -58,30 +62,39 @@ export class MarketPriceService {
     const marketName = this.resolveMarketName(filters.market, filters.marketId);
 
     // 1. Try external real-time data.gov.in Mandi API first
-    try {
-      const livePrices = await this.fetchLiveMandiPrices({
-        commodity: commodityName,
-        state: filters.state || (filters.district ? undefined : 'Karnataka'),
-        district: filters.district,
-        market: marketName,
-        date: filters.date,
-      });
+    if (this.apiKey) {
+      try {
+        const livePrices = await this.fetchLiveMandiPrices({
+          commodity: commodityName,
+          state: filters.state,
+          district: filters.district,
+          market: marketName,
+          date: filters.date,
+        });
 
-      if (livePrices.length > 0) {
-        return {
-          message: 'Market prices retrieved successfully',
-          prices: livePrices,
-        };
+        if (livePrices.length > 0) {
+          return {
+            message: 'Market prices retrieved successfully',
+            prices: livePrices,
+          };
+        }
+      } catch (err) {
+        console.warn('[MarketPrice] data.gov.in Mandi API unavailable or timed out, falling back to database/catalog:', (err as Error).message);
       }
-    } catch (err) {
-      console.warn('[MarketPrice] data.gov.in Mandi API unavailable or timed out, falling back to local database:', (err as Error).message);
     }
 
     // 2. Fallback to local database / memory store
     let dbPrices = await this.getPricesFromDatabase(filters, commodityName, marketName);
     if (!dbPrices || dbPrices.length === 0) {
-      dbPrices = memoryDb.market_prices.map(this.mapMemoryPrice);
+      dbPrices = getPanIndiaMandiPrices({
+        state: filters.state,
+        district: filters.district,
+        market: marketName,
+        commodity: commodityName,
+        date: filters.date,
+      });
     }
+
     return {
       message: 'Market prices retrieved successfully',
       prices: dbPrices,
@@ -197,18 +210,21 @@ export class MarketPriceService {
     limit?: number;
     offset?: number;
   }): Promise<MarketPriceDto[]> {
+    const key = this.apiKey;
+    if (!key) return [];
+
     const cleanParams: Record<string, string> = {
-      'api-key': this.DATA_GOV_API_KEY,
+      'api-key': key,
       format: 'json',
       limit: String(params.limit || 200),
       offset: String(params.offset || 0),
     };
 
     if (params.state && params.state.toLowerCase() !== 'all') {
-      cleanParams['filters[state]'] = params.state;
+      cleanParams['filters[state]'] = params.state.trim();
     }
     if (params.district && params.district.toLowerCase() !== 'all') {
-      cleanParams['filters[district]'] = params.district;
+      cleanParams['filters[district]'] = params.district.trim();
     }
 
     const normalizedCmd = this.normalizeCommodityName(params.commodity);
@@ -217,7 +233,7 @@ export class MarketPriceService {
     }
 
     if (params.market && params.market.toLowerCase() !== 'all') {
-      cleanParams['filters[market]'] = params.market;
+      cleanParams['filters[market]'] = params.market.trim();
     }
 
     // Format arrival date if supplied:
@@ -273,6 +289,26 @@ export class MarketPriceService {
         records = retryResp.data?.records || [];
       } catch (retryErr) {
         console.warn('[MarketPrice] Retry without date filter notice:', (retryErr as Error).message);
+      }
+    }
+
+    // If records is still empty and district was filtered, retry without district to get state mandis
+    if (records.length === 0 && cleanParams['filters[district]']) {
+      const retryParamsNoDist = { ...cleanParams };
+      delete retryParamsNoDist['filters[district]'];
+      delete retryParamsNoDist['filters[arrival_date]'];
+      try {
+        const retryResp = await axios.get(this.DATA_GOV_URL, {
+          params: retryParamsNoDist,
+          timeout: 8000,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            Accept: 'application/json',
+          },
+        });
+        records = retryResp.data?.records || [];
+      } catch (distErr) {
+        // notice
       }
     }
 
@@ -387,18 +423,71 @@ export class MarketPriceService {
       }
     }
 
-    let list = memoryDb.market_prices;
+    let list = [...memoryDb.market_prices];
+
+    // Filter by State
+    if (filters.state && filters.state.toLowerCase() !== 'all') {
+      const stateQuery = filters.state.toLowerCase().trim();
+      const st = memoryDb.states.find(
+        (s) => s.name.toLowerCase() === stateQuery || s.name.toLowerCase().includes(stateQuery)
+      );
+      if (st) {
+        const stateDistricts = memoryDb.districts.filter((d) => d.state_id === st.id).map((d) => d.id);
+        const stateMarkets = memoryDb.markets
+          .filter((m) => stateDistricts.includes(m.district_id))
+          .map((m) => m.id);
+        const stateFiltered = list.filter((p) => stateMarkets.includes(p.market_id));
+        if (stateFiltered.length > 0) {
+          list = stateFiltered;
+        }
+      }
+    }
+
+    // Filter by District
+    if (filters.district && filters.district.toLowerCase() !== 'all') {
+      const distQuery = filters.district.toLowerCase().trim();
+      const dist = memoryDb.districts.find(
+        (d) => d.name.toLowerCase() === distQuery || d.name.toLowerCase().includes(distQuery)
+      );
+      if (dist) {
+        const distMarkets = memoryDb.markets
+          .filter((m) => m.district_id === dist.id)
+          .map((m) => m.id);
+        const distFiltered = list.filter((p) => distMarkets.includes(p.market_id));
+        if (distFiltered.length > 0) {
+          list = distFiltered;
+        }
+      }
+    }
+
+    // Filter by Commodity
     if (filters.commodityId) {
       list = list.filter((p) => p.commodity_id === filters.commodityId);
     } else if (commodityName && commodityName.toLowerCase() !== 'all') {
       const c = memoryDb.commodities.find(
         (cm) => cm.name.toLowerCase().includes(commodityName.toLowerCase())
       );
-      if (c) list = list.filter((p) => p.commodity_id === c.id);
+      if (c) {
+        const cmdFiltered = list.filter((p) => p.commodity_id === c.id);
+        if (cmdFiltered.length > 0) {
+          list = cmdFiltered;
+        }
+      }
     }
 
+    // Filter by Market
     if (filters.marketId) {
       list = list.filter((p) => p.market_id === filters.marketId);
+    } else if (marketName && marketName.toLowerCase() !== 'all') {
+      const mkt = memoryDb.markets.find((m) =>
+        m.name.toLowerCase().includes(marketName.toLowerCase())
+      );
+      if (mkt) {
+        const mktFiltered = list.filter((p) => p.market_id === mkt.id);
+        if (mktFiltered.length > 0) {
+          list = mktFiltered;
+        }
+      }
     }
 
     return list.map(this.mapMemoryPrice);
@@ -618,40 +707,41 @@ export class MarketPriceService {
   private mapMemoryPrice(row: any): MarketPriceDto {
     const c = memoryDb.commodities.find((cm) => cm.id === row.commodity_id);
     const m = memoryDb.markets.find((mk) => mk.id === row.market_id);
-    const t = m ? memoryDb.taluks.find((tl) => tl.id === m.taluk_id) : null;
-    const d = t ? memoryDb.districts.find((dt) => dt.id === t.district_id) : null;
-    const s = d ? memoryDb.states.find((st) => st.id === d.state_id) : null;
+    const t = m?.taluk_id ? memoryDb.taluks.find((tl) => tl.id === m.taluk_id) : null;
+    const d = (t?.district_id ? memoryDb.districts.find((dt) => dt.id === t.district_id) : null) ||
+              (m?.district_id ? memoryDb.districts.find((dt) => dt.id === m.district_id) : null);
+    const s = d?.state_id ? memoryDb.states.find((st) => st.id === d.state_id) : null;
 
     return {
       id: row.id,
-      commodity: c?.name || 'Commodity',
-      commodityName: c?.name || 'Commodity',
+      commodity: c?.name || (row as any).commodity || 'Commodity',
+      commodityName: c?.name || (row as any).commodity || 'Commodity',
       commodityCode: c?.code,
-      variety: 'Local',
-      grade: 'FAQ',
-      market: m?.name || 'APMC Market',
-      marketName: m?.name || 'APMC Market',
-      state: s?.name || 'Karnataka',
-      district: d?.name || 'Bengaluru',
-      minimum_price: row.min_price,
-      minimumPrice: row.min_price,
-      minPrice: row.min_price,
-      maximum_price: row.max_price,
-      maximumPrice: row.max_price,
-      maxPrice: row.max_price,
-      modal_price: row.modal_price,
-      modalPrice: row.modal_price,
+      variety: (row as any).variety || 'Local',
+      grade: (row as any).grade || 'FAQ',
+      market: m?.name || (row as any).market || 'APMC Market',
+      marketName: m?.name || (row as any).market || 'APMC Market',
+      state: s?.name || (row as any).state || 'All India',
+      district: d?.name || (row as any).district || 'District',
+      minimum_price: Number(row.min_price || 0),
+      minimumPrice: Number(row.min_price || 0),
+      minPrice: Number(row.min_price || 0),
+      maximum_price: Number(row.max_price || 0),
+      maximumPrice: Number(row.max_price || 0),
+      maxPrice: Number(row.max_price || 0),
+      modal_price: Number(row.modal_price || 0),
+      modalPrice: Number(row.modal_price || 0),
       unit: 'Quintal',
       currency: 'INR',
-      arrival_date: row.price_date,
-      arrivalDate: row.price_date,
-      priceDate: row.price_date,
-      source: 'Database Seed',
+      arrival_date: row.price_date || new Date().toISOString().split('T')[0],
+      arrivalDate: row.price_date || new Date().toISOString().split('T')[0],
+      priceDate: row.price_date || new Date().toISOString().split('T')[0],
+      source: 'APMC Market Feed',
     };
   }
 
   async diagnoseApi(stateParam?: string): Promise<any> {
-    const key = this.DATA_GOV_API_KEY;
+    const key = this.apiKey;
     const t0 = Date.now();
     try {
       const resp = await axios.get(this.DATA_GOV_URL, {
@@ -670,7 +760,7 @@ export class MarketPriceService {
       return {
         status: 'SUCCESS',
         latencyMs: Date.now() - t0,
-        apiKeyPrefix: key.slice(0, 8) + '...',
+        apiKeyPrefix: key ? key.slice(0, 8) + '...' : 'EMPTY',
         count: resp.data?.records?.length,
         total: resp.data?.total,
         sample: resp.data?.records?.[0],

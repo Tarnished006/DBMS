@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { ENV } from '../config/env.js';
+import { RAW_PAN_INDIA_MANDI_RECORDS } from '../data/panIndiaMandiData.js';
 
 export interface MemoryDb {
   users: any[];
@@ -395,59 +396,84 @@ export async function initMemoryStore(): Promise<void> {
     }
   }
 
-  // 8. Commodities & Market Prices
-  const commodities = [
-    { id: 'comm-paddy', name: 'Paddy (Dhan)', code: 'PDY' },
-    { id: 'comm-cotton', name: 'Cotton (Kapas)', code: 'COT' },
-    { id: 'comm-ragi', name: 'Ragi (Finger Millet)', code: 'RGI' },
-    { id: 'comm-arecanut', name: 'Arecanut (Betelnut)', code: 'ARC' },
-    { id: 'comm-onion', name: 'Onion (Kanda)', code: 'ONN' },
-  ];
-  memoryDb.commodities.push(...commodities.map(c => ({ ...c, created_date: new Date(), last_modified_date: new Date() })));
-
-  const markets = [
-    { id: 'mkt-yeshwanthpur', name: 'Yeshwanthpur APMC', taluk_id: 'taluk-bengaluru-north' },
-    { id: 'mkt-mysuru-bandipalya', name: 'Bandipalya APMC Mysuru', taluk_id: 'taluk-mysuru' },
-    { id: 'mkt-mandya-apmc', name: 'Mandya District APMC', taluk_id: 'taluk-mandya' },
-  ];
-  memoryDb.markets.push(...markets.map(m => ({ ...m, created_date: new Date(), last_modified_date: new Date() })));
-
+  // 8. Commodities & Market Prices (Pan-India APMC Mandi Integration)
   const todayStr = new Date().toISOString().split('T')[0];
-  memoryDb.market_prices.push(
-    {
-      id: uuidv4(),
-      commodity_id: 'comm-paddy',
-      market_id: 'mkt-yeshwanthpur',
-      min_price: 2150,
-      max_price: 2480,
-      modal_price: 2350,
-      price_date: todayStr,
-      created_date: new Date(),
-      last_modified_date: new Date(),
-    },
-    {
-      id: uuidv4(),
-      commodity_id: 'comm-ragi',
-      market_id: 'mkt-mysuru-bandipalya',
-      min_price: 3200,
-      max_price: 3750,
-      modal_price: 3500,
-      price_date: todayStr,
-      created_date: new Date(),
-      last_modified_date: new Date(),
-    },
-    {
-      id: uuidv4(),
-      commodity_id: 'comm-arecanut',
-      market_id: 'mkt-mandya-apmc',
-      min_price: 43000,
-      max_price: 49500,
-      modal_price: 46800,
-      price_date: todayStr,
-      created_date: new Date(),
-      last_modified_date: new Date(),
-    }
-  );
 
-  console.log('[MemoryDb] Mock database store seeded successfully with users, catalog, and locations.');
+  // Seed Pan-India states, districts, markets, commodities, and mandi prices
+  for (const rec of RAW_PAN_INDIA_MANDI_RECORDS) {
+    // 1. State
+    let s = memoryDb.states.find((x) => x.name.toLowerCase() === rec.state.toLowerCase());
+    if (!s) {
+      s = {
+        id: `state-${rec.state.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+        name: rec.state,
+        code: rec.state.slice(0, 2).toUpperCase(),
+        created_date: new Date(),
+        last_modified_date: new Date(),
+      };
+      memoryDb.states.push(s);
+    }
+
+    // 2. District
+    let d = memoryDb.districts.find(
+      (x) => x.name.toLowerCase() === rec.district.toLowerCase() && x.state_id === s.id
+    );
+    if (!d) {
+      d = {
+        id: `dist-${rec.district.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+        name: rec.district,
+        code: rec.district.slice(0, 4).toUpperCase(),
+        state_id: s.id,
+        created_date: new Date(),
+        last_modified_date: new Date(),
+      };
+      memoryDb.districts.push(d);
+    }
+
+    // 3. Market
+    let m = memoryDb.markets.find((x) => x.name.toLowerCase() === rec.market.toLowerCase());
+    if (!m) {
+      m = {
+        id: `mkt-${rec.market.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+        name: rec.market,
+        district_id: d.id,
+        taluk_id: null,
+        created_date: new Date(),
+        last_modified_date: new Date(),
+      };
+      memoryDb.markets.push(m);
+    } else if (!m.district_id) {
+      m.district_id = d.id;
+    }
+
+    // 4. Commodity
+    let c = memoryDb.commodities.find((x) => x.name.toLowerCase() === rec.commodity.toLowerCase());
+    if (!c) {
+      c = {
+        id: `comm-${rec.commodity.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+        name: rec.commodity,
+        code: rec.commodity.slice(0, 3).toUpperCase(),
+        created_date: new Date(),
+        last_modified_date: new Date(),
+      };
+      memoryDb.commodities.push(c);
+    }
+
+    // 5. Market Price
+    memoryDb.market_prices.push({
+      id: uuidv4(),
+      commodity_id: c.id,
+      market_id: m.id,
+      min_price: rec.minPrice,
+      max_price: rec.maxPrice,
+      modal_price: rec.modalPrice,
+      variety: rec.variety,
+      grade: rec.grade,
+      price_date: todayStr,
+      created_date: new Date(),
+      last_modified_date: new Date(),
+    });
+  }
+
+  console.log(`[MemoryDb] Master database seeded successfully with ${memoryDb.states.length} states, ${memoryDb.markets.length} APMC markets, and ${memoryDb.market_prices.length} Mandi prices.`);
 }

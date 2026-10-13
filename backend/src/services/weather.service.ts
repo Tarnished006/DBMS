@@ -42,7 +42,9 @@ export interface HourlyForecastItem {
 }
 
 export class WeatherService {
-  private openWeatherApiKey: string = ENV.OPENWEATHER_API_KEY || '';
+  private get openWeatherApiKey(): string {
+    return process.env.OPENWEATHER_API_KEY || ENV.OPENWEATHER_API_KEY || '';
+  }
 
   private weatherCodeToCondition(code: number): string {
     switch (code) {
