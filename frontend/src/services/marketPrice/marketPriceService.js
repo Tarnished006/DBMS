@@ -1,9 +1,21 @@
 import axios from 'axios';
 import apiClient from '../api/apiClient';
-import { getPanIndiaMandiPrices } from '@/data/panIndiaMandiData';
+import { getPanIndiaMandiPrices, stateMatches } from '@/data/panIndiaMandiData';
 
 const DATA_GOV_RESOURCE_ID = '9ef84268-d588-465a-a308-a864a43d0070';
 const DATA_GOV_URL = `https://api.data.gov.in/resource/${DATA_GOV_RESOURCE_ID}`;
+
+function mapStateToGovApi(state) {
+  if (!state) return '';
+  const trimmed = state.trim();
+  const lower = trimmed.toLowerCase();
+  if (lower === 'kerala') return 'Keralam';
+  if (lower === 'chhattisgarh') return 'Chattisgarh';
+  if (lower === 'delhi') return 'NCT of Delhi';
+  if (lower === 'puducherry') return 'Pondicherry';
+  if (lower.includes('andaman') && lower.includes('nicobar')) return 'Andaman and Nicobar';
+  return trimmed;
+}
 
 function normalizeCommodity(name) {
   if (!name) return undefined;
@@ -37,7 +49,7 @@ async function fetchDirectFromDataGov(params = {}) {
 
   const state = params.state?.trim();
   if (state && state.toLowerCase() !== 'all') {
-    query['filters[state]'] = state;
+    query['filters[state]'] = mapStateToGovApi(state);
   }
 
   const district = params.district?.trim();
@@ -78,7 +90,10 @@ async function fetchDirectFromDataGov(params = {}) {
         Accept: 'application/json',
       },
     });
-    records = res.data?.records || [];
+    const raw = res.data?.records || [];
+    records = state && state.toLowerCase() !== 'all'
+      ? raw.filter((r) => stateMatches(r.state, state))
+      : raw;
   } catch (err) {
     console.warn('[MarketPriceService] Direct data.gov.in call notice:', err?.message);
   }
@@ -96,7 +111,10 @@ async function fetchDirectFromDataGov(params = {}) {
           Accept: 'application/json',
         },
       });
-      records = retryRes.data?.records || [];
+      const raw = retryRes.data?.records || [];
+      records = state && state.toLowerCase() !== 'all'
+        ? raw.filter((r) => stateMatches(r.state, state))
+        : raw;
     } catch (retryErr) {
       console.warn('[MarketPriceService] Retry without date filter notice:', retryErr?.message);
     }
@@ -115,9 +133,43 @@ async function fetchDirectFromDataGov(params = {}) {
           Accept: 'application/json',
         },
       });
-      records = retryRes.data?.records || [];
+      const raw = retryRes.data?.records || [];
+      records = state && state.toLowerCase() !== 'all'
+        ? raw.filter((r) => stateMatches(r.state, state))
+        : raw;
     } catch (distErr) {
       // notice
+    }
+  }
+
+  // If state was requested and still returned 0, try alternative aliases (e.g. Orissa, Uttaranchal, Delhi)
+  if (records.length === 0 && state && state.toLowerCase() !== 'all') {
+    const alternates = [];
+    const lower = state.toLowerCase();
+    if (lower === 'odisha') alternates.push('Orissa');
+    if (lower === 'uttarakhand') alternates.push('Uttaranchal');
+    if (lower === 'kerala') alternates.push('Kerala');
+    if (lower === 'delhi') alternates.push('Delhi');
+
+    for (const alt of alternates) {
+      const altQuery = { ...query, 'filters[state]': alt };
+      delete altQuery['filters[arrival_date]'];
+      delete altQuery['filters[district]'];
+      try {
+        const altRes = await axios.get(DATA_GOV_URL, {
+          params: altQuery,
+          timeout: 7000,
+          headers: { Accept: 'application/json' },
+        });
+        const altRaw = altRes.data?.records || [];
+        const altRecs = altRaw.filter((r) => stateMatches(r.state, state));
+        if (altRecs.length > 0) {
+          records = altRecs;
+          break;
+        }
+      } catch (e) {
+        // notice
+      }
     }
   }
 

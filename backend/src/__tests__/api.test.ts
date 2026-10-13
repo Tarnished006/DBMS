@@ -177,6 +177,19 @@ describe('AgriMarket Backend API End-to-End Suite', () => {
       expect(first.market).toBeDefined();
     });
 
+    it('GET /api/v1/market-prices should return authentic mandis for non-Karnataka states', async () => {
+      for (const st of ['Assam', 'Maharashtra', 'Kerala', 'Delhi']) {
+        const res = await request(app).get(`/api/v1/market-prices?state=${encodeURIComponent(st)}`);
+        expect(res.status).toBe(200);
+        expect(Array.isArray(res.body.prices)).toBe(true);
+        expect(res.body.prices.length).toBeGreaterThan(0);
+        // Ensure no state leakage
+        for (const p of res.body.prices) {
+          expect(p.state.toLowerCase()).not.toBe('karnataka');
+        }
+      }
+    });
+
     it('GET /api/v1/market-prices/history should return price trend data', async () => {
       const res = await request(app).get('/api/v1/market-prices/history?commodity=Tomato');
       expect(res.status).toBe(200);

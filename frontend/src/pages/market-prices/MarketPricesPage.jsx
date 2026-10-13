@@ -56,7 +56,7 @@ function sortMarketPrices(priceList, activeFilters, userState, userCity) {
     targetCmd ||
     targetDistrict ||
     targetMarket ||
-    (targetState && targetState !== 'karnataka')
+    (targetState && targetState !== (uState || 'karnataka'))
   );
 
   return [...priceList].sort((a, b) => {
@@ -446,12 +446,13 @@ export function MarketPricesPage() {
     setSearchParams({});
   };
 
+  const defaultState = userState ? normalizeStateName(userState) : 'Karnataka';
   // Determines if the user has applied custom search or filter criteria
   const hasUserFilter = Boolean(
     activeFilters.commodity?.trim() ||
     activeFilters.district?.trim() ||
     activeFilters.market?.trim() ||
-    (activeFilters.state && activeFilters.state.toLowerCase() !== 'karnataka')
+    (activeFilters.state && activeFilters.state.toLowerCase() !== defaultState.toLowerCase())
   );
 
   return (

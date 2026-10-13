@@ -3,7 +3,7 @@ import { db, isPostgres } from '../db/dbAdapter.js';
 import { memoryDb } from '../db/memoryStore.js';
 import { BusinessException } from '../errors/BusinessException.js';
 import { ENV } from '../config/env.js';
-import { getPanIndiaMandiPrices } from '../data/panIndiaMandiData.js';
+import { getPanIndiaMandiPrices, stateMatches, canonicalState } from '../data/panIndiaMandiData.js';
 import {
   MarketPriceDto,
   MarketPriceResponseDto,
@@ -221,7 +221,7 @@ export class MarketPriceService {
     };
 
     if (params.state && params.state.toLowerCase() !== 'all') {
-      cleanParams['filters[state]'] = params.state.trim();
+      cleanParams['filters[state]'] = this.mapStateToGovApi(params.state);
     }
     if (params.district && params.district.toLowerCase() !== 'all') {
       cleanParams['filters[district]'] = params.district.trim();
@@ -257,6 +257,7 @@ export class MarketPriceService {
       return cached.data;
     }
 
+    const targetState = params.state?.trim();
     let records: any[] = [];
     try {
       const resp = await axios.get(this.DATA_GOV_URL, {
@@ -267,7 +268,10 @@ export class MarketPriceService {
           Accept: 'application/json',
         },
       });
-      records = resp.data?.records || [];
+      const raw = resp.data?.records || [];
+      records = targetState && targetState.toLowerCase() !== 'all'
+        ? raw.filter((r: any) => stateMatches(r.state, targetState))
+        : raw;
     } catch (apiErr) {
       console.warn('[MarketPrice] data.gov.in initial query notice:', (apiErr as Error).message);
     }
@@ -286,7 +290,10 @@ export class MarketPriceService {
             Accept: 'application/json',
           },
         });
-        records = retryResp.data?.records || [];
+        const raw = retryResp.data?.records || [];
+        records = targetState && targetState.toLowerCase() !== 'all'
+          ? raw.filter((r: any) => stateMatches(r.state, targetState))
+          : raw;
       } catch (retryErr) {
         console.warn('[MarketPrice] Retry without date filter notice:', (retryErr as Error).message);
       }
@@ -306,9 +313,46 @@ export class MarketPriceService {
             Accept: 'application/json',
           },
         });
-        records = retryResp.data?.records || [];
+        const raw = retryResp.data?.records || [];
+        records = targetState && targetState.toLowerCase() !== 'all'
+          ? raw.filter((r: any) => stateMatches(r.state, targetState))
+          : raw;
       } catch (distErr) {
         // notice
+      }
+    }
+
+    // If still empty and state was filtered, try alternative state spellings on data.gov.in
+    if (records.length === 0 && targetState && targetState.toLowerCase() !== 'all') {
+      const alternates: string[] = [];
+      const lower = targetState.toLowerCase();
+      if (lower === 'odisha') alternates.push('Orissa');
+      if (lower === 'uttarakhand') alternates.push('Uttaranchal');
+      if (lower === 'kerala') alternates.push('Kerala');
+      if (lower === 'delhi') alternates.push('Delhi');
+
+      for (const alt of alternates) {
+        const altQuery: Record<string, string> = { ...cleanParams, 'filters[state]': alt };
+        delete altQuery['filters[arrival_date]'];
+        delete altQuery['filters[district]'];
+        try {
+          const altResp = await axios.get(this.DATA_GOV_URL, {
+            params: altQuery,
+            timeout: 8000,
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+              Accept: 'application/json',
+            },
+          });
+          const raw = altResp.data?.records || [];
+          const matchedRecs = raw.filter((r: any) => stateMatches(r.state, targetState));
+          if (matchedRecs.length > 0) {
+            records = matchedRecs;
+            break;
+          }
+        } catch (e) {
+          // notice
+        }
       }
     }
 
@@ -429,17 +473,16 @@ export class MarketPriceService {
     if (filters.state && filters.state.toLowerCase() !== 'all') {
       const stateQuery = filters.state.toLowerCase().trim();
       const st = memoryDb.states.find(
-        (s) => s.name.toLowerCase() === stateQuery || s.name.toLowerCase().includes(stateQuery)
+        (s) => stateMatches(s.name, stateQuery)
       );
       if (st) {
         const stateDistricts = memoryDb.districts.filter((d) => d.state_id === st.id).map((d) => d.id);
         const stateMarkets = memoryDb.markets
           .filter((m) => stateDistricts.includes(m.district_id))
           .map((m) => m.id);
-        const stateFiltered = list.filter((p) => stateMarkets.includes(p.market_id));
-        if (stateFiltered.length > 0) {
-          list = stateFiltered;
-        }
+        list = list.filter((p) => stateMarkets.includes(p.market_id));
+      } else {
+        list = [];
       }
     }
 
@@ -453,10 +496,9 @@ export class MarketPriceService {
         const distMarkets = memoryDb.markets
           .filter((m) => m.district_id === dist.id)
           .map((m) => m.id);
-        const distFiltered = list.filter((p) => distMarkets.includes(p.market_id));
-        if (distFiltered.length > 0) {
-          list = distFiltered;
-        }
+        list = list.filter((p) => distMarkets.includes(p.market_id));
+      } else {
+        list = [];
       }
     }
 
@@ -468,10 +510,9 @@ export class MarketPriceService {
         (cm) => cm.name.toLowerCase().includes(commodityName.toLowerCase())
       );
       if (c) {
-        const cmdFiltered = list.filter((p) => p.commodity_id === c.id);
-        if (cmdFiltered.length > 0) {
-          list = cmdFiltered;
-        }
+        list = list.filter((p) => p.commodity_id === c.id);
+      } else {
+        list = [];
       }
     }
 
@@ -483,10 +524,9 @@ export class MarketPriceService {
         m.name.toLowerCase().includes(marketName.toLowerCase())
       );
       if (mkt) {
-        const mktFiltered = list.filter((p) => p.market_id === mkt.id);
-        if (mktFiltered.length > 0) {
-          list = mktFiltered;
-        }
+        list = list.filter((p) => p.market_id === mkt.id);
+      } else {
+        list = [];
       }
     }
 
@@ -654,6 +694,18 @@ export class MarketPriceService {
       market: filters.market || 'APMC Market',
       prices,
     };
+  }
+
+  private mapStateToGovApi(state?: string): string {
+    if (!state) return '';
+    const trimmed = state.trim();
+    const lower = trimmed.toLowerCase();
+    if (lower === 'kerala') return 'Keralam';
+    if (lower === 'chhattisgarh') return 'Chattisgarh';
+    if (lower === 'delhi') return 'NCT of Delhi';
+    if (lower === 'puducherry') return 'Pondicherry';
+    if (lower.includes('andaman') && lower.includes('nicobar')) return 'Andaman and Nicobar';
+    return trimmed;
   }
 
   private resolveCommodityName(name?: string, id?: string): string | undefined {

@@ -264,22 +264,40 @@ export const RAW_PAN_INDIA_MANDI_RECORDS = [
   { state: 'Karnataka', district: 'Shivamogga', market: 'Shivamogga APMC', commodity: 'Arecanut', variety: 'Rashi Red', grade: 'FAQ', minPrice: 45000, maxPrice: 51000, modalPrice: 48000 },
 ];
 
+export function canonicalState(s) {
+  if (!s) return '';
+  return s
+    .toLowerCase()
+    .replace(/[^a-z]/g, '')
+    .replace(/keralam/g, 'kerala')
+    .replace(/chattisgarh/g, 'chhattisgarh')
+    .replace(/nctofdelhi/g, 'delhi')
+    .replace(/pondicherry/g, 'puducherry')
+    .replace(/orissa/g, 'odisha')
+    .replace(/uttaranchal/g, 'uttarakhand')
+    .replace(/islands/g, '');
+}
+
+export function stateMatches(itemState, targetState) {
+  if (!targetState || targetState.toLowerCase() === 'all') return true;
+  if (!itemState) return false;
+  const cItem = canonicalState(itemState);
+  const cTarget = canonicalState(targetState);
+  return cItem === cTarget || cItem.includes(cTarget) || cTarget.includes(cItem);
+}
+
 export function getPanIndiaMandiPrices(filters = {}) {
   const targetDate = filters.date || new Date().toISOString().split('T')[0];
-  const reqState = (filters.state || '').trim().toLowerCase();
+  const reqState = (filters.state || '').trim();
   const reqDist = (filters.district || '').trim().toLowerCase();
   const reqMkt = (filters.market || '').trim().toLowerCase();
   const reqCmd = (filters.commodity || '').trim().toLowerCase();
 
   let pool = RAW_PAN_INDIA_MANDI_RECORDS;
 
-  if (reqState && reqState !== 'all') {
-    pool = pool.filter((r) => r.state.toLowerCase() === reqState);
-    if (pool.length === 0) {
-      pool = RAW_PAN_INDIA_MANDI_RECORDS.filter(
-        (r) => r.state.toLowerCase().includes(reqState) || reqState.includes(r.state.toLowerCase())
-      );
-    }
+  if (reqState && reqState.toLowerCase() !== 'all') {
+    const matched = RAW_PAN_INDIA_MANDI_RECORDS.filter((r) => stateMatches(r.state, reqState));
+    pool = matched.length > 0 ? matched : [];
   }
 
   // If district filter specified
