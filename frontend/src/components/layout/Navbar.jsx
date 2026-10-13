@@ -121,8 +121,8 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md transition-all">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8">
-        <div className="flex h-16 items-center justify-between gap-2 lg:gap-3 xl:gap-4">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 w-full">
+        <div className="flex h-16 items-center justify-between gap-2 xl:gap-3 w-full">
           {/* Logo - Clean AgriMarket branding */}
           <Link to="/" className="flex items-center gap-2 group flex-shrink-0">
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-brand-600 to-emerald-700 flex items-center justify-center text-white shadow-soft-sm group-hover:scale-105 transition-transform">
@@ -136,7 +136,7 @@ export function Navbar() {
           {/* Desktop Search Bar - Submits strictly on Enter */}
           <form
             onSubmit={handleSearchSubmit}
-            className="hidden md:flex items-center relative flex-1 min-w-[140px] max-w-[220px] lg:max-w-[270px] xl:max-w-[340px]"
+            className="hidden md:flex items-center relative flex-1 min-w-0 max-w-[160px] lg:max-w-[200px] xl:max-w-[260px]"
           >
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
             <input
@@ -158,8 +158,8 @@ export function Navbar() {
             )}
           </form>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-1 xl:gap-1.5 flex-shrink-0 lg:translate-x-3 xl:translate-x-6">
+          {/* Desktop Navigation Links (shown on xl+ screens to prevent horizontal overflow) */}
+          <nav className="hidden xl:flex items-center gap-0.5 xl:gap-1 flex-shrink min-w-0">
             {navLinks.map((link) => {
               const Icon = link.icon;
               return (
@@ -182,12 +182,12 @@ export function Navbar() {
           </nav>
 
           {/* Right Actions / Auth */}
-          <div className="flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 xl:gap-2.5 flex-shrink-0">
             {/* Mode Switcher Button (Farmer Mode <-> Buyer Mode) */}
             <button
               type="button"
               onClick={toggleUserMode}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-soft-xs cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-soft-xs cursor-pointer flex-shrink-0 ${
                 userMode === 'FARMER'
                   ? 'border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800'
                   : 'border-blue-300 bg-blue-50 hover:bg-blue-100 text-blue-800'
@@ -202,16 +202,13 @@ export function Navbar() {
               <span className="hidden sm:inline font-extrabold">
                 {userMode === 'FARMER' ? 'Farmer Mode' : 'Buyer Mode'}
               </span>
-              <span className="text-[10px] font-semibold opacity-70 border-l border-current pl-1 hidden xl:inline">
-                ⇄ Switch
-              </span>
             </button>
 
             {/* Prominent Sell Crop CTA for Farmers */}
             {userMode === 'FARMER' && (
               <Link
                 to="/sell"
-                className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-brand-600 to-emerald-700 hover:from-brand-700 hover:to-emerald-800 text-white text-xs font-black shadow-soft-sm transition-all hover:scale-105"
+                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-brand-600 to-emerald-700 hover:from-brand-700 hover:to-emerald-800 text-white text-xs font-black shadow-soft-sm transition-all hover:scale-105 flex-shrink-0"
               >
                 <PlusCircle className="w-3.5 h-3.5" />
                 <span>+ Sell Crop</span>
@@ -372,7 +369,7 @@ export function Navbar() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors"
+              className="xl:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors"
               aria-label="Toggle mobile menu"
             >
               {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -383,7 +380,7 @@ export function Navbar() {
 
       {/* Mobile Drawer Menu */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-6 space-y-2 animate-fade-in shadow-soft-lg">
+        <div className="xl:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-6 space-y-2 animate-fade-in shadow-soft-lg">
           {/* Mobile Mode Switcher Card */}
           <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-slate-50 to-emerald-50/40 border border-slate-200/90 mb-1">
             <div className="flex items-center gap-2.5">
