@@ -1,3 +1,4 @@
+import 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import { v2 as cloudinary } from 'cloudinary';
 import { db, isPostgres } from '../db/dbAdapter.js';
@@ -47,7 +48,7 @@ export class ProductImageService {
               else resolve(result);
             }
           );
-          stream.end(file.buffer);
+          (stream as any).end(file.buffer);
         });
         imageUrl = uploadResult.secure_url;
       } catch (err) {
