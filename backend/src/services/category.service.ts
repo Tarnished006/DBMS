@@ -7,7 +7,7 @@ export class CategoryService {
   async getAllCategories(): Promise<CategoryDto[]> {
     if (isPostgres()) {
       const res = await db.query(
-        'SELECT id, name, description, icon_url FROM categories ORDER BY name ASC'
+        'SELECT id, name FROM categories ORDER BY name ASC'
       );
       return res.rows.map(this.mapCategory);
     }
@@ -17,7 +17,7 @@ export class CategoryService {
   async getCategoryById(id: string): Promise<CategoryDto> {
     if (isPostgres()) {
       const res = await db.query(
-        'SELECT id, name, description, icon_url FROM categories WHERE id = $1',
+        'SELECT id, name FROM categories WHERE id = $1',
         [id]
       );
       if (res.rows.length === 0) throw new BusinessException('CATEGORY_NOT_FOUND');
@@ -32,8 +32,8 @@ export class CategoryService {
     return {
       id: row.id,
       name: row.name,
-      description: row.description,
-      iconUrl: row.icon_url,
+      description: row.description || '',
+      iconUrl: row.icon_url || '',
     };
   }
 }

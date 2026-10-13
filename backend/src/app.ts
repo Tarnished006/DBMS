@@ -60,7 +60,23 @@ export function createApp(): Express {
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
   app.use(cookieParser());
 
-  // 4. Health Check
+  // 4. Welcome & Health Check
+  app.get('/', (_req, res) => {
+    res.json({
+      name: 'AgriMarket Production API',
+      status: 'ONLINE',
+      health: '/api/health',
+      endpoints: {
+        categories: '/api/v1/categories',
+        products: '/api/v1/products',
+        marketPrices: '/api/v1/market-prices',
+        weather: '/api/v1/weather',
+        crops: '/api/v1/crops/info',
+      },
+      message: 'AgriMarket REST API is running. Connect the frontend web client to interact with the full marketplace.',
+    });
+  });
+
   app.get('/api/health', (_req, res) => {
     res.json({
       status: 'UP',
