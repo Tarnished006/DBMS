@@ -8,7 +8,7 @@ import { Input } from '@/components/common/Input';
 import { OAuthButtons } from '@/components/auth/OAuthButtons';
 
 export function RegisterPage() {
-  const { register, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { register, setUserMode, isAuthenticated, isLoading: authLoading } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -19,6 +19,7 @@ export function RegisterPage() {
     }
   }, [isAuthenticated, authLoading, navigate]);
 
+  const [accountType, setAccountType] = useState('FARMER');
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -61,7 +62,9 @@ export function RegisterPage() {
         email: formData.email.trim(),
         password: formData.password,
         confirmPassword: formData.confirmPassword,
+        accountType: accountType,
       });
+      setUserMode(accountType);
       setIsSuccess(true);
       toast.success('Registration successful! Please check your email to verify.');
     } catch (err) {
@@ -130,6 +133,63 @@ export function RegisterPage() {
           <span className="bg-white px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
             or sign up with email
           </span>
+        </div>
+
+        {/* Role Mode Selection (Farmer vs Buyer) */}
+        <div className="space-y-2">
+          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+            I am joining primarily as:
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setAccountType('FARMER')}
+              className={`p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer flex flex-col justify-between ${
+                accountType === 'FARMER'
+                  ? 'border-brand-600 bg-brand-50/60 shadow-soft-sm ring-2 ring-brand-500/20'
+                  : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50/50'
+              }`}
+            >
+              <div className="flex items-center justify-between w-full mb-1.5">
+                <span className="text-2xl">🚜</span>
+                {accountType === 'FARMER' && (
+                  <CheckCircle2 className="w-4 h-4 text-brand-600" />
+                )}
+              </div>
+              <div>
+                <p className="font-extrabold text-sm text-slate-900">Farmer / Grower</p>
+                <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                  Sell crops, track mandi rates, pooling
+                </p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setAccountType('BUYER')}
+              className={`p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer flex flex-col justify-between ${
+                accountType === 'BUYER'
+                  ? 'border-blue-600 bg-blue-50/60 shadow-soft-sm ring-2 ring-blue-500/20'
+                  : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50/50'
+              }`}
+            >
+              <div className="flex items-center justify-between w-full mb-1.5">
+                <span className="text-2xl">🛒</span>
+                {accountType === 'BUYER' && (
+                  <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                )}
+              </div>
+              <div>
+                <p className="font-extrabold text-sm text-slate-900">Buyer / Consumer</p>
+                <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                  Buy fresh produce, bulk & wholesale
+                </p>
+              </div>
+            </button>
+          </div>
+          <p className="text-[11px] text-slate-400 text-center pt-0.5">
+            ✨ You can easily switch between Farmer and Buyer mode at any time!
+          </p>
         </div>
 
         {/* Form — strictly no phone field during initial registration */}

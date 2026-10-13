@@ -186,7 +186,7 @@ const FEATURED_CROPS = [
 
 export function HomePage() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, setUserMode } = useAuth();
   const toast = useToast();
   const { latitude, longitude, city, state: geoState, loading: geoLoading, isDefault } = useGeolocation();
 
@@ -207,6 +207,7 @@ export function HomePage() {
       toast.info('Please sign in to list and sell your agricultural products on AgriMarket.');
       navigate(`/login?redirect=${targetPath}`);
     } else {
+      if (setUserMode) setUserMode('FARMER');
       navigate(targetPath);
     }
   };

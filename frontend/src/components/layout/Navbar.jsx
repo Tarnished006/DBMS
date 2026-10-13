@@ -27,7 +27,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/common/Button';
 
 export function Navbar() {
-  const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, logout, userMode, toggleUserMode } = useAuth();
   const { language, toggleLanguage, t } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
@@ -100,14 +100,24 @@ export function Navbar() {
     }
   };
 
-  const navLinks = [
-    { to: '/marketplace', label: t('marketplace', 'Marketplace'), icon: ShoppingBag },
-    { to: '/market-prices', label: t('mandiPrices', 'Mandi Prices'), icon: TrendingUp },
-    { to: '/demands', label: t('demandBoard', 'Demand Board'), icon: ClipboardList },
-    { to: '/pools', label: t('producePools', 'Produce Pools'), icon: Truck },
-    { to: '/crops', label: t('cropGuide', 'Crop Guide'), icon: BookOpen },
-    { to: '/weather', label: t('weather', 'Weather'), icon: CloudSun },
-  ];
+  const navLinks =
+    userMode === 'FARMER'
+      ? [
+          { to: '/market-prices', label: t('mandiPrices', 'Mandi Prices'), icon: TrendingUp },
+          { to: '/pools', label: t('producePools', 'Produce Pools'), icon: Truck },
+          { to: '/demands', label: t('demandBoard', 'Buyer Demands'), icon: ClipboardList },
+          { to: '/marketplace', label: t('marketplace', 'Marketplace'), icon: ShoppingBag },
+          { to: '/crops', label: t('cropGuide', 'Crop Guide'), icon: BookOpen },
+          { to: '/weather', label: t('weather', 'Weather'), icon: CloudSun },
+        ]
+      : [
+          { to: '/marketplace', label: t('marketplace', 'Marketplace'), icon: ShoppingBag },
+          { to: '/demands', label: t('demandBoard', 'Demand Board'), icon: ClipboardList },
+          { to: '/pools', label: t('producePools', 'Produce Pools'), icon: Truck },
+          { to: '/market-prices', label: t('mandiPrices', 'Mandi Prices'), icon: TrendingUp },
+          { to: '/crops', label: t('cropGuide', 'Crop Guide'), icon: BookOpen },
+          { to: '/weather', label: t('weather', 'Weather'), icon: CloudSun },
+        ];
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md transition-all">
@@ -173,6 +183,41 @@ export function Navbar() {
 
           {/* Right Actions / Auth */}
           <div className="flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
+            {/* Mode Switcher Button (Farmer Mode <-> Buyer Mode) */}
+            <button
+              type="button"
+              onClick={toggleUserMode}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-soft-xs cursor-pointer ${
+                userMode === 'FARMER'
+                  ? 'border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800'
+                  : 'border-blue-300 bg-blue-50 hover:bg-blue-100 text-blue-800'
+              }`}
+              title={
+                userMode === 'FARMER'
+                  ? 'Active: Farmer Mode. Click to switch to Buyer Mode 🛒'
+                  : 'Active: Buyer Mode. Click to switch to Farmer Mode 🚜'
+              }
+            >
+              <span className="text-sm">{userMode === 'FARMER' ? '🚜' : '🛒'}</span>
+              <span className="hidden sm:inline font-extrabold">
+                {userMode === 'FARMER' ? 'Farmer Mode' : 'Buyer Mode'}
+              </span>
+              <span className="text-[10px] font-semibold opacity-70 border-l border-current pl-1 hidden xl:inline">
+                ⇄ Switch
+              </span>
+            </button>
+
+            {/* Prominent Sell Crop CTA for Farmers */}
+            {userMode === 'FARMER' && (
+              <Link
+                to="/sell"
+                className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-brand-600 to-emerald-700 hover:from-brand-700 hover:to-emerald-800 text-white text-xs font-black shadow-soft-sm transition-all hover:scale-105"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>+ Sell Crop</span>
+              </Link>
+            )}
+
             {/* Language Toggle Button */}
             <button
               type="button"
@@ -215,6 +260,23 @@ export function Navbar() {
                         <div className="px-3 py-2 border-b border-slate-100 mb-1">
                           <p className="text-xs font-bold text-slate-900 truncate">{user?.fullName}</p>
                           <p className="text-[11px] text-slate-500 truncate">{user?.email}</p>
+                        </div>
+
+                        {/* Current Mode Badge & Switch Action */}
+                        <div className="px-3 py-2 mb-1.5 bg-slate-50 rounded-xl flex items-center justify-between border border-slate-100">
+                          <span className="text-[11px] font-extrabold text-slate-800 flex items-center gap-1">
+                            {userMode === 'FARMER' ? '🚜 Farmer' : '🛒 Buyer'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              toggleUserMode();
+                              setIsUserDropdownOpen(false);
+                            }}
+                            className="text-[11px] font-bold text-brand-700 hover:text-brand-900 underline cursor-pointer"
+                          >
+                            Switch to {userMode === 'FARMER' ? 'Buyer 🛒' : 'Farmer 🚜'}
+                          </button>
                         </div>
 
                         <Link
@@ -322,6 +384,40 @@ export function Navbar() {
       {/* Mobile Drawer Menu */}
       {isMobileMenuOpen && (
         <div className="lg:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-6 space-y-2 animate-fade-in shadow-soft-lg">
+          {/* Mobile Mode Switcher Card */}
+          <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-slate-50 to-emerald-50/40 border border-slate-200/90 mb-1">
+            <div className="flex items-center gap-2.5">
+              <span className="text-xl">{userMode === 'FARMER' ? '🚜' : '🛒'}</span>
+              <div>
+                <p className="text-xs font-black text-slate-900">
+                  {userMode === 'FARMER' ? 'Farmer Mode' : 'Buyer Mode'}
+                </p>
+                <p className="text-[10px] text-slate-500 font-medium">
+                  {userMode === 'FARMER' ? 'Selling & APMC Mandi rates' : 'Produce & Bulk shopping'}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={toggleUserMode}
+              className="px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-white border border-slate-200 text-brand-700 hover:bg-brand-50 shadow-soft-xs cursor-pointer"
+            >
+              Switch ⇄
+            </button>
+          </div>
+
+          {/* Mobile Sell Crop Quick CTA (Farmer Mode) */}
+          {userMode === 'FARMER' && (
+            <Link
+              to="/sell"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-brand-600 to-emerald-700 text-white text-xs font-black shadow-soft-sm mb-1"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>+ Sell Your Crops / Produce</span>
+            </Link>
+          )}
+
           {/* Mobile Search Bar */}
           <form
             onSubmit={(e) => {

@@ -29,7 +29,32 @@ export function AuthProvider({ children }) {
       return true;
     }
   });
+  const [userMode, setUserModeState] = useState(() => {
+    try {
+      return localStorage.getItem('agri_user_mode') || 'FARMER';
+    } catch {
+      return 'FARMER';
+    }
+  });
   const [isLoading, setIsLoading] = useState(true);
+
+  const setUserMode = useCallback((mode) => {
+    const validMode = mode === 'BUYER' ? 'BUYER' : 'FARMER';
+    setUserModeState(validMode);
+    try {
+      localStorage.setItem('agri_user_mode', validMode);
+    } catch {}
+  }, []);
+
+  const toggleUserMode = useCallback(() => {
+    setUserModeState((prev) => {
+      const next = prev === 'FARMER' ? 'BUYER' : 'FARMER';
+      try {
+        localStorage.setItem('agri_user_mode', next);
+      } catch {}
+      return next;
+    });
+  }, []);
 
   const setHasPassword = useCallback((val) => {
     setHasPasswordState(val);
@@ -199,6 +224,9 @@ export function AuthProvider({ children }) {
         user,
         isAuthenticated: !!user,
         isAdmin,
+        userMode,
+        setUserMode,
+        toggleUserMode,
         hasPassword,
         setHasPassword,
         isLoading,
