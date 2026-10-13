@@ -32,6 +32,8 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMoreDropdownOpen, setIsMoreDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -119,6 +121,9 @@ export function Navbar() {
           { to: '/weather', label: t('weather', 'Weather'), icon: CloudSun },
         ];
 
+  const primaryNavLinks = navLinks.slice(0, 4);
+  const secondaryNavLinks = navLinks.slice(4);
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md transition-all">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 w-full">
@@ -133,9 +138,9 @@ export function Navbar() {
             </span>
           </Link>
 
-          {/* 2. Center Zone: Desktop Navigation Links (flex-shrink-0 to guarantee zero collision) */}
+          {/* 2. Center Zone: Desktop Navigation Links (Primary 4 + More Dropdown) */}
           <nav className="hidden xl:flex items-center gap-1 xl:gap-1.5 flex-shrink-0">
-            {navLinks.map((link) => {
+            {primaryNavLinks.map((link) => {
               const Icon = link.icon;
               return (
                 <NavLink
@@ -154,34 +159,101 @@ export function Navbar() {
                 </NavLink>
               );
             })}
-          </nav>
 
-          {/* 3. Right Zone: Compact Search, Role Mode, Sell CTA, Language, User Menu */}
-          <div className="flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
-            {/* Desktop Sleek Search Input */}
-            <form
-              onSubmit={handleSearchSubmit}
-              className="hidden lg:flex items-center relative w-32 xl:w-40 focus-within:w-52 transition-all duration-200"
-            >
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 pointer-events-none" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                placeholder={getSearchPlaceholder()}
-                className="w-full pl-8 pr-7 py-1.5 text-xs bg-slate-100/90 hover:bg-slate-100 focus:bg-white rounded-xl border border-slate-200/80 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all placeholder:text-slate-400 shadow-soft-xs"
-              />
-              {searchQuery && (
+            {/* More Menu Dropdown for secondary links */}
+            {secondaryNavLinks.length > 0 && (
+              <div className="relative">
                 <button
                   type="button"
-                  onClick={handleClearSearch}
-                  className="absolute right-2 p-0.5 text-slate-400 hover:text-slate-600 rounded-full transition-colors cursor-pointer"
-                  title="Clear search"
+                  onClick={() => setIsMoreDropdownOpen(!isMoreDropdownOpen)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs xl:text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer"
                 >
-                  <X className="w-3 h-3" />
+                  <span>More</span>
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 transition-transform ${isMoreDropdownOpen ? 'rotate-180' : ''}`}
+                  />
                 </button>
+
+                {isMoreDropdownOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setIsMoreDropdownOpen(false)}
+                    />
+                    <div className="absolute left-0 mt-2 w-48 rounded-2xl bg-white p-2 shadow-soft-xl border border-slate-100 z-50 animate-slide-up">
+                      {secondaryNavLinks.map((link) => {
+                        const Icon = link.icon;
+                        return (
+                          <NavLink
+                            key={link.to}
+                            to={link.to}
+                            onClick={() => setIsMoreDropdownOpen(false)}
+                            className={({ isActive }) =>
+                              `flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl transition-colors ${
+                                isActive
+                                  ? 'bg-brand-50 text-brand-700 font-bold'
+                                  : 'text-slate-700 hover:bg-slate-50'
+                              }`
+                            }
+                          >
+                            <Icon className="w-4 h-4 text-slate-400" />
+                            <span>{link.label}</span>
+                          </NavLink>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </nav>
+
+          {/* 3. Right Zone: Search Popover, Mode Switcher, Sell CTA, Language, Auth Buttons */}
+          <div className="flex items-center gap-1.5 sm:gap-2 xl:gap-2.5 flex-shrink-0">
+            {/* Desktop Search Popover Button */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsSearchOpen(!isSearchOpen)}
+                className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+                title="Search products, crops, mandi rates..."
+                aria-label="Search"
+              >
+                <Search className="w-4 h-4" />
+              </button>
+
+              {isSearchOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsSearchOpen(false)} />
+                  <form
+                    onSubmit={(e) => {
+                      setIsSearchOpen(false);
+                      handleSearchSubmit(e);
+                    }}
+                    className="absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl bg-white p-2 shadow-soft-xl border border-slate-200/90 z-50 animate-slide-up flex items-center"
+                  >
+                    <Search className="w-4 h-4 text-slate-400 absolute left-4.5 pointer-events-none" />
+                    <input
+                      type="text"
+                      autoFocus
+                      value={searchQuery}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      placeholder={getSearchPlaceholder()}
+                      className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-slate-100/90 focus:bg-white rounded-xl border border-slate-200 outline-none focus:border-brand-500 shadow-soft-xs"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={handleClearSearch}
+                        className="absolute right-4 p-0.5 text-slate-400 hover:text-slate-600 rounded-full"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </form>
+                </>
               )}
-            </form>
+            </div>
 
             {/* Mode Switcher Button (Farmer Mode <-> Buyer Mode) */}
             <button
@@ -200,7 +272,7 @@ export function Navbar() {
             >
               <span className="text-sm">{userMode === 'FARMER' ? '🚜' : '🛒'}</span>
               <span className="hidden sm:inline font-extrabold">
-                {userMode === 'FARMER' ? 'Farmer Mode' : 'Buyer Mode'}
+                {userMode === 'FARMER' ? 'Farmer' : 'Buyer'}
               </span>
             </button>
 
@@ -215,11 +287,11 @@ export function Navbar() {
               </Link>
             )}
 
-            {/* Language Toggle Button */}
+            {/* Language Toggle Button - ALWAYS PROMINENT AND VISIBLE */}
             <button
               type="button"
               onClick={toggleLanguage}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200/90 bg-white hover:bg-emerald-50 hover:border-emerald-300 text-xs font-bold text-slate-700 hover:text-emerald-800 transition-all shadow-soft-xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200/90 bg-white hover:bg-emerald-50 hover:border-emerald-300 text-xs font-bold text-slate-700 hover:text-emerald-800 transition-all shadow-soft-xs cursor-pointer flex-shrink-0"
               title="Switch Language / ಭಾಷೆ ಬದಲಿಸಿ"
             >
               <Globe className="w-3.5 h-3.5 text-emerald-600" />
@@ -352,14 +424,14 @@ export function Navbar() {
                 </div>
               </>
             ) : (
-              <div className="flex items-center gap-2">
-                <Link to="/login">
-                  <Button variant="ghost" size="sm">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                <Link to="/login" className="flex-shrink-0">
+                  <Button variant="ghost" size="sm" className="px-2 sm:px-3 text-xs font-bold">
                     Sign In
                   </Button>
                 </Link>
-                <Link to="/register">
-                  <Button size="sm">
+                <Link to="/register" className="flex-shrink-0">
+                  <Button size="sm" className="px-2.5 sm:px-3 text-xs font-bold whitespace-nowrap">
                     Register
                   </Button>
                 </Link>
@@ -369,7 +441,7 @@ export function Navbar() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="xl:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors"
+              className="xl:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors flex-shrink-0"
               aria-label="Toggle mobile menu"
             >
               {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -381,6 +453,26 @@ export function Navbar() {
       {/* Mobile Drawer Menu */}
       {isMobileMenuOpen && (
         <div className="xl:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-6 space-y-2 animate-fade-in shadow-soft-lg">
+          {/* Mobile Auth Quick Row when unauthenticated */}
+          {!isAuthenticated && (
+            <div className="grid grid-cols-2 gap-2 pt-1 pb-2 border-b border-slate-100">
+              <Link
+                to="/login"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center justify-center py-2 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 text-center"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/register"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center justify-center py-2 px-3 rounded-xl bg-brand-600 text-xs font-bold text-white hover:bg-brand-700 text-center shadow-soft-xs"
+              >
+                Register
+              </Link>
+            </div>
+          )}
+
           {/* Mobile Mode Switcher Card */}
           <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-slate-50 to-emerald-50/40 border border-slate-200/90 mb-1">
             <div className="flex items-center gap-2.5">
