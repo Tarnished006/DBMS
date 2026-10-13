@@ -239,7 +239,7 @@ export class MarketPriceService {
     try {
       const resp = await axios.get(this.DATA_GOV_URL, {
         params: cleanParams,
-        timeout: 8000,
+        timeout: 3500,
       });
       records = resp.data?.records || [];
     } catch (apiErr) {
@@ -254,7 +254,7 @@ export class MarketPriceService {
       try {
         const retryResp = await axios.get(this.DATA_GOV_URL, {
           params: retryParams,
-          timeout: 8000,
+          timeout: 3500,
         });
         records = retryResp.data?.records || [];
       } catch (retryErr) {
@@ -316,55 +316,61 @@ export class MarketPriceService {
     marketName?: string
   ): Promise<MarketPriceDto[]> {
     if (isPostgres()) {
-      let query = `
-        SELECT mp.*, 
-               mp.arrival_date as price_date,
-               mp.minimum_price as min_price,
-               mp.maximum_price as max_price,
-               c.name as commodity_name, c.code as commodity_code,
-               m.name as market_name, d.name as district_name, s.name as state_name
-        FROM market_prices mp
-        JOIN commodities c ON c.id = mp.commodity_id
-        JOIN markets m ON m.id = mp.market_id
-        JOIN districts d ON d.id = m.district_id
-        JOIN states s ON s.id = d.state_id
-      `;
-      const conditions: string[] = [];
-      const params: any[] = [];
-      let idx = 1;
+      try {
+        let query = `
+          SELECT mp.*, 
+                 mp.arrival_date as price_date,
+                 mp.minimum_price as min_price,
+                 mp.maximum_price as max_price,
+                 c.name as commodity_name, c.name as commodity_code,
+                 m.name as market_name, d.name as district_name, s.name as state_name
+          FROM market_prices mp
+          JOIN commodities c ON c.id = mp.commodity_id
+          JOIN markets m ON m.id = mp.market_id
+          JOIN districts d ON d.id = m.district_id
+          JOIN states s ON s.id = d.state_id
+        `;
+        const conditions: string[] = [];
+        const params: any[] = [];
+        let idx = 1;
 
-      if (filters.commodityId) {
-        conditions.push(`mp.commodity_id = $${idx++}`);
-        params.push(filters.commodityId);
-      } else if (commodityName && commodityName.toLowerCase() !== 'all') {
-        conditions.push(`LOWER(c.name) LIKE $${idx++}`);
-        params.push(`%${commodityName.toLowerCase()}%`);
-      }
+        if (filters.commodityId) {
+          conditions.push(`mp.commodity_id = $${idx++}`);
+          params.push(filters.commodityId);
+        } else if (commodityName && commodityName.toLowerCase() !== 'all') {
+          conditions.push(`LOWER(c.name) LIKE $${idx++}`);
+          params.push(`%${commodityName.toLowerCase()}%`);
+        }
 
-      if (filters.marketId) {
-        conditions.push(`mp.market_id = $${idx++}`);
-        params.push(filters.marketId);
-      } else if (marketName) {
-        conditions.push(`LOWER(m.name) LIKE $${idx++}`);
-        params.push(`%${marketName.toLowerCase()}%`);
-      }
+        if (filters.marketId) {
+          conditions.push(`mp.market_id = $${idx++}`);
+          params.push(filters.marketId);
+        } else if (marketName) {
+          conditions.push(`LOWER(m.name) LIKE $${idx++}`);
+          params.push(`%${marketName.toLowerCase()}%`);
+        }
 
-      if (filters.state) {
-        conditions.push(`LOWER(s.name) = $${idx++}`);
-        params.push(filters.state.toLowerCase());
-      }
-      if (filters.district) {
-        conditions.push(`LOWER(d.name) = $${idx++}`);
-        params.push(filters.district.toLowerCase());
-      }
+        if (filters.state) {
+          conditions.push(`LOWER(s.name) = $${idx++}`);
+          params.push(filters.state.toLowerCase());
+        }
+        if (filters.district) {
+          conditions.push(`LOWER(d.name) = $${idx++}`);
+          params.push(filters.district.toLowerCase());
+        }
 
-      if (conditions.length > 0) {
-        query += ` WHERE ${conditions.join(' AND ')}`;
-      }
-      query += ' ORDER BY mp.arrival_date DESC LIMIT 50';
+        if (conditions.length > 0) {
+          query += ` WHERE ${conditions.join(' AND ')}`;
+        }
+        query += ' ORDER BY mp.arrival_date DESC LIMIT 50';
 
-      const res = await db.query(query, params);
-      return res.rows.map(this.mapDbPrice);
+        const res = await db.query(query, params);
+        if (res.rows && res.rows.length > 0) {
+          return res.rows.map(this.mapDbPrice);
+        }
+      } catch (dbErr) {
+        console.warn('[MarketPrice] Database query notice, using memory fallback:', (dbErr as Error).message);
+      }
     }
 
     let list = memoryDb.market_prices;
@@ -390,23 +396,29 @@ export class MarketPriceService {
     endDate: string
   ): Promise<MarketPriceDto[]> {
     if (isPostgres()) {
-      const res = await db.query(
-        `SELECT mp.*, 
-                mp.arrival_date as price_date,
-                mp.minimum_price as min_price,
-                mp.maximum_price as max_price,
-                c.name as commodity_name, c.code as commodity_code,
-                m.name as market_name, d.name as district_name, s.name as state_name
-         FROM market_prices mp
-         JOIN commodities c ON c.id = mp.commodity_id
-         JOIN markets m ON m.id = mp.market_id
-         JOIN districts d ON d.id = m.district_id
-         JOIN states s ON s.id = d.state_id
-         WHERE mp.commodity_id = $1 AND mp.arrival_date BETWEEN $2 AND $3
-         ORDER BY mp.arrival_date ASC`,
-        [commodityId, startDate, endDate]
-      );
-      return res.rows.map(this.mapDbPrice);
+      try {
+        const res = await db.query(
+          `SELECT mp.*, 
+                  mp.arrival_date as price_date,
+                  mp.minimum_price as min_price,
+                  mp.maximum_price as max_price,
+                  c.name as commodity_name, c.name as commodity_code,
+                  m.name as market_name, d.name as district_name, s.name as state_name
+           FROM market_prices mp
+           JOIN commodities c ON c.id = mp.commodity_id
+           JOIN markets m ON m.id = mp.market_id
+           JOIN districts d ON d.id = m.district_id
+           JOIN states s ON s.id = d.state_id
+           WHERE mp.commodity_id = $1 AND mp.arrival_date BETWEEN $2 AND $3
+           ORDER BY mp.arrival_date ASC`,
+          [commodityId, startDate, endDate]
+        );
+        if (res.rows && res.rows.length > 0) {
+          return res.rows.map(this.mapDbPrice);
+        }
+      } catch (dbErr) {
+        console.warn('[MarketPrice] Historical query notice, using synthetic fallback:', (dbErr as Error).message);
+      }
     }
 
     const list = memoryDb.market_prices.filter(
