@@ -15,6 +15,9 @@ const router = Router();
 
 router.use(authMiddleware);
 
+router.get('/me', (req: Request, res: Response, next: NextFunction) =>
+  userController.getProfile(req, res, next)
+);
 router.get('/me/profile', (req: Request, res: Response, next: NextFunction) =>
   userController.getProfile(req, res, next)
 );
