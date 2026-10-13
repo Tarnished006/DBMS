@@ -317,13 +317,16 @@ export class MarketPriceService {
   ): Promise<MarketPriceDto[]> {
     if (isPostgres()) {
       let query = `
-        SELECT mp.*, c.name as commodity_name, c.code as commodity_code,
+        SELECT mp.*, 
+               mp.arrival_date as price_date,
+               mp.minimum_price as min_price,
+               mp.maximum_price as max_price,
+               c.name as commodity_name, c.code as commodity_code,
                m.name as market_name, d.name as district_name, s.name as state_name
         FROM market_prices mp
         JOIN commodities c ON c.id = mp.commodity_id
         JOIN markets m ON m.id = mp.market_id
-        JOIN taluks t ON t.id = m.taluk_id
-        JOIN districts d ON d.id = t.district_id
+        JOIN districts d ON d.id = m.district_id
         JOIN states s ON s.id = d.state_id
       `;
       const conditions: string[] = [];
@@ -358,7 +361,7 @@ export class MarketPriceService {
       if (conditions.length > 0) {
         query += ` WHERE ${conditions.join(' AND ')}`;
       }
-      query += ' ORDER BY mp.price_date DESC LIMIT 50';
+      query += ' ORDER BY mp.arrival_date DESC LIMIT 50';
 
       const res = await db.query(query, params);
       return res.rows.map(this.mapDbPrice);
@@ -388,16 +391,19 @@ export class MarketPriceService {
   ): Promise<MarketPriceDto[]> {
     if (isPostgres()) {
       const res = await db.query(
-        `SELECT mp.*, c.name as commodity_name, c.code as commodity_code,
+        `SELECT mp.*, 
+                mp.arrival_date as price_date,
+                mp.minimum_price as min_price,
+                mp.maximum_price as max_price,
+                c.name as commodity_name, c.code as commodity_code,
                 m.name as market_name, d.name as district_name, s.name as state_name
          FROM market_prices mp
          JOIN commodities c ON c.id = mp.commodity_id
          JOIN markets m ON m.id = mp.market_id
-         JOIN taluks t ON t.id = m.taluk_id
-         JOIN districts d ON d.id = t.district_id
+         JOIN districts d ON d.id = m.district_id
          JOIN states s ON s.id = d.state_id
-         WHERE mp.commodity_id = $1 AND mp.price_date BETWEEN $2 AND $3
-         ORDER BY mp.price_date ASC`,
+         WHERE mp.commodity_id = $1 AND mp.arrival_date BETWEEN $2 AND $3
+         ORDER BY mp.arrival_date ASC`,
         [commodityId, startDate, endDate]
       );
       return res.rows.map(this.mapDbPrice);

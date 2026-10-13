@@ -5,7 +5,16 @@ const { Pool } = pg;
 
 export const pool = new Pool(
   ENV.DB_URL
-    ? { connectionString: ENV.DB_URL, max: 20, idleTimeoutMillis: 30000 }
+    ? {
+        connectionString: ENV.DB_URL,
+        ssl:
+          ENV.DB_URL.includes('render.com') || ENV.IS_PROD
+            ? { rejectUnauthorized: false }
+            : undefined,
+        max: 20,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 10000,
+      }
     : {
         host: ENV.DB_HOST,
         port: ENV.DB_PORT,
@@ -14,6 +23,7 @@ export const pool = new Pool(
         password: ENV.DB_PASSWORD,
         max: 20,
         idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 10000,
       }
 );
 
