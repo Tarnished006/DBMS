@@ -222,9 +222,8 @@ export function PriceTrendChart({
       })
       .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    // If backend returned 3 or more records with distinct prices, use them
-    const distinctPrices = new Set(rawList.map((p) => p.modalPrice));
-    if (rawList.length >= 3 && distinctPrices.size > 1) {
+    // If backend returned authentic historical records, use them directly
+    if (rawList.length >= 2) {
       return rawList;
     }
 
