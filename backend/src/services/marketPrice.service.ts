@@ -40,10 +40,7 @@ interface CacheEntry {
 export class MarketPriceService {
   private cache = new Map<string, CacheEntry>();
   private readonly CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
-  private readonly DATA_GOV_API_KEY =
-    (process.env.DATA_GOV_IN_API_KEY && process.env.DATA_GOV_IN_API_KEY.length > 20)
-      ? process.env.DATA_GOV_IN_API_KEY
-      : '579b464db66ec23bdd000001545f657fd0f648fd743841900f2cf198';
+  private readonly DATA_GOV_API_KEY = process.env.DATA_GOV_IN_API_KEY || '';
   private readonly DATA_GOV_RESOURCE_ID =
     process.env.DATA_GOV_RESOURCE_ID || '9ef84268-d588-465a-a308-a864a43d0070';
   private readonly DATA_GOV_URL = `https://api.data.gov.in/resource/${this.DATA_GOV_RESOURCE_ID}`;

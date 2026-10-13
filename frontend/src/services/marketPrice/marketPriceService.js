@@ -1,7 +1,7 @@
 import axios from 'axios';
 import apiClient from '../api/apiClient';
 
-const DATA_GOV_API_KEY = '579b464db66ec23bdd000001545f657fd0f648fd743841900f2cf198';
+const DATA_GOV_API_KEY = import.meta.env.VITE_DATA_GOV_API_KEY || '';
 const DATA_GOV_URL = 'https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070';
 
 /**
@@ -9,6 +9,9 @@ const DATA_GOV_URL = 'https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a
  * Calling from the user's browser in India avoids overseas cloud datacenter firewall IP blocks.
  */
 async function fetchDirectFromDataGov(params = {}) {
+  if (!DATA_GOV_API_KEY) {
+    return [];
+  }
   const query = {
     'api-key': DATA_GOV_API_KEY,
     format: 'json',

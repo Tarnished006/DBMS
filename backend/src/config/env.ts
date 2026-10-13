@@ -57,11 +57,11 @@ export const ENV = {
   DATA_GOV_IN_API_KEY:
     process.env.DATA_GOV_IN_API_KEY ||
     process.env.MANDI_API_KEY ||
-    '579b464db66ec23bdd000001545f657fd0f648fd743841900f2cf198',
+    '',
   OPENWEATHER_API_KEY:
     process.env.OPENWEATHER_API_KEY ||
     process.env.WEATHER_API_KEY ||
-    '5f228666bb1519bd847b99f2dad42efe',
+    '',
 
   // Cookies
   COOKIE_SECURE: process.env.COOKIE_SECURE === 'true' || process.env.NODE_ENV === 'production',
