@@ -89,7 +89,7 @@ BEGIN
     INSERT INTO product_images (
         id, product_id, image_url, is_primary, display_order, created_at, updated_at
     ) VALUES (
-        'img-prod-tomato-hybrid-seed', 'prod-tomato-hybrid-seed', 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        'img-prod-tomato-hybrid-seed', 'prod-tomato-hybrid-seed', 'https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     ) ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO inventory (
@@ -114,7 +114,7 @@ BEGIN
     INSERT INTO product_images (
         id, product_id, image_url, is_primary, display_order, created_at, updated_at
     ) VALUES (
-        'img-prod-wheat-hd2967-seed', 'prod-wheat-hd2967-seed', 'https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        'img-prod-wheat-hd2967-seed', 'prod-wheat-hd2967-seed', 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     ) ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO inventory (
@@ -239,7 +239,7 @@ BEGIN
     INSERT INTO product_images (
         id, product_id, image_url, is_primary, display_order, created_at, updated_at
     ) VALUES (
-        'img-prod-vermicompost-humus', 'prod-vermicompost-humus', 'https://images.unsplash.com/photo-1592417817098-8f3d6eb2252a?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        'img-prod-vermicompost-humus', 'prod-vermicompost-humus', 'https://images.unsplash.com/photo-1588964895597-cfccd6e2dbf9?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     ) ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO inventory (
@@ -264,7 +264,7 @@ BEGIN
     INSERT INTO product_images (
         id, product_id, image_url, is_primary, display_order, created_at, updated_at
     ) VALUES (
-        'img-prod-nano-urea-liquid', 'prod-nano-urea-liquid', 'https://images.unsplash.com/photo-1607613009820-a29f7bb81c04?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        'img-prod-nano-urea-liquid', 'prod-nano-urea-liquid', 'https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     ) ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO inventory (
@@ -289,7 +289,7 @@ BEGIN
     INSERT INTO product_images (
         id, product_id, image_url, is_primary, display_order, created_at, updated_at
     ) VALUES (
-        'img-prod-dap-granular-fert', 'prod-dap-granular-fert', 'https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        'img-prod-dap-granular-fert', 'prod-dap-granular-fert', 'https://images.unsplash.com/photo-1598532163257-ae3c6b2524b6?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     ) ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO inventory (
@@ -314,7 +314,7 @@ BEGIN
     INSERT INTO product_images (
         id, product_id, image_url, is_primary, display_order, created_at, updated_at
     ) VALUES (
-        'img-prod-seaweed-extract-fert', 'prod-seaweed-extract-fert', 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        'img-prod-seaweed-extract-fert', 'prod-seaweed-extract-fert', 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     ) ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO inventory (
@@ -339,7 +339,7 @@ BEGIN
     INSERT INTO product_images (
         id, product_id, image_url, is_primary, display_order, created_at, updated_at
     ) VALUES (
-        'img-prod-neem-oil-10000ppm', 'prod-neem-oil-10000ppm', 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        'img-prod-neem-oil-10000ppm', 'prod-neem-oil-10000ppm', 'https://images.unsplash.com/photo-1617897903246-719242758050?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     ) ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO inventory (
@@ -364,7 +364,7 @@ BEGIN
     INSERT INTO product_images (
         id, product_id, image_url, is_primary, display_order, created_at, updated_at
     ) VALUES (
-        'img-prod-trichoderma-bio-fungicide', 'prod-trichoderma-bio-fungicide', 'https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        'img-prod-trichoderma-bio-fungicide', 'prod-trichoderma-bio-fungicide', 'https://images.unsplash.com/photo-1576086213369-97a306d36557?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     ) ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO inventory (
@@ -389,7 +389,7 @@ BEGIN
     INSERT INTO product_images (
         id, product_id, image_url, is_primary, display_order, created_at, updated_at
     ) VALUES (
-        'img-prod-emamectin-benzoate-sg', 'prod-emamectin-benzoate-sg', 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        'img-prod-emamectin-benzoate-sg', 'prod-emamectin-benzoate-sg', 'https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     ) ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO inventory (
@@ -414,7 +414,7 @@ BEGIN
     INSERT INTO product_images (
         id, product_id, image_url, is_primary, display_order, created_at, updated_at
     ) VALUES (
-        'img-prod-copper-oxychloride-wp', 'prod-copper-oxychloride-wp', 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        'img-prod-copper-oxychloride-wp', 'prod-copper-oxychloride-wp', 'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     ) ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO inventory (
@@ -464,7 +464,7 @@ BEGIN
     INSERT INTO product_images (
         id, product_id, image_url, is_primary, display_order, created_at, updated_at
     ) VALUES (
-        'img-prod-pseudomonas-liquid-bio', 'prod-pseudomonas-liquid-bio', 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        'img-prod-pseudomonas-liquid-bio', 'prod-pseudomonas-liquid-bio', 'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     ) ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO inventory (
@@ -489,7 +489,7 @@ BEGIN
     INSERT INTO product_images (
         id, product_id, image_url, is_primary, display_order, created_at, updated_at
     ) VALUES (
-        'img-prod-battery-knapsack-sprayer', 'prod-battery-knapsack-sprayer', 'https://images.unsplash.com/photo-1595246140625-573b715d11dc?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        'img-prod-battery-knapsack-sprayer', 'prod-battery-knapsack-sprayer', 'https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     ) ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO inventory (
@@ -539,7 +539,7 @@ BEGIN
     INSERT INTO product_images (
         id, product_id, image_url, is_primary, display_order, created_at, updated_at
     ) VALUES (
-        'img-prod-power-weeder-tiller-7hp', 'prod-power-weeder-tiller-7hp', 'https://images.unsplash.com/photo-1592878904946-b3cd8ae243d0?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        'img-prod-power-weeder-tiller-7hp', 'prod-power-weeder-tiller-7hp', 'https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     ) ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO inventory (
@@ -564,7 +564,7 @@ BEGIN
     INSERT INTO product_images (
         id, product_id, image_url, is_primary, display_order, created_at, updated_at
     ) VALUES (
-        'img-prod-hdpe-tarpaulin-250gsm', 'prod-hdpe-tarpaulin-250gsm', 'https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        'img-prod-hdpe-tarpaulin-250gsm', 'prod-hdpe-tarpaulin-250gsm', 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     ) ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO inventory (
@@ -589,7 +589,7 @@ BEGIN
     INSERT INTO product_images (
         id, product_id, image_url, is_primary, display_order, created_at, updated_at
     ) VALUES (
-        'img-prod-solar-pump-submersible-3hp', 'prod-solar-pump-submersible-3hp', 'https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        'img-prod-solar-pump-submersible-3hp', 'prod-solar-pump-submersible-3hp', 'https://images.unsplash.com/photo-1545208942-e1c9c916524b?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     ) ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO inventory (
@@ -614,7 +614,7 @@ BEGIN
     INSERT INTO product_images (
         id, product_id, image_url, is_primary, display_order, created_at, updated_at
     ) VALUES (
-        'img-prod-mulching-film-silver-black', 'prod-mulching-film-silver-black', 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        'img-prod-mulching-film-silver-black', 'prod-mulching-film-silver-black', 'https://images.unsplash.com/photo-1591857177580-dc82b9ac4e1e?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     ) ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO inventory (
@@ -739,7 +739,7 @@ BEGIN
     INSERT INTO product_images (
         id, product_id, image_url, is_primary, display_order, created_at, updated_at
     ) VALUES (
-        'img-prod-traditional-basmati-rice-50kg', 'prod-traditional-basmati-rice-50kg', 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        'img-prod-traditional-basmati-rice-50kg', 'prod-traditional-basmati-rice-50kg', 'https://images.unsplash.com/photo-1536304993881-ff6e9eefa2a6?auto=format&fit=crop&w=800&q=80', TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     ) ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO inventory (

@@ -107,6 +107,7 @@ export interface ProductDto {
   totalQuantity?: number;
   status: 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
   images: (ProductImageDto & { primary?: boolean })[];
+  imageUrl?: string;
   inventory?: InventoryDto;
   location?: string | ProductLocationDto | any;
   locationDetails?: ProductLocationDto;

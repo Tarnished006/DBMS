@@ -82,7 +82,7 @@ export const MASTER_AGRICULTURAL_PRODUCTS: RawAgriculturalProduct[] = [
     pinCode: '563131',
     latitude: 13.1611,
     longitude: 78.3944,
-    imageUrl: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?auto=format&fit=crop&w=800&q=80',
     badge: 'Disease Resistant',
   },
   {
@@ -101,7 +101,7 @@ export const MASTER_AGRICULTURAL_PRODUCTS: RawAgriculturalProduct[] = [
     pinCode: '141114',
     latitude: 30.8333,
     longitude: 76.1833,
-    imageUrl: 'https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80',
     badge: 'Certified Foundation',
   },
   {
@@ -200,7 +200,7 @@ export const MASTER_AGRICULTURAL_PRODUCTS: RawAgriculturalProduct[] = [
     pinCode: '571301',
     latitude: 12.1167,
     longitude: 76.6833,
-    imageUrl: 'https://images.unsplash.com/photo-1592417817098-8f3d6eb2252a?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1588964895597-cfccd6e2dbf9?auto=format&fit=crop&w=800&q=80',
     badge: 'Bio-Organic',
   },
   {
@@ -219,7 +219,7 @@ export const MASTER_AGRICULTURAL_PRODUCTS: RawAgriculturalProduct[] = [
     pinCode: '560022',
     latitude: 13.0285,
     longitude: 77.5414,
-    imageUrl: 'https://images.unsplash.com/photo-1607613009820-a29f7bb81c04?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?auto=format&fit=crop&w=800&q=80',
     badge: 'Govt Subsidized',
   },
   {
@@ -238,7 +238,7 @@ export const MASTER_AGRICULTURAL_PRODUCTS: RawAgriculturalProduct[] = [
     pinCode: '573116',
     latitude: 12.9056,
     longitude: 76.3889,
-    imageUrl: 'https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1598532163257-ae3c6b2524b6?auto=format&fit=crop&w=800&q=80',
     badge: 'High Phosphate',
   },
   {
@@ -257,7 +257,7 @@ export const MASTER_AGRICULTURAL_PRODUCTS: RawAgriculturalProduct[] = [
     pinCode: '575001',
     latitude: 12.9141,
     longitude: 74.856,
-    imageUrl: 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=800&q=80',
     badge: 'Yield Booster',
   },
 
@@ -280,7 +280,7 @@ export const MASTER_AGRICULTURAL_PRODUCTS: RawAgriculturalProduct[] = [
     pinCode: '562123',
     latitude: 13.0983,
     longitude: 77.3878,
-    imageUrl: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1617897903246-719242758050?auto=format&fit=crop&w=800&q=80',
     badge: 'Organic Certified',
   },
   {
@@ -299,7 +299,7 @@ export const MASTER_AGRICULTURAL_PRODUCTS: RawAgriculturalProduct[] = [
     pinCode: '580020',
     latitude: 15.3647,
     longitude: 75.124,
-    imageUrl: 'https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1576086213369-97a306d36557?auto=format&fit=crop&w=800&q=80',
     badge: 'Root Shield',
   },
   {
@@ -318,7 +318,7 @@ export const MASTER_AGRICULTURAL_PRODUCTS: RawAgriculturalProduct[] = [
     pinCode: '571428',
     latitude: 12.5833,
     longitude: 77.05,
-    imageUrl: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=800&q=80',
     badge: 'Fast Acting',
   },
   {
@@ -337,7 +337,7 @@ export const MASTER_AGRICULTURAL_PRODUCTS: RawAgriculturalProduct[] = [
     pinCode: '577301',
     latitude: 13.8447,
     longitude: 75.7039,
-    imageUrl: 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=800&q=80',
     badge: 'Blight Protection',
   },
   {
@@ -375,7 +375,7 @@ export const MASTER_AGRICULTURAL_PRODUCTS: RawAgriculturalProduct[] = [
     pinCode: '591307',
     latitude: 16.1667,
     longitude: 74.8333,
-    imageUrl: 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=800&q=80',
     badge: 'Systemic Defense',
   },
 
@@ -398,7 +398,7 @@ export const MASTER_AGRICULTURAL_PRODUCTS: RawAgriculturalProduct[] = [
     pinCode: '560058',
     latitude: 13.0289,
     longitude: 77.5256,
-    imageUrl: 'https://images.unsplash.com/photo-1595246140625-573b715d11dc?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=800&q=80',
     badge: '1 Year Warranty',
   },
   {
@@ -436,7 +436,7 @@ export const MASTER_AGRICULTURAL_PRODUCTS: RawAgriculturalProduct[] = [
     pinCode: '580030',
     latitude: 15.35,
     longitude: 75.13,
-    imageUrl: 'https://images.unsplash.com/photo-1592878904946-b3cd8ae243d0?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&w=800&q=80',
     badge: 'Heavy Duty',
   },
   {
@@ -455,7 +455,7 @@ export const MASTER_AGRICULTURAL_PRODUCTS: RawAgriculturalProduct[] = [
     pinCode: '577601',
     latitude: 14.5167,
     longitude: 75.8,
-    imageUrl: 'https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=800&q=80',
     badge: 'Tear Proof',
   },
   {
@@ -474,7 +474,7 @@ export const MASTER_AGRICULTURAL_PRODUCTS: RawAgriculturalProduct[] = [
     pinCode: '577598',
     latitude: 13.95,
     longitude: 76.6167,
-    imageUrl: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1545208942-e1c9c916524b?auto=format&fit=crop&w=800&q=80',
     badge: 'MNRE Certified',
   },
   {
@@ -493,7 +493,7 @@ export const MASTER_AGRICULTURAL_PRODUCTS: RawAgriculturalProduct[] = [
     pinCode: '563114',
     latitude: 12.9833,
     longitude: 78.2,
-    imageUrl: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1591857177580-dc82b9ac4e1e?auto=format&fit=crop&w=800&q=80',
     badge: 'Weed Control',
   },
 
@@ -595,7 +595,7 @@ export const MASTER_AGRICULTURAL_PRODUCTS: RawAgriculturalProduct[] = [
     pinCode: '143112',
     latitude: 31.55,
     longitude: 75.2333,
-    imageUrl: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1536304993881-ff6e9eefa2a6?auto=format&fit=crop&w=800&q=80',
     badge: '1-Yr Aged Grain',
     mandiLinkedCommodity: 'Basmati Rice',
   },
@@ -765,7 +765,7 @@ export const MASTER_AGRICULTURAL_PRODUCTS: RawAgriculturalProduct[] = [
     pinCode: '591102',
     latitude: 15.8167,
     longitude: 74.8667,
-    imageUrl: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=800&q=80',
     badge: 'Buy / Rent ₹450/hr',
     isRentalAvailable: true,
     rentalRate: 450,
@@ -811,7 +811,7 @@ export const MASTER_AGRICULTURAL_PRODUCTS: RawAgriculturalProduct[] = [
     pinCode: '571428',
     latitude: 12.5833,
     longitude: 77.05,
-    imageUrl: 'https://images.unsplash.com/photo-1595246140625-573b715d11dc?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1523741543316-beb7fc7023d8?auto=format&fit=crop&w=800&q=80',
     badge: 'Buy / Rent ₹1,800/acre',
     isRentalAvailable: true,
     rentalRate: 1800,
@@ -838,7 +838,7 @@ export const MASTER_AGRICULTURAL_PRODUCTS: RawAgriculturalProduct[] = [
     pinCode: '585222',
     latitude: 17.1833,
     longitude: 77.2833,
-    imageUrl: 'https://images.unsplash.com/photo-1585994192701-f1a505c817ea?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1515543237350-b3eea1ec8082?auto=format&fit=crop&w=800&q=80',
     badge: 'GI Tagged',
     mandiLinkedCommodity: 'Arhar',
   },
