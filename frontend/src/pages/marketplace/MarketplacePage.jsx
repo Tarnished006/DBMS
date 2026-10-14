@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ShoppingBag, SlidersHorizontal, Search, RotateCcw, X, Tag, Network, Sparkles, Tractor, Sprout } from 'lucide-react';
+import { ShoppingBag, SlidersHorizontal, Search, RotateCcw, X, Tag, Sparkles, Tractor, Sprout } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { productService } from '@/services/product/productService';
 import { categoryService } from '@/services/category/categoryService';
@@ -10,7 +10,6 @@ import { Pagination } from '@/components/common/Pagination';
 import { Drawer } from '@/components/common/Drawer';
 import { Button } from '@/components/common/Button';
 import { Breadcrumb } from '@/components/common/Breadcrumb';
-import { MarketplaceSyncModal } from '@/components/marketplace/MarketplaceSyncModal';
 
 // Check if string is a valid UUID format
 function isUuid(str) {
@@ -93,7 +92,6 @@ export function MarketplacePage() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
-  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
 
   const [searchInput, setSearchInput] = useState(searchParams.get('q') || '');
 
@@ -429,17 +427,6 @@ export function MarketplacePage() {
             </Button>
           </form>
 
-          {/* Live Market Sync Button */}
-          <Button
-            variant="outline"
-            className="shrink-0 rounded-2xl border-brand-300 text-brand-800 hover:bg-brand-50 flex items-center gap-1.5 shadow-soft-xs font-bold text-xs sm:text-sm"
-            onClick={() => setIsSyncModalOpen(true)}
-            icon={Network}
-          >
-            <span className="hidden sm:inline">Live Market Sync</span>
-            <span className="sm:hidden">Sync</span>
-          </Button>
-
           {/* Mobile Filter Toggle */}
           <Button
             variant="outline"
@@ -703,13 +690,6 @@ export function MarketplacePage() {
           />
         </div>
       </div>
-
-      {/* Real Marketplace & Mandi Sync Modal */}
-      <MarketplaceSyncModal
-        isOpen={isSyncModalOpen}
-        onClose={() => setIsSyncModalOpen(false)}
-        onSyncComplete={fetchProducts}
-      />
     </div>
   );
 }
