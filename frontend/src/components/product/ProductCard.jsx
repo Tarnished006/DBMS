@@ -129,11 +129,19 @@ export function ProductCard({ product }) {
 
         {/* Price & Stock Section */}
         <div className="pt-2.5 border-t border-slate-100 flex items-baseline justify-between gap-2">
-          <div className="flex items-baseline gap-1">
-            <span className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
-              {formatCurrency(product.price)}
-            </span>
-            <span className="text-xs text-slate-500 font-semibold">/{product.unit || 'unit'}</span>
+          <div className="flex flex-col">
+            <div className="flex items-baseline gap-1">
+              <span className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+                {formatCurrency(product.price)}
+              </span>
+              <span className="text-xs text-slate-500 font-semibold">/{product.unit || 'unit'}</span>
+            </div>
+            {product.isRentalAvailable && product.rentalRate && (
+              <span className="text-[11px] font-bold text-brand-700 flex items-center gap-1">
+                <span>🚜 Rent:</span>
+                <span>₹{product.rentalRate}/{product.rentalUnit?.toLowerCase() || 'hr'}</span>
+              </span>
+            )}
           </div>
 
           <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/70 whitespace-nowrap">
@@ -151,7 +159,7 @@ export function ProductCard({ product }) {
             icon={ShoppingBag}
             className="w-full justify-center py-2.5 text-xs sm:text-sm font-bold shadow-soft-sm tracking-wide rounded-xl"
           >
-            {isAvailable ? 'View & Buy' : 'Out of Stock'}
+            {isAvailable ? (product.isRentalAvailable ? 'Buy or Rent' : 'View & Buy') : 'Out of Stock'}
           </Button>
         </div>
       </div>

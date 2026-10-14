@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { ShoppingBag, SlidersHorizontal, Search, RotateCcw, X, Tag, Network } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { ShoppingBag, SlidersHorizontal, Search, RotateCcw, X, Tag, Network, Sparkles, Tractor, Sprout } from 'lucide-react';
+import { cn } from '@/utils/cn';
 import { productService } from '@/services/product/productService';
 import { categoryService } from '@/services/category/categoryService';
 import { ProductGrid } from '@/components/product/ProductGrid';
@@ -78,6 +79,7 @@ export function resolveCategory(identifier, categoryList = []) {
 
 export function MarketplacePage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const [categories, setCategories] = useState([]);
   const [isCategoriesLoaded, setIsCategoriesLoaded] = useState(false);
@@ -314,6 +316,19 @@ export function MarketplacePage() {
     });
   };
 
+  const handleCategorySelect = (categoryName) => {
+    if (!categoryName) {
+      handleClearCategory();
+      return;
+    }
+    const matched = categories.find((c) => c.name.toLowerCase() === categoryName.toLowerCase());
+    handleFilterChange({
+      ...filters,
+      categoryId: matched ? matched.id : categoryName,
+      page: 0,
+    });
+  };
+
   const handleResetFilters = () => {
     setSearchInput('');
     setSearchParams({});
@@ -411,6 +426,115 @@ export function MarketplacePage() {
             Filters
           </Button>
         </div>
+      </div>
+
+      {/* Two-Sided Marketplace Quick Category Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <button
+          type="button"
+          onClick={() => handleCategorySelect('')}
+          className={cn(
+            "px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all shadow-soft-xs flex items-center gap-1.5 cursor-pointer",
+            !filters.categoryId ? "bg-slate-900 text-white" : "bg-white text-slate-700 hover:bg-slate-50 border border-slate-200"
+          )}
+        >
+          <span>🌟 All Marketplace</span>
+          <span className="text-[10px] opacity-75">({paginationMeta.totalElements || products.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleCategorySelect('Seeds')}
+          className={cn(
+            "px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all shadow-soft-xs flex items-center gap-1.5 cursor-pointer",
+            activeCategory?.name === 'Seeds' ? "bg-brand-600 text-white" : "bg-white text-slate-700 hover:bg-brand-50 border border-slate-200"
+          )}
+        >
+          <span>🌱 Certified Seeds</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleCategorySelect('Fertilizers')}
+          className={cn(
+            "px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all shadow-soft-xs flex items-center gap-1.5 cursor-pointer",
+            activeCategory?.name === 'Fertilizers' ? "bg-brand-600 text-white" : "bg-white text-slate-700 hover:bg-brand-50 border border-slate-200"
+          )}
+        >
+          <span>🧪 Fertilizers & Nutrients</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleCategorySelect('Pesticides')}
+          className={cn(
+            "px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all shadow-soft-xs flex items-center gap-1.5 cursor-pointer",
+            activeCategory?.name === 'Pesticides' ? "bg-brand-600 text-white" : "bg-white text-slate-700 hover:bg-brand-50 border border-slate-200"
+          )}
+        >
+          <span>🛡️ Crop Protection & Bio</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleCategorySelect('Farm Equipment')}
+          className={cn(
+            "px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all shadow-soft-xs flex items-center gap-1.5 cursor-pointer",
+            activeCategory?.name === 'Farm Equipment' ? "bg-brand-600 text-white" : "bg-white text-slate-700 hover:bg-brand-50 border border-slate-200"
+          )}
+        >
+          <span>🚜 Machinery & Tractors (Buy & Rent)</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleCategorySelect('Harvested Products')}
+          className={cn(
+            "px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all shadow-soft-xs flex items-center gap-1.5 cursor-pointer",
+            activeCategory?.name === 'Harvested Products' ? "bg-amber-600 text-white" : "bg-white text-slate-700 hover:bg-amber-50 border border-slate-200"
+          )}
+        >
+          <span>🌾 Farmer Harvests & Crops</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleCategorySelect('Pre-Harvested Products')}
+          className={cn(
+            "px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all shadow-soft-xs flex items-center gap-1.5 cursor-pointer",
+            activeCategory?.name === 'Pre-Harvested Products' ? "bg-indigo-600 text-white" : "bg-white text-slate-700 hover:bg-indigo-50 border border-slate-200"
+          )}
+        >
+          <span>📋 Forward Contracts</span>
+        </button>
+      </div>
+
+      {/* Farmer Seller CTA Banner */}
+      <div className="bg-gradient-to-r from-emerald-700 via-emerald-800 to-teal-900 rounded-2xl p-4 sm:p-5 text-white shadow-soft-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-emerald-600/30">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white backdrop-blur-sm">
+              🌾 Farmer Direct Selling & Custom Hiring
+            </span>
+            <span className="text-xs text-emerald-200 font-medium hidden md:inline">
+              Zero Middleman Commission
+            </span>
+          </div>
+          <h3 className="text-sm sm:text-base font-black tracking-tight">
+            Have harvested crops, pulses, grains, or machinery to rent?
+          </h3>
+          <p className="text-xs text-emerald-100/90 max-w-2xl leading-relaxed">
+            Sell your produce directly to millers, food brands, and retail buyers, or list your tractor, harvester, and tillers for hourly rental in your taluk.
+          </p>
+        </div>
+        <Button
+          variant="primary"
+          size="md"
+          onClick={() => navigate('/sell')}
+          className="bg-white hover:bg-emerald-50 text-emerald-950 font-black rounded-xl shrink-0 shadow-soft-xs text-xs sm:text-sm px-4 py-2.5 cursor-pointer border-0"
+        >
+          + Sell My Crop / Machine
+        </Button>
       </div>
 
       {/* Active Filter Pills Bar */}
