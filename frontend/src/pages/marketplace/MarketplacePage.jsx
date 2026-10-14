@@ -106,8 +106,8 @@ export function MarketplacePage() {
     location: searchParams.get('location') || '',
     sortBy: searchParams.get('sortBy') || 'createdAt',
     sortDirection: searchParams.get('sortDirection') || 'DESC',
-    page: parseInt(searchParams.get('page') || '0', 10),
-    size: 24,
+    page: Math.max(0, parseInt(searchParams.get('page') || '0', 10) || 0),
+    size: 12,
   });
 
   // Load Categories on mount
@@ -141,7 +141,8 @@ export function MarketplacePage() {
     const locParam = searchParams.get('location') || '';
     const sortParam = searchParams.get('sortBy') || 'createdAt';
     const sortDirParam = searchParams.get('sortDirection') || 'DESC';
-    const pageParam = parseInt(searchParams.get('page') || '0', 10);
+    const rawPage = parseInt(searchParams.get('page') || '0', 10);
+    const pageParam = isNaN(rawPage) || rawPage < 0 ? 0 : rawPage;
 
     setSearchInput(qParam);
 
@@ -180,7 +181,7 @@ export function MarketplacePage() {
         sortBy: sortParam,
         sortDirection: sortDirParam,
         page: pageParam,
-        size: prev.size || 16,
+        size: 12,
       };
     });
   }, [searchParams, categories]);
@@ -213,10 +214,21 @@ export function MarketplacePage() {
       if (newFilters.location?.trim()) next.set('location', newFilters.location.trim());
       else next.delete('location');
 
-      next.set('page', String(newFilters.page || 0));
+      if (newFilters.page && newFilters.page > 0) {
+        next.set('page', String(newFilters.page));
+      } else {
+        next.delete('page');
+      }
       return next;
     });
   }, [categories, setSearchParams]);
+
+  // Handle direct page change and scroll smoothly to top
+  const handlePageChange = useCallback((newPage) => {
+    if (newPage < 0 || newPage >= paginationMeta.totalPages) return;
+    handleFilterChange({ ...filters, page: newPage });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [filters, handleFilterChange, paginationMeta.totalPages]);
 
   // Fetch Products based on filters
   const fetchProducts = useCallback(async () => {
@@ -240,26 +252,38 @@ export function MarketplacePage() {
 
       const params = {
         page: filters.page,
-        size: filters.size,
+        size: filters.size || 12,
         sortBy: filters.sortBy,
         sortDirection: filters.sortDirection,
       };
 
-      if (filters.query.trim()) params.query = filters.query.trim();
+      if (filters.query?.trim()) params.query = filters.query.trim();
       if (effectiveCategoryId) params.categoryId = effectiveCategoryId;
       if (filters.minPrice) params.minPrice = parseFloat(filters.minPrice);
       if (filters.maxPrice) params.maxPrice = parseFloat(filters.maxPrice);
-      if (filters.location.trim()) params.location = filters.location.trim();
+      if (filters.location?.trim()) params.location = filters.location.trim();
 
       const searchResult = await productService.searchProducts(params);
 
-      setProducts(searchResult.products || searchResult.content || []);
+      const items = searchResult.products || searchResult.content || (Array.isArray(searchResult) ? searchResult : []);
+      setProducts(items);
+
+      const resolvedPage = typeof searchResult.page === 'number'
+        ? searchResult.page
+        : typeof searchResult.number === 'number'
+          ? searchResult.number
+          : (filters.page || 0);
+
+      const pageSize = filters.size || 12;
+      const totalElements = typeof searchResult.totalElements === 'number' ? searchResult.totalElements : items.length;
+      const totalPages = searchResult.totalPages || Math.max(1, Math.ceil(totalElements / pageSize));
+
       setPaginationMeta({
-        page: searchResult.page || 0,
-        totalPages: searchResult.totalPages || 1,
-        totalElements: searchResult.totalElements || 0,
-        hasNext: searchResult.hasNext || false,
-        hasPrevious: searchResult.hasPrevious || false,
+        page: resolvedPage,
+        totalPages,
+        totalElements,
+        hasNext: typeof searchResult.hasNext === 'boolean' ? searchResult.hasNext : resolvedPage < totalPages - 1,
+        hasPrevious: typeof searchResult.hasPrevious === 'boolean' ? searchResult.hasPrevious : resolvedPage > 0,
       });
     } catch (err) {
       console.error('Failed to search products:', err);
@@ -341,7 +365,7 @@ export function MarketplacePage() {
       sortBy: 'createdAt',
       sortDirection: 'DESC',
       page: 0,
-      size: 16,
+      size: 12,
     });
   };
 
@@ -675,7 +699,7 @@ export function MarketplacePage() {
             totalElements={paginationMeta.totalElements}
             hasNext={paginationMeta.hasNext}
             hasPrevious={paginationMeta.hasPrevious}
-            onPageChange={(newPage) => handleFilterChange({ ...filters, page: newPage })}
+            onPageChange={handlePageChange}
           />
         </div>
       </div>

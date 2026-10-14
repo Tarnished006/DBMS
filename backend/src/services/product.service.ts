@@ -124,14 +124,21 @@ export class ProductService {
 
   async getAllProducts(filters: any = {}): Promise<{
     content: ProductDto[];
+    products: ProductDto[];
     totalElements: number;
     totalPages: number;
     size: number;
     number: number;
+    page: number;
+    pageNumber: number;
+    first: boolean;
+    last: boolean;
+    hasNext: boolean;
+    hasPrevious: boolean;
   }> {
     const page = Math.max(0, parseInt(filters.page || '0', 10));
     const size = Math.max(1, Math.min(100, parseInt(filters.size || '10', 10)));
-    const search = (filters.search || filters.q || '').toLowerCase().trim();
+    const search = (filters.search || filters.q || filters.query || '').toLowerCase().trim();
     const categoryId = filters.categoryId;
     const sellerId = filters.sellerId || filters.farmerId;
     const minPrice = filters.minPrice ? parseFloat(filters.minPrice) : null;
@@ -193,6 +200,7 @@ export class ProductService {
         params
       );
       const totalElements = parseInt(countRes.rows[0].count, 10);
+      const totalPages = Math.ceil(totalElements / size) || 1;
 
       const offset = page * size;
       const listRes = await db.query(
@@ -210,10 +218,17 @@ export class ProductService {
 
       return {
         content,
+        products: content,
         totalElements,
-        totalPages: Math.ceil(totalElements / size),
+        totalPages,
         size,
         number: page,
+        page,
+        pageNumber: page,
+        first: page === 0,
+        last: page >= totalPages - 1,
+        hasNext: page < totalPages - 1,
+        hasPrevious: page > 0,
       };
     }
 
@@ -252,16 +267,24 @@ export class ProductService {
     }
 
     const totalElements = list.length;
+    const totalPages = Math.ceil(totalElements / size) || 1;
     const offset = page * size;
     const sliced = list.slice(offset, offset + size);
     const content = sliced.map((p) => this.enrichMemoryProduct(p));
 
     return {
       content,
+      products: content,
       totalElements,
-      totalPages: Math.ceil(totalElements / size),
+      totalPages,
       size,
       number: page,
+      page,
+      pageNumber: page,
+      first: page === 0,
+      last: page >= totalPages - 1,
+      hasNext: page < totalPages - 1,
+      hasPrevious: page > 0,
     };
   }
 
