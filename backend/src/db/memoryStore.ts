@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { ENV } from '../config/env.js';
 import { RAW_PAN_INDIA_MANDI_RECORDS } from '../data/panIndiaMandiData.js';
+import { MASTER_AGRICULTURAL_PRODUCTS } from '../data/agriculturalProductsData.js';
 
 export interface MemoryDb {
   users: any[];
@@ -211,78 +212,90 @@ export async function initMemoryStore(): Promise<void> {
     });
   }
 
-  // 6. Products, Inventory & Images
-  const seedCat = memoryDb.categories.find(c => c.name === 'Seeds');
-  const fertCat = memoryDb.categories.find(c => c.name === 'Fertilizers');
-  const harvestCat = memoryDb.categories.find(c => c.name === 'Harvested Products');
+  // 6. Products, Inventory & Images - Master Pan-India Agricultural Marketplace Catalog
+  for (const raw of MASTER_AGRICULTURAL_PRODUCTS) {
+    const category = memoryDb.categories.find(
+      c => c.name.toLowerCase() === raw.categoryName.toLowerCase()
+    );
+    const categoryId = category ? category.id : 'cat-' + raw.categoryKey;
 
-  const sampleProducts = [
-    {
-      id: 'prod-sona-masoori-seed',
-      category_id: seedCat?.id || 'cat-seeds',
-      seller_id: adminId,
-      name: 'Organic Sona Masoori Paddy Seeds',
-      description: 'Certified premium grade Sona Masoori paddy seeds with 95% germination rate and disease resistance.',
-      price_per_unit: 1450,
-      unit: 'BAG (25KG)',
-      status: 'ACTIVE',
-      quantity: 120,
-      reserved: 5,
-      imageUrl: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=600&q=80',
-    },
-    {
-      id: 'prod-organic-neem-fert',
-      category_id: fertCat?.id || 'cat-fert',
-      seller_id: adminId,
-      name: 'Pure Neem Cake Organic Fertilizer',
-      description: 'Slow-release soil conditioner enriched with Azadirachtin to protect roots against nematodes while enriching nitrogen.',
-      price_per_unit: 850,
-      unit: 'BAG (50KG)',
-      status: 'ACTIVE',
-      quantity: 80,
-      reserved: 2,
-      imageUrl: 'https://images.unsplash.com/photo-1622383563227-04401ab4e5ea?auto=format&fit=crop&w=600&q=80',
-    },
-    {
-      id: 'prod-fresh-shimoga-arecanut',
-      category_id: harvestCat?.id || 'cat-harvest',
-      seller_id: adminId,
-      name: 'Premium Shimoga Red Arecanut (Rashi)',
-      description: 'Sun-dried high quality whole betel nut selected directly from Malnad plantations.',
-      price_per_unit: 480,
-      unit: 'KG',
-      status: 'ACTIVE',
-      quantity: 500,
-      reserved: 10,
-      imageUrl: 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?auto=format&fit=crop&w=600&q=80',
-    },
-    {
-      id: 'prod-alphonso-mango-harvest',
-      category_id: harvestCat?.id || 'cat-harvest',
-      seller_id: adminId,
-      name: 'Dharwad Alphonso Mangoes (Organic Farm Pick)',
-      description: 'Naturally ripened carbide-free Alphonso mangoes celebrated for exquisite sweetness and aroma.',
-      price_per_unit: 650,
-      unit: 'DOZEN',
-      status: 'ACTIVE',
-      quantity: 40,
-      reserved: 0,
-      imageUrl: 'https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&w=600&q=80',
-    },
-  ];
+    // Ensure state exists
+    let state = memoryDb.states.find(s => s.name.toLowerCase() === raw.state.toLowerCase());
+    if (!state) {
+      state = {
+        id: `state-${raw.state.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+        name: raw.state,
+        code: raw.state.substring(0, 2).toUpperCase(),
+        created_date: new Date(),
+        last_modified_date: new Date(),
+      };
+      memoryDb.states.push(state);
+    }
 
-  for (const p of sampleProducts) {
+    // Ensure district exists
+    let dist = memoryDb.districts.find(
+      d => d.name.toLowerCase() === raw.district.toLowerCase() && d.state_id === state!.id
+    );
+    if (!dist) {
+      dist = {
+        id: `dist-${raw.district.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+        name: raw.district,
+        code: raw.district.substring(0, 3).toUpperCase(),
+        state_id: state.id,
+        created_date: new Date(),
+        last_modified_date: new Date(),
+      };
+      memoryDb.districts.push(dist);
+    }
+
+    // Ensure taluk exists
+    let taluk = memoryDb.taluks.find(
+      t => t.name.toLowerCase() === raw.villageOrTown.toLowerCase() && t.district_id === dist!.id
+    );
+    if (!taluk) {
+      taluk = {
+        id: `taluk-${raw.villageOrTown.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+        name: raw.villageOrTown,
+        district_id: dist.id,
+        created_date: new Date(),
+        last_modified_date: new Date(),
+      };
+      memoryDb.taluks.push(taluk);
+    }
+
+    const snapshotId = uuidv4();
+    memoryDb.product_location_snapshots.push({
+      id: snapshotId,
+      product_id: raw.id,
+      taluk_id: taluk.id,
+      village_or_town: raw.villageOrTown,
+      district: raw.district,
+      state: raw.state,
+      pin_code: raw.pinCode,
+      latitude: raw.latitude,
+      longitude: raw.longitude,
+      created_date: new Date(),
+      last_modified_date: new Date(),
+    });
+
+    const reserved = Math.max(1, Math.floor(raw.quantity * 0.05));
     const prodRecord = {
-      id: p.id,
-      category_id: p.category_id,
-      farmer_id: p.seller_id,
-      seller_id: p.seller_id,
-      name: p.name,
-      description: p.description,
-      price: p.price_per_unit,
-      price_per_unit: p.price_per_unit,
-      unit: p.unit,
-      status: p.status,
+      id: raw.id,
+      category_id: categoryId,
+      farmer_id: raw.sellerId || adminId,
+      seller_id: raw.sellerId || adminId,
+      seller_name: raw.sellerName,
+      farmer_name: raw.sellerName,
+      name: raw.name,
+      description: raw.description,
+      price: raw.price,
+      price_per_unit: raw.price,
+      unit: raw.unit,
+      status: 'ACTIVE',
+      badge: raw.badge,
+      mandiLinkedCommodity: raw.mandiLinkedCommodity,
+      isMandiLinked: Boolean(raw.mandiLinkedCommodity),
+      product_location_snapshot_id: snapshotId,
       created_date: new Date(),
       last_modified_date: new Date(),
     };
@@ -290,32 +303,20 @@ export async function initMemoryStore(): Promise<void> {
 
     memoryDb.product_images.push({
       id: uuidv4(),
-      product_id: p.id,
-      image_url: p.imageUrl,
+      product_id: raw.id,
+      image_url: raw.imageUrl,
       is_primary: true,
       display_order: 1,
       created_date: new Date(),
       last_modified_date: new Date(),
     });
 
-    memoryDb.product_location_snapshots.push({
-      id: uuidv4(),
-      product_id: p.id,
-      taluk_id: 'taluk-devanahalli',
-      village_or_town: 'Devanahalli',
-      pin_code: '562110',
-      latitude: 13.2483,
-      longitude: 77.7126,
-      created_date: new Date(),
-      last_modified_date: new Date(),
-    });
-
     memoryDb.inventory.push({
       id: uuidv4(),
-      product_id: p.id,
-      quantity: p.quantity,
-      total_quantity: p.quantity,
-      reserved_quantity: p.reserved,
+      product_id: raw.id,
+      quantity: raw.quantity,
+      total_quantity: raw.quantity,
+      reserved_quantity: reserved,
       last_restocked_at: new Date(),
       created_date: new Date(),
       last_modified_date: new Date(),

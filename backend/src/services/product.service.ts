@@ -443,6 +443,9 @@ export class ProductService {
       farmerName: sellerName,
       name: row.name,
       description: row.description,
+      badge: row.badge,
+      mandiLinkedCommodity: row.mandi_linked_commodity || row.mandiLinkedCommodity,
+      isMandiLinked: Boolean(row.mandi_linked_commodity || row.mandiLinkedCommodity),
       price,
       pricePerUnit: price,
       price_per_unit: price,
@@ -495,23 +498,27 @@ export class ProductService {
     let locationString = 'Karnataka, India';
     if (loc) {
       const taluk = memoryDb.taluks.find((t) => t.id === loc.taluk_id);
-      const dist = taluk ? memoryDb.districts.find((d) => d.id === taluk.district_id) : null;
-      const state = dist ? memoryDb.states.find((s) => s.id === dist.state_id) : null;
+      const dist = taluk
+        ? memoryDb.districts.find((d) => d.id === taluk.district_id)
+        : (loc.district ? { name: loc.district } : null);
+      const state = dist && (dist as any).state_id
+        ? memoryDb.states.find((s) => s.id === (dist as any).state_id)
+        : (loc.state ? { name: loc.state } : null);
       locationDetails = {
         id: loc.id,
         productId: loc.product_id,
         talukId: loc.taluk_id,
         taluk: taluk?.name,
-        district: dist?.name,
-        state: state?.name,
+        district: dist?.name || loc.district,
+        state: state?.name || loc.state,
         villageOrTown: loc.village_or_town || loc.village,
         pinCode: loc.pin_code || loc.pincode,
         latitude: loc.latitude,
         longitude: loc.longitude,
       };
-      locationString = [loc.village_or_town || loc.village, taluk?.name, dist?.name, state?.name]
+      locationString = [loc.village_or_town || loc.village, taluk?.name, dist?.name || loc.district, state?.name || loc.state]
         .filter(Boolean)
-        .join(', ') || 'Karnataka, India';
+        .join(', ') || 'India';
     } else if (typeof prod.location === 'string' && prod.location) {
       locationString = prod.location;
     }
@@ -520,7 +527,7 @@ export class ProductService {
     const seller = memoryDb.users.find((u) => u.id === (prod.farmer_id || prod.seller_id));
     const price = prod.price ?? prod.price_per_unit ?? 0;
     const sellerId = prod.farmer_id || prod.seller_id;
-    const sellerName = seller?.full_name || 'Farmer';
+    const sellerName = prod.seller_name || prod.farmer_name || seller?.full_name || 'Farmer';
 
     return {
       id: prod.id,
@@ -536,6 +543,9 @@ export class ProductService {
       farmerName: sellerName,
       name: prod.name,
       description: prod.description,
+      badge: prod.badge,
+      mandiLinkedCommodity: prod.mandiLinkedCommodity,
+      isMandiLinked: Boolean(prod.mandiLinkedCommodity || prod.isMandiLinked),
       price,
       pricePerUnit: price,
       price_per_unit: price,

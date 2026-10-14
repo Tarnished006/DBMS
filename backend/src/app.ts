@@ -25,6 +25,7 @@ import adminRoutes from './routes/admin.routes.js';
 import negotiationRoutes from './routes/negotiation.routes.js';
 import demandRoutes from './routes/demand.routes.js';
 import poolRoutes from './routes/pool.routes.js';
+import marketplaceRoutes from './routes/marketplace.routes.js';
 
 export function createApp(): Express {
   const app = express();
@@ -111,6 +112,7 @@ export function createApp(): Express {
   app.use('/api/v1/negotiations', negotiationRoutes);
   app.use('/api/v1/demands', demandRoutes);
   app.use('/api/v1/pools', poolRoutes);
+  app.use('/api/v1/marketplace', marketplaceRoutes);
 
   // 6. 404 Resource Not Found Handler
   app.use((_req, res) => {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, ShoppingBag, CheckCircle2, AlertCircle } from 'lucide-react';
+import { MapPin, ShoppingBag, CheckCircle2, AlertCircle, ShieldCheck, Zap, Sparkles } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { formatCurrency, formatQuantity } from '@/utils/formatters';
 import { Button } from '@/components/common/Button';
@@ -64,18 +64,37 @@ export function ProductCard({ product }) {
             </span>
           )}
         </div>
+
+        {/* Product Trust / Certified Badge */}
+        {product.badge && (
+          <div className="absolute bottom-2.5 left-3">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wide bg-slate-900/85 text-white backdrop-blur-md shadow-sm border border-white/20">
+              <Sparkles className="w-2.5 h-2.5 text-amber-400" />
+              {product.badge}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Product Content */}
       <div className="flex flex-col flex-1 p-4 justify-between gap-2.5">
-        <div className="space-y-1">
-          {/* Location */}
-          {product.location && (
-            <div className="flex items-center gap-1 text-[11px] font-medium text-slate-400">
-              <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-              <span className="truncate">{product.location}</span>
-            </div>
-          )}
+        <div className="space-y-1.5">
+          {/* Seller / Producer & Location */}
+          <div className="flex items-center justify-between gap-1 text-[11px]">
+            {product.sellerName ? (
+              <div className="flex items-center gap-1 text-brand-700 font-semibold truncate max-w-[65%]">
+                <ShieldCheck className="w-3.5 h-3.5 text-brand-600 flex-shrink-0" />
+                <span className="truncate">{product.sellerName}</span>
+              </div>
+            ) : <div />}
+
+            {product.location && (
+              <div className="flex items-center gap-0.5 text-slate-400 truncate max-w-[35%] justify-end">
+                <MapPin className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                <span className="truncate">{product.location}</span>
+              </div>
+            )}
+          </div>
 
           {/* Title */}
           <div
@@ -96,9 +115,19 @@ export function ProductCard({ product }) {
               {product.description}
             </p>
           )}
+
+          {/* Mandi Price Link Indicator */}
+          {(product.isMandiLinked || product.mandiLinkedCommodity) && (
+            <div className="pt-0.5">
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                <Zap className="w-3 h-3 text-amber-600 flex-shrink-0" />
+                Agmarknet Mandi Indexed
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Price & Stock Section - Spacious & Uncompressed */}
+        {/* Price & Stock Section */}
         <div className="pt-2.5 border-t border-slate-100 flex items-baseline justify-between gap-2">
           <div className="flex items-baseline gap-1">
             <span className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
