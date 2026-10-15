@@ -32,8 +32,8 @@ export class UserController {
 
   async sendPhoneOtp(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
-      await userService.sendPhoneOtp(req.user!.id, req.body.phoneNumber);
-      res.status(204).end();
+      const result = await userService.sendPhoneOtp(req.user!.id, req.body.phoneNumber);
+      res.json(result);
     } catch (err) {
       next(err);
     }
@@ -41,8 +41,8 @@ export class UserController {
 
   async verifyPhoneOtp(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
-      await userService.verifyPhoneOtp(req.user!.id, req.body.phoneNumber, req.body.otp);
-      res.status(204).end();
+      const result = await userService.verifyPhoneOtp(req.user!.id, req.body.phoneNumber, req.body.otp);
+      res.json(result);
     } catch (err) {
       next(err);
     }
@@ -50,8 +50,8 @@ export class UserController {
 
   async resendPhoneOtp(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
-      await userService.resendPhoneOtp(req.user!.id, req.body.phoneNumber);
-      res.status(204).end();
+      const result = await userService.resendPhoneOtp(req.user!.id, req.body.phoneNumber);
+      res.json(result);
     } catch (err) {
       next(err);
     }

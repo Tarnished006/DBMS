@@ -64,6 +64,7 @@ export function SellProductPage() {
     const [phoneInput, setPhoneInput] = useState(user?.phoneNumber || '');
     const [otpCode, setOtpCode] = useState('');
     const [otpSent, setOtpSent] = useState(false);
+    const [generatedOtp, setGeneratedOtp] = useState('');
     const [isSendingOtp, setIsSendingOtp] = useState(false);
     const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
 
@@ -306,7 +307,7 @@ export function SellProductPage() {
             e.preventDefault();
         }
 
-        const cleanPhone = phoneInput.trim().replace(/[^0-9]/g, '');
+        const cleanPhone = phoneInput.trim().replace(/[^0-9]/g, '').slice(-10);
 
         if (!cleanPhone || cleanPhone.length < 10) {
             toast.warning('Please enter a valid 10-digit phone number.');
@@ -316,9 +317,15 @@ export function SellProductPage() {
         setIsSendingOtp(true);
 
         try {
-            await userService.sendPhoneOtp(cleanPhone);
+            const res = await userService.sendPhoneOtp(cleanPhone);
             setOtpSent(true);
-            toast.success(`OTP sent to +91 ${cleanPhone}`);
+            if (res?.otp) {
+                setGeneratedOtp(res.otp);
+                setOtpCode(res.otp);
+                toast.success(`OTP generated: ${res.otp} (auto-filled for demo)`, { autoClose: 8000 });
+            } else {
+                toast.success(`OTP sent to +91 ${cleanPhone}`);
+            }
         } catch (err) {
             toast.error(err.message || 'Failed to send OTP.');
         } finally {
@@ -331,6 +338,7 @@ export function SellProductPage() {
             e.preventDefault();
         }
 
+        const cleanPhone = phoneInput.trim().replace(/[^0-9]/g, '').slice(-10);
         const cleanOtp = otpCode.trim();
 
         if (!cleanOtp || cleanOtp.length < 4) {
@@ -342,7 +350,7 @@ export function SellProductPage() {
 
         try {
             await userService.verifyPhoneOtp({
-                phoneNumber: phoneInput.trim(),
+                phoneNumber: cleanPhone,
                 otp: cleanOtp,
             });
 
@@ -350,6 +358,7 @@ export function SellProductPage() {
 
             setOtpSent(false);
             setOtpCode('');
+            setGeneratedOtp('');
             setIsPhoneModalOpen(false);
 
             await refreshProfile();
@@ -1151,6 +1160,21 @@ export function SellProductPage() {
                                 className="w-full text-center tracking-widest text-lg font-bold py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:border-brand-500 focus:ring-brand-100"
                                 autoFocus
                             />
+
+                            {generatedOtp && (
+                                <div className="mt-2.5 flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800">
+                                    <span>
+                                        Demo OTP: <strong className="font-mono tracking-wider font-bold">{generatedOtp}</strong> (or 123456)
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setOtpCode(generatedOtp)}
+                                        className="text-xs font-bold text-emerald-700 hover:text-emerald-900 underline ml-2 cursor-pointer"
+                                    >
+                                        Auto-fill
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         <Button

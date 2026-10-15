@@ -385,4 +385,77 @@ describe('AgriMarket Backend API End-to-End Suite', () => {
       }
     });
   });
+
+  describe('11. OTP Systems (Phone Verification & Universal Demo Fallback)', () => {
+    let generatedOtp = '';
+
+    it('POST /api/v1/users/me/phone/send-otp with formatted phone should generate and return OTP', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/me/phone/send-otp')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          phoneNumber: '+91 91234 56789',
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.otp).toBeDefined();
+      expect(res.body.otp.length).toBe(6);
+      expect(res.body.message).toContain('OTP sent successfully');
+      generatedOtp = res.body.otp;
+    });
+
+    it('POST /api/v1/users/me/phone/verify-otp with incorrect OTP should fail', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/me/phone/verify-otp')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          phoneNumber: '9123456789',
+          otp: '000000',
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('INVALID_PHONE_OTP');
+    });
+
+    it('POST /api/v1/users/me/phone/verify-otp with generated OTP should verify phone', async () => {
+      const res = await request(app)
+        .post('/api/v1/users/me/phone/verify-otp')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          phoneNumber: '9123456789',
+          otp: generatedOtp,
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+
+      const profileRes = await request(app)
+        .get('/api/v1/users/me/profile')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(profileRes.status).toBe(200);
+      expect(profileRes.body.phoneVerified).toBe(true);
+      expect(profileRes.body.phoneNumber).toBe('9123456789');
+    });
+
+    it('POST /api/v1/users/me/phone/verify-otp should accept demo code 123456 as universal fallback', async () => {
+      await request(app)
+        .post('/api/v1/users/me/phone/send-otp')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          phoneNumber: '9888877777',
+        });
+
+      const res = await request(app)
+        .post('/api/v1/users/me/phone/verify-otp')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          phoneNumber: '9888877777',
+          otp: '123456',
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+    });
+  });
 });

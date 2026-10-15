@@ -37,6 +37,7 @@ export function ProfilePage() {
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState('');
+  const [generatedOtp, setGeneratedOtp] = useState('');
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [otpCountdown, setOtpCountdown] = useState(0);
 
@@ -64,7 +65,7 @@ export function ProfilePage() {
     return () => clearTimeout(timer);
   }, [otpCountdown]);
 
-  const cleanPhone = (phone) => (phone || '').replace(/[\s\-()]/g, '').trim();
+  const cleanPhone = (phone) => (phone || '').replace(/[^0-9]/g, '').slice(-10);
 
   // -------------------------------------------------------------
   // Full Name Update Handler
@@ -144,10 +145,16 @@ export function ProfilePage() {
 
     setIsSendingOtp(true);
     try {
-      await userService.sendPhoneOtp(cleaned);
+      const res = await userService.sendPhoneOtp(cleaned);
       setOtpSent(true);
       setOtpCountdown(30);
-      toast.success(`Verification code sent to ${cleaned}`);
+      if (res?.otp) {
+        setGeneratedOtp(res.otp);
+        setOtpCode(res.otp);
+        toast.success(`Verification code generated: ${res.otp} (auto-filled for demo)`, { autoClose: 8000 });
+      } else {
+        toast.success(`Verification code sent to +91 ${cleaned}`);
+      }
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Failed to send OTP. Please try again.';
       toast.error(msg);
@@ -165,9 +172,15 @@ export function ProfilePage() {
 
     setIsSendingOtp(true);
     try {
-      await userService.resendPhoneOtp(cleaned);
+      const res = await userService.resendPhoneOtp(cleaned);
       setOtpCountdown(30);
-      toast.success('A fresh verification code has been sent.');
+      if (res?.otp) {
+        setGeneratedOtp(res.otp);
+        setOtpCode(res.otp);
+        toast.success(`Fresh code generated: ${res.otp} (auto-filled for demo)`, { autoClose: 8000 });
+      } else {
+        toast.success('A fresh verification code has been sent.');
+      }
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Failed to resend code.';
       toast.error(msg);
@@ -198,6 +211,7 @@ export function ProfilePage() {
       toast.success('Phone number verified successfully!');
       setOtpSent(false);
       setOtpCode('');
+      setGeneratedOtp('');
       setIsChangingPhone(false);
       await refreshProfile();
     } catch (err) {
@@ -557,12 +571,28 @@ export function ProfilePage() {
                 onClick={() => {
                   setOtpSent(false);
                   setOtpCode('');
+                  setGeneratedOtp('');
                   setIsChangingPhone(false);
                 }}
               >
                 Cancel
               </Button>
             </div>
+
+            {generatedOtp && (
+              <div className="flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 max-w-md">
+                <span>
+                  Demo OTP: <strong className="font-mono tracking-wider font-bold">{generatedOtp}</strong> (or 123456)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setOtpCode(generatedOtp)}
+                  className="text-xs font-bold text-emerald-700 hover:text-emerald-900 underline ml-2 cursor-pointer"
+                >
+                  Auto-fill
+                </button>
+              </div>
+            )}
           </form>
         )}
       </div>

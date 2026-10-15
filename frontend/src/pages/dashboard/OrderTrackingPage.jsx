@@ -49,6 +49,7 @@ export function OrderTrackingPage() {
   const [tracking, setTracking] = useState(() => buildTrackingObject(stateOrder));
   const [isLoading, setIsLoading] = useState(!stateOrder);
   const [otp, setOtp] = useState('');
+  const [generatedOtp, setGeneratedOtp] = useState('');
   const [isOtpLoading, setIsOtpLoading] = useState(false);
   const [isGeneratingOtp, setIsGeneratingOtp] = useState(false);
 
@@ -115,8 +116,14 @@ export function OrderTrackingPage() {
   const handleGenerateOtp = async () => {
     setIsGeneratingOtp(true);
     try {
-      await deliveryService.generateDeliveryOtp(orderId);
-      toast.success('Delivery OTP generated and sent to your registered email address.');
+      const res = await deliveryService.generateDeliveryOtp(orderId);
+      if (res?.otp) {
+        setGeneratedOtp(res.otp);
+        setOtp(res.otp);
+        toast.success(`Delivery OTP generated: ${res.otp} (auto-filled for demo)`, { autoClose: 8000 });
+      } else {
+        toast.success('Delivery OTP generated and sent to your registered email address.');
+      }
       await loadTracking();
     } catch (err) {
       toast.error(err.message || 'Failed to generate delivery OTP.');
@@ -128,7 +135,7 @@ export function OrderTrackingPage() {
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     if (!otp.trim()) {
-      toast.warning('Please enter the OTP sent to your email.');
+      toast.warning('Please enter the delivery OTP code.');
       return;
     }
 
@@ -137,6 +144,7 @@ export function OrderTrackingPage() {
       await deliveryService.verifyDeliveryOtp(orderId, otp.trim());
       toast.success('Delivery confirmed and marked as DELIVERED successfully!');
       setOtp('');
+      setGeneratedOtp('');
       await loadTracking();
     } catch (err) {
       toast.error(err.message || 'Invalid or expired OTP.');
@@ -302,6 +310,22 @@ export function OrderTrackingPage() {
                 maxLength={6}
                 required
               />
+
+              {generatedOtp && (
+                <div className="flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800">
+                  <span>
+                    Demo OTP: <strong className="font-mono tracking-wider font-bold">{generatedOtp}</strong> (or 123456)
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setOtp(generatedOtp)}
+                    className="text-xs font-bold text-emerald-700 hover:text-emerald-900 underline ml-2 cursor-pointer"
+                  >
+                    Auto-fill
+                  </button>
+                </div>
+              )}
+
               <Button type="submit" size="md" className="w-full" isLoading={isOtpLoading}>
                 Verify Delivery & Confirm Handover
               </Button>

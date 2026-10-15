@@ -108,18 +108,23 @@ export const SendOtpSchema = z.object({
   phoneNumber: z
     .string()
     .trim()
-    .regex(/^[0-9]{10}$/, 'Phone number must be a valid 10-digit number'),
+    .transform((val) => val.replace(/[^0-9]/g, '').slice(-10))
+    .refine((val) => /^[0-9]{10}$/.test(val), {
+      message: 'Phone number must be a valid 10-digit number',
+    }),
 });
 
 export const VerifyOtpSchema = z.object({
   phoneNumber: z
     .string()
     .trim()
-    .regex(/^[0-9]{10}$/, 'Phone number must be a valid 10-digit number'),
+    .optional()
+    .transform((val) => (val ? val.replace(/[^0-9]/g, '').slice(-10) : undefined)),
   otp: z
     .string()
     .trim()
-    .length(6, 'OTP must be 6 digits'),
+    .min(4, 'OTP must be at least 4 digits')
+    .max(8, 'OTP must be at most 8 digits'),
 });
 
 export const AddressCreateSchema = z.object({
