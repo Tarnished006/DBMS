@@ -140,6 +140,46 @@ describe('AgriMarket Backend API End-to-End Suite', () => {
       expect(availRes.status).toBe(200);
       expect(availRes.body.available).toBe(true);
     });
+
+    it('POST /api/v1/products should create product with frontend payload (price, categoryId, address)', async () => {
+      const catRes = await request(app).get('/api/v1/categories');
+      const catId = catRes.body[0].id;
+
+      const createRes = await request(app)
+        .post('/api/v1/products')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          categoryId: catId,
+          name: 'Organic Cavendish Bananas',
+          description: 'Naturally ripened organic fresh farm bananas',
+          price: 45,
+          unit: 'KG',
+          quantity: 150,
+          villageOrTown: 'Dharwad Farm Hub',
+          city: 'Dharwad',
+          pinCode: '580001',
+        });
+
+      expect(createRes.status).toBe(201);
+      expect(createRes.body.id).toBeDefined();
+      expect(createRes.body.name).toBe('Organic Cavendish Bananas');
+      expect(createRes.body.price).toBe(45);
+      expect(createRes.body.pricePerUnit).toBe(45);
+      expect(createRes.body.quantity).toBe(150);
+    });
+
+    it('POST /api/v1/products should reject with validation error when required fields are missing', async () => {
+      const res = await request(app)
+        .post('/api/v1/products')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          name: 'Incomplete Crop',
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('VALIDATION_ERROR');
+      expect(Array.isArray(res.body.validationErrors)).toBe(true);
+    });
   });
 
   describe('5. Weather & Farming Risk Engine', () => {
@@ -267,7 +307,8 @@ describe('AgriMarket Backend API End-to-End Suite', () => {
 
     it('POST /api/v1/negotiations should allow buyer to make a proposed price offer', async () => {
       const catalogRes = await request(app).get('/api/v1/products');
-      testProduceId = catalogRes.body.content[0].id;
+      const farmerProd = catalogRes.body.content.find((p: any) => p.farmerId !== '11111111-2222-3333-4444-555555555555');
+      testProduceId = farmerProd ? farmerProd.id : catalogRes.body.content[0].id;
 
       // userToken acts as buyer making offer to farmer (adminToken owns seed products)
       const res = await request(app)

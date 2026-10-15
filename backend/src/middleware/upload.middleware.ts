@@ -17,6 +17,22 @@ export const uploadSingleImage = multer({
   },
 });
 
+const flexibleUpload = uploadSingleImage.fields([
+  { name: 'file', maxCount: 1 },
+  { name: 'image', maxCount: 1 },
+]);
+
+export function uploadSingleImageFlexible(req: any, res: any, next: any) {
+  flexibleUpload(req, res, (err: any) => {
+    if (err) return next(err);
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+    if (files) {
+      req.file = files['file']?.[0] || files['image']?.[0];
+    }
+    next();
+  });
+}
+
 export const uploadMultipleImages = multer({
   storage,
   limits: {

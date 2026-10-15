@@ -35,8 +35,13 @@ export const productService = {
   async createProduct(productData) {
     const payload = {
       ...productData,
+      categoryId: productData.categoryId || productData.category_id,
       category_id: productData.category_id || productData.categoryId,
+      price: productData.price !== undefined ? productData.price : productData.pricePerUnit,
+      pricePerUnit: productData.pricePerUnit !== undefined ? productData.pricePerUnit : productData.price,
+      savedAddressId: productData.savedAddressId || productData.saved_address_id,
       saved_address_id: productData.saved_address_id || productData.savedAddressId,
+      newLocation: productData.newLocation || productData.new_location,
       new_location: productData.new_location || productData.newLocation,
     };
     const response = await apiClient.post('/api/v1/products', payload);
@@ -47,8 +52,13 @@ export const productService = {
   async updateProduct(productId, productData) {
     const payload = {
       ...productData,
+      categoryId: productData.categoryId || productData.category_id,
       category_id: productData.category_id || productData.categoryId,
+      price: productData.price !== undefined ? productData.price : productData.pricePerUnit,
+      pricePerUnit: productData.pricePerUnit !== undefined ? productData.pricePerUnit : productData.price,
+      savedAddressId: productData.savedAddressId || productData.saved_address_id,
       saved_address_id: productData.saved_address_id || productData.savedAddressId,
+      newLocation: productData.newLocation || productData.new_location,
       new_location: productData.new_location || productData.newLocation,
     };
     const response = await apiClient.patch(`/api/v1/products/${productId}`, payload);
@@ -76,6 +86,7 @@ export const productService = {
   // Upload product image
   async uploadProductImage(productId, file) {
     const formData = new FormData();
+    formData.append('file', file);
     formData.append('image', file);
 
     const response = await apiClient.post(`/api/v1/products/${productId}/images`, formData, {
@@ -89,6 +100,7 @@ export const productService = {
   // Update product image
   async updateProductImage(productId, imageId, file) {
     const formData = new FormData();
+    formData.append('file', file);
     formData.append('image', file);
 
     const response = await apiClient.patch(`/api/v1/products/${productId}/images/${imageId}`, formData, {

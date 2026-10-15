@@ -94,9 +94,12 @@ export function normalizeApiError(error) {
     switch (status) {
       case 400:
         if (Array.isArray(data?.validationErrors) && data.validationErrors.length > 0) {
-          const firstValidation = data.validationErrors.find((v) => v.message)?.message;
-          if (firstValidation) {
-            message = `Validation Rule: ${firstValidation}`;
+          const firstErr = data.validationErrors.find((v) => v.message);
+          if (firstErr) {
+            const fieldPrefix = firstErr.field && firstErr.field !== 'location'
+              ? `${firstErr.field.charAt(0).toUpperCase() + firstErr.field.slice(1)}: `
+              : '';
+            message = `${fieldPrefix}${firstErr.message}`;
           }
         } else if (!message || message === 'Request body is invalid or malformed') {
           message = 'Invalid request. Please check the entered information.';

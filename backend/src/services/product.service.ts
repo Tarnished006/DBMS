@@ -9,24 +9,138 @@ export class ProductService {
     const productId = uuidv4();
     const snapshotId = uuidv4();
     const now = new Date();
-    const price = data.pricePerUnit ?? data.price;
+    const price = data.pricePerUnit ?? data.price ?? data.price_per_unit;
     const qty = data.quantity || 0;
+    const categoryId = data.categoryId || data.category_id;
+
+    let addressLine1 = 'Direct Farm Location';
+    let addressLine2: string | null = null;
+    let village: string | null = null;
+    let city = 'Farm';
+    let district = 'Dharwad';
+    let state = 'Karnataka';
+    let pincode = '580001';
+    let latitude: number | null = null;
+    let longitude: number | null = null;
+    let talukId: string | null = data.talukId || data.taluk_id || null;
+    let locationType = 'MANUAL';
+    let addressType = 'FARM';
+
+    const savedAddressId = data.savedAddressId || data.saved_address_id;
+    const newLocation = data.newLocation || data.new_location;
+
+    if (savedAddressId) {
+      if (isPostgres()) {
+        const addrRes = await db.query(
+          `SELECT a.*, t.name as taluk_name, d.name as district_name, s.name as state_name
+           FROM addresses a
+           LEFT JOIN taluks t ON t.id = a.taluk_id
+           LEFT JOIN districts d ON d.id = t.district_id
+           LEFT JOIN states s ON s.id = d.state_id
+           WHERE a.id = $1`,
+          [savedAddressId]
+        );
+        if (addrRes.rows.length > 0) {
+          const a = addrRes.rows[0];
+          addressLine1 = a.address_line1 || addressLine1;
+          addressLine2 = a.address_line2 || null;
+          village = a.village || null;
+          city = a.city || a.taluk_name || city;
+          district = a.district_name || district;
+          state = a.state_name || state;
+          pincode = a.pincode || pincode;
+          latitude = a.latitude ? parseFloat(a.latitude) : null;
+          longitude = a.longitude ? parseFloat(a.longitude) : null;
+          talukId = a.taluk_id || talukId;
+          locationType = a.location_type || 'MANUAL';
+          addressType = a.address_type || 'FARM';
+        }
+      } else {
+        const a = memoryDb.addresses.find((addr) => addr.id === savedAddressId);
+        if (a) {
+          const taluk = memoryDb.taluks.find((t) => t.id === a.taluk_id);
+          const dist = taluk ? memoryDb.districts.find((d) => d.id === taluk.district_id) : null;
+          const st = dist ? memoryDb.states.find((s) => s.id === dist.state_id) : null;
+          addressLine1 = a.address_line1 || addressLine1;
+          addressLine2 = a.address_line2 || null;
+          village = a.village || null;
+          city = a.city || taluk?.name || city;
+          district = dist?.name || district;
+          state = st?.name || state;
+          pincode = a.pin_code || a.pincode || pincode;
+          latitude = a.latitude ? parseFloat(a.latitude) : null;
+          longitude = a.longitude ? parseFloat(a.longitude) : null;
+          talukId = a.taluk_id || talukId;
+          locationType = a.location_type || 'MANUAL';
+          addressType = a.address_type || 'FARM';
+        }
+      }
+    } else if (newLocation && typeof newLocation === 'object') {
+      addressLine1 = newLocation.addressLine1 || newLocation.village || newLocation.city || addressLine1;
+      addressLine2 = newLocation.addressLine2 || null;
+      village = newLocation.village || null;
+      city = newLocation.city || newLocation.village || city;
+      district = newLocation.district || district;
+      state = newLocation.state || state;
+      pincode = newLocation.pincode || newLocation.pinCode || pincode;
+      if (newLocation.latitude !== undefined && newLocation.latitude !== null) {
+        latitude = parseFloat(newLocation.latitude);
+      }
+      if (newLocation.longitude !== undefined && newLocation.longitude !== null) {
+        longitude = parseFloat(newLocation.longitude);
+      }
+      if (newLocation.talukId || newLocation.taluk_id) {
+        talukId = newLocation.talukId || newLocation.taluk_id;
+      }
+      locationType = newLocation.locationType || (latitude && longitude ? 'MAP' : 'MANUAL');
+      addressType = newLocation.addressType || 'FARM';
+    }
+
+    // Direct overrides if explicitly provided
+    if (data.addressLine1) addressLine1 = data.addressLine1;
+    if (data.villageOrTown || data.village) village = data.villageOrTown || data.village;
+    if (data.city) city = data.city;
+    if (data.district) district = data.district;
+    if (data.state) state = data.state;
+    if (data.pinCode || data.pincode) pincode = data.pinCode || data.pincode;
+    if (data.latitude !== undefined && data.latitude !== null) latitude = parseFloat(data.latitude);
+    if (data.longitude !== undefined && data.longitude !== null) longitude = parseFloat(data.longitude);
+    if (data.locationType) locationType = data.locationType;
+    if (data.addressType) addressType = data.addressType;
 
     if (isPostgres()) {
+      if (talukId) {
+        const tRes = await db.query('SELECT id, name FROM taluks WHERE id = $1', [talukId]);
+        if (tRes.rows.length === 0) {
+          const matchRes = await db.query('SELECT id FROM taluks WHERE LOWER(name) = LOWER($1) LIMIT 1', [city || village || '']);
+          talukId = matchRes.rows.length > 0 ? matchRes.rows[0].id : null;
+        }
+      } else if (city || village) {
+        const matchRes = await db.query('SELECT id FROM taluks WHERE LOWER(name) = LOWER($1) LIMIT 1', [city || village]);
+        if (matchRes.rows.length > 0) {
+          talukId = matchRes.rows[0].id;
+        }
+      }
+
       // 1. Create Location Snapshot first (products foreign key constraint requires it)
       await db.query(
         `INSERT INTO product_location_snapshots (
-          id, taluk_id, address_line1, village, city, pincode, country, latitude, longitude, created_date, last_modified_date
-        ) VALUES ($1, $2, $3, $4, $5, $6, 'India', $7, $8, $9, $9)`,
+          id, taluk_id, address_line1, address_line2, village, city, district, state, pincode, country, latitude, longitude, location_type, address_type, created_date, last_modified_date
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'India', $10, $11, $12, $13, $14, $14)`,
         [
           snapshotId,
-          data.talukId || null,
-          data.addressLine1?.trim() || data.villageOrTown?.trim() || 'Direct Farm',
-          data.villageOrTown?.trim() || null,
-          data.city?.trim() || data.villageOrTown?.trim() || 'Farm',
-          data.pinCode?.trim() || '580001',
-          data.latitude || null,
-          data.longitude || null,
+          talukId,
+          addressLine1.slice(0, 200),
+          addressLine2 ? addressLine2.slice(0, 200) : null,
+          village ? village.slice(0, 100) : null,
+          city.slice(0, 100),
+          district.slice(0, 100),
+          state.slice(0, 100),
+          pincode.slice(0, 10),
+          latitude,
+          longitude,
+          locationType,
+          addressType,
           now,
         ]
       );
@@ -38,7 +152,7 @@ export class ProductService {
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'ACTIVE', $8, $9, $9)`,
         [
           productId,
-          data.categoryId,
+          categoryId,
           sellerId,
           data.name.trim(),
           data.description?.trim() || null,
@@ -59,7 +173,7 @@ export class ProductService {
     } else {
       const prod = {
         id: productId,
-        category_id: data.categoryId,
+        category_id: categoryId,
         farmer_id: sellerId,
         seller_id: sellerId,
         name: data.name.trim(),
@@ -77,11 +191,21 @@ export class ProductService {
       memoryDb.product_location_snapshots.push({
         id: snapshotId,
         product_id: productId,
-        taluk_id: data.talukId,
-        village_or_town: data.villageOrTown?.trim() || null,
-        pin_code: data.pinCode?.trim() || null,
-        latitude: data.latitude || null,
-        longitude: data.longitude || null,
+        taluk_id: talukId,
+        address_line1: addressLine1,
+        address_line2: addressLine2,
+        village: village,
+        village_or_town: village || city,
+        city: city,
+        district: district,
+        state: state,
+        pin_code: pincode,
+        pincode: pincode,
+        country: 'India',
+        latitude: latitude,
+        longitude: longitude,
+        location_type: locationType,
+        address_type: addressType,
         created_date: now,
         last_modified_date: now,
       });

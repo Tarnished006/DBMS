@@ -112,10 +112,12 @@ export function SellProductPage() {
                     setSavedAddresses(addrs.value);
 
                     const defaultAddr =
-                        addrs.value.find((address) => address.defaultAddress) ||
+                        addrs.value.find((address) => address.defaultAddress || address.isDefault) ||
                         addrs.value[0];
 
                     if (defaultAddr) {
+                        setSelectedAddressId(defaultAddr.id);
+
                         const parts = [
                             defaultAddr.addressLine1,
                             defaultAddr.village,
@@ -515,17 +517,28 @@ export function SellProductPage() {
         try {
             const productPayload = {
                 categoryId: formData.categoryId,
+                category_id: formData.categoryId,
                 name: formData.name.trim(),
                 description: formData.description.trim(),
-                price: parseInt(formData.price, 10),
+                price: parseFloat(formData.price),
+                pricePerUnit: parseFloat(formData.price),
                 unit: formData.unit,
                 quantity: parseFloat(formData.quantity),
             };
 
             if (selectedAddressId) {
                 productPayload.savedAddressId = selectedAddressId;
-            } else {
+                productPayload.saved_address_id = selectedAddressId;
+                const addr = savedAddresses.find((a) => a.id === selectedAddressId);
+                if (addr?.talukId) {
+                    productPayload.talukId = addr.talukId;
+                }
+            } else if (newLocationDetails) {
                 productPayload.newLocation = newLocationDetails;
+                productPayload.new_location = newLocationDetails;
+                if (newLocationDetails.talukId) {
+                    productPayload.talukId = newLocationDetails.talukId;
+                }
             }
 
             const createdProduct =
@@ -568,11 +581,19 @@ export function SellProductPage() {
 
                 Object.entries(err.validationErrors).forEach(
                     ([field, msg]) => {
-                        serverErrors[field] = msg;
+                        const mappedField =
+                            field === 'pricePerUnit' || field === 'price_per_unit'
+                                ? 'price'
+                                : field === 'categoryId' || field === 'category_id'
+                                ? 'categoryId'
+                                : field === 'talukId' || field === 'savedAddressId' || field === 'newLocation'
+                                ? 'location'
+                                : field;
+                        serverErrors[mappedField] = msg;
                     }
                 );
 
-                setErrors(serverErrors);
+                setErrors((prev) => ({ ...prev, ...serverErrors }));
                 scrollToFirstError(serverErrors);
             }
 

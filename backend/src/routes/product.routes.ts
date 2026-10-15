@@ -4,7 +4,7 @@ import { productImageController } from '../controllers/productImage.controller.j
 import { inventoryController } from '../controllers/inventory.controller.js';
 import { authMiddleware } from '../middleware/auth.middleware.js';
 import { validateBody } from '../middleware/validate.middleware.js';
-import { uploadSingleImage } from '../middleware/upload.middleware.js';
+import { uploadSingleImage, uploadSingleImageFlexible } from '../middleware/upload.middleware.js';
 import { ProductCreateSchema, ProductUpdateSchema } from '../utils/validation.js';
 
 const router = Router();
@@ -64,7 +64,7 @@ router.get('/:productId/images', (req: Request, res: Response, next: NextFunctio
 router.post(
   '/:productId/images',
   authMiddleware,
-  uploadSingleImage.single('file'),
+  uploadSingleImageFlexible,
   (req: Request, res: Response, next: NextFunction) => productImageController.uploadImage(req, res, next)
 );
 router.patch(
