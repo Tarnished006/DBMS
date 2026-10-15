@@ -159,7 +159,7 @@ export class UserService {
     userId: string,
     phoneNumber?: string,
     otp?: string
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<{ success: boolean; message: string; user?: UserProfileDto }> {
     if (!otp) {
       throw new BusinessException('INVALID_PHONE_OTP', 'Verification OTP is required.');
     }
@@ -201,16 +201,31 @@ export class UserService {
 
     // Success: Update user
     if (isPostgres()) {
-      if (targetPhone) {
-        await db.query(
-          'UPDATE users SET phone_number = $1, phone_verified = true, last_modified_date = $2 WHERE id = $3',
-          [targetPhone, new Date(), userId]
-        );
-      } else {
-        await db.query(
-          'UPDATE users SET phone_verified = true, last_modified_date = $1 WHERE id = $2',
-          [new Date(), userId]
-        );
+      try {
+        if (targetPhone) {
+          await db.query(
+            'UPDATE users SET phone_number = $1, phone_verified = true, last_modified_date = $2 WHERE id = $3',
+            [targetPhone, new Date(), userId]
+          );
+        } else {
+          await db.query(
+            'UPDATE users SET phone_verified = true, last_modified_date = $1 WHERE id = $2',
+            [new Date(), userId]
+          );
+        }
+      } catch (dbErr) {
+        // Fallback for legacy schemas with updated_at instead of last_modified_date
+        if (targetPhone) {
+          await db.query(
+            'UPDATE users SET phone_number = $1, phone_verified = true WHERE id = $2',
+            [targetPhone, userId]
+          );
+        } else {
+          await db.query(
+            'UPDATE users SET phone_verified = true WHERE id = $1',
+            [userId]
+          );
+        }
       }
     } else {
       const user = memoryDb.users.find((u) => u.id === userId);
@@ -227,9 +242,12 @@ export class UserService {
 
     memoryDb.phone_otps = memoryDb.phone_otps.filter((o) => o.user_id !== userId);
 
+    const updatedProfile = await this.getCurrentUserProfile(userId);
+
     return {
       success: true,
       message: 'Phone number verified successfully.',
+      user: updatedProfile,
     };
   }
 

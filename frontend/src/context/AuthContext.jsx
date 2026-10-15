@@ -63,6 +63,17 @@ export function AuthProvider({ children }) {
     } catch {}
   }, []);
 
+  const updateUser = useCallback((updatedData) => {
+    if (!updatedData) return;
+    setUser((prev) => {
+      const merged = { ...(prev || {}), ...updatedData };
+      try {
+        localStorage.setItem('agri_user', JSON.stringify(merged));
+      } catch {}
+      return merged;
+    });
+  }, []);
+
   // Verify admin role (stores result to keep admin navigation instantly accessible)
   const verifyAdminPrivilege = async () => {
     try {
@@ -235,9 +246,10 @@ export function AuthProvider({ children }) {
         handleOAuthSuccess,
         logout,
         logoutAll,
-        refreshProfile: fetchUserProfile,
+        refreshProfile: (force = true) => fetchUserProfile(force),
         verifyAdminPrivilege,
         setUser,
+        updateUser,
       }}
     >
       {children}

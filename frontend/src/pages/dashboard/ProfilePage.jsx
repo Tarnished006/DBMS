@@ -20,7 +20,7 @@ import { Input } from '@/components/common/Input';
 import { Spinner } from '@/components/loaders/Spinner';
 
 export function ProfilePage() {
-  const { user, refreshProfile, hasPassword, setHasPassword } = useAuth();
+  const { user, refreshProfile, updateUser, hasPassword, setHasPassword } = useAuth();
   const toast = useToast();
 
   // Full Name State
@@ -203,17 +203,26 @@ export function ProfilePage() {
     setIsVerifyingOtp(true);
     try {
       const cleaned = cleanPhone(phoneInput);
-      await userService.verifyPhoneOtp({
+      const res = await userService.verifyPhoneOtp({
         phoneNumber: cleaned,
         otp: code,
       });
 
       toast.success('Phone number verified successfully!');
+
+      if (updateUser) {
+        updateUser({
+          phoneNumber: cleaned,
+          phoneVerified: true,
+          ...(res?.user || {}),
+        });
+      }
+
       setOtpSent(false);
       setOtpCode('');
       setGeneratedOtp('');
       setIsChangingPhone(false);
-      await refreshProfile();
+      await refreshProfile(true);
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Invalid or expired OTP code.';
       toast.error(msg);

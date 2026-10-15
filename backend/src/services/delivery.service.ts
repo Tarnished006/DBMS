@@ -139,7 +139,12 @@ export class DeliveryService {
     try {
       await orderService.updateOrderStatus(orderId, 'DELIVERED', true);
     } catch (e) {
-      // If already transitioning, ignore
+      if (isPostgres()) {
+        await db.query("UPDATE orders SET status = 'DELIVERED' WHERE id = $1", [orderId]);
+      } else {
+        const o = memoryDb.orders.find((m) => m.id === orderId);
+        if (o) o.status = 'DELIVERED';
+      }
     }
 
     return this.getDeliveryByOrderId(orderId);

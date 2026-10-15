@@ -141,10 +141,15 @@ export function OrderTrackingPage() {
 
     setIsOtpLoading(true);
     try {
-      await deliveryService.verifyDeliveryOtp(orderId, otp.trim());
+      const res = await deliveryService.verifyDeliveryOtp(orderId, otp.trim());
       toast.success('Delivery confirmed and marked as DELIVERED successfully!');
       setOtp('');
       setGeneratedOtp('');
+      setTracking((prev) => ({
+        ...(prev || {}),
+        status: 'DELIVERED',
+        delivery: res || { ...(prev?.delivery || {}), otpVerified: true, status: 'DELIVERED' },
+      }));
       await loadTracking();
     } catch (err) {
       toast.error(err.message || 'Invalid or expired OTP.');

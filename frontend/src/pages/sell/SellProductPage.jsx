@@ -30,7 +30,7 @@ import {
 } from '@/components/location/LocationMapModal';
 
 export function SellProductPage() {
-    const { user, refreshProfile } = useAuth();
+    const { user, refreshProfile, updateUser } = useAuth();
     const toast = useToast();
     const navigate = useNavigate();
 
@@ -349,19 +349,27 @@ export function SellProductPage() {
         setIsVerifyingOtp(true);
 
         try {
-            await userService.verifyPhoneOtp({
+            const res = await userService.verifyPhoneOtp({
                 phoneNumber: cleanPhone,
                 otp: cleanOtp,
             });
 
             toast.success('Phone verified successfully!');
 
+            if (updateUser) {
+                updateUser({
+                    phoneNumber: cleanPhone,
+                    phoneVerified: true,
+                    ...(res?.user || {}),
+                });
+            }
+
             setOtpSent(false);
             setOtpCode('');
             setGeneratedOtp('');
             setIsPhoneModalOpen(false);
 
-            await refreshProfile();
+            await refreshProfile(true);
         } catch (err) {
             toast.error(err.message || 'Invalid or expired OTP.');
         } finally {
