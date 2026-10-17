@@ -403,45 +403,9 @@ class ExternalEnrichmentService {
       },
     ];
 
-    // Step 5: Synthesize standard Integrated Pest & Disease Diagnostic Manual (Organic + Chemical)
-    const pestAndDiseases: PestOrDisease[] = [
-      {
-        name: 'Sucking Pests (Aphids, Whiteflies & Thrips)',
-        type: 'PEST',
-        symptoms: 'Curling of tender apical leaves, yellow stippling, honeydew excretion, and sooty mold development.',
-        prevention: 'Install yellow and blue sticky traps (15 traps/acre); intercrop with marigold or cowpea.',
-        organicControl: 'Foliar spray of cold-pressed Neem Seed Kernel Extract (NSKE 5%) or Neem Oil 10,000 ppm @ 3 ml/L water.',
-        chemicalControl: 'Foliar application of Imidacloprid 17.8% SL @ 0.5 ml/L or Thiamethoxam 25% WG @ 0.3 g/L.',
-        severity: 'MEDIUM',
-      },
-      {
-        name: 'Fungal Leaf Spot & Foliar Blight',
-        type: 'FUNGAL',
-        symptoms: 'Concentric necrotic circular brown lesions surrounded by chlorotic yellow halos across mature lower leaves.',
-        prevention: 'Crop rotation with non-host cereals; avoid overhead sprinkler watering in late afternoons.',
-        organicControl: 'Seed treatment with Trichoderma viride @ 5 g/kg seed and foliar spray of Pseudomonas fluorescens @ 5 g/L.',
-        chemicalControl: 'Spray Mancozeb 75% WP @ 2.5 g/L or Azoxystrobin 23% SC @ 1 ml/L at first appearance of symptoms.',
-        severity: 'HIGH',
-      },
-      {
-        name: 'Powdery Mildew & Rust',
-        type: 'FUNGAL',
-        symptoms: 'White powdery superficial fungal mycelium coating both upper and lower leaf surfaces, causing premature defoliation.',
-        prevention: 'Maintain wide plant canopy spacing for adequate sunlight penetration and aeration.',
-        organicControl: 'Foliar application of Wettable Sulphur 80% WDG @ 2.5 g/L or baking soda (0.5%) soap solution.',
-        chemicalControl: 'Spray Hexaconazole 5% EC @ 1 ml/L or Difenoconazole 25% EC @ 0.5 ml/L.',
-        severity: 'MEDIUM',
-      },
-      {
-        name: 'Root Rot & Seedling Damping-Off',
-        type: 'FUNGAL',
-        symptoms: 'Collar water-soaking, seedling toppling, stunted growth, and root discoloration.',
-        prevention: 'Ensure raised planting beds and well-drained fertile loam; avoid waterlogged soils.',
-        organicControl: 'Soil drenching with Trichoderma harzianum enriched FYM @ 50 kg/acre.',
-        chemicalControl: 'Soil drench with Carbendazim 50% WP @ 2 g/L or Metalaxyl 35% WS.',
-        severity: 'HIGH',
-      },
-    ];
+    // Step 5: Synthesize tailored Plant Pathology & Integrated Pest Management (IPM) based on botanical family & crop type
+    const pestAndDiseases = this.synthesizeTailoredPests(wiki.title, family, category, text);
+
 
     // Step 6: Tailored Fertilizer NPK formulation
     let nutrientSchedule: NutrientSchedule;
@@ -530,13 +494,436 @@ class ExternalEnrichmentService {
         'Direct trading in APMC Mandis and spot marketplaces',
         'Processing into value-added agricultural products and culinary derivatives',
       ],
-      commonDiseases: ['Aphids & Sucking Pests', 'Foliar Leaf Blight', 'Powdery Mildew', 'Root Rot'],
+      commonDiseases: pestAndDiseases.map((d) => d.name),
     };
 
     this.synthesizedCropCache.set(slug, synthesized);
     return synthesized;
   }
+
+  /**
+   * Botanical Plant Pathology & Integrated Pest Management (IPM) Synthesis Engine:
+   * Generates tailored diseases, symptoms, organic remedies, and chemical dosages based on
+   * botanical family, crop name, and taxonomic classification.
+   */
+  private synthesizeTailoredPests(cropName: string, family: string, category: string, extractText: string): PestOrDisease[] {
+    const lowerName = cropName.toLowerCase();
+    const lowerFam = family.toLowerCase();
+    const text = extractText.toLowerCase();
+
+    // 1. Cactaceae / Exotic Cacti (Dragon Fruit / Pitaya)
+    if (lowerFam.includes('cact') || lowerName.includes('dragon fruit') || lowerName.includes('pitaya') || text.includes('hylocereus')) {
+      return [
+        {
+          name: 'Stem Canker (Neoscytalidium dimidiatum)',
+          type: 'FUNGAL',
+          symptoms: 'Small chlorotic circular spots on cladodes that turn into brown-orange sunken lesions and eruptive crusts.',
+          prevention: 'Prune infected cladodes during dry sunny periods; disinfect pruning shears with 70% alcohol.',
+          organicControl: 'Foliar spray of Copper Hydroxide (2 g/L) or Bacillus subtilis bio-fungicide @ 5 g/L.',
+          chemicalControl: 'Spray Azoxystrobin + Difenoconazole (Amistar Top) @ 1 ml/L or Mancozeb 75% WP @ 2.5 g/L.',
+          severity: 'HIGH',
+        },
+        {
+          name: 'Anthracnose (Colletotrichum gloeosporioides)',
+          type: 'FUNGAL',
+          symptoms: 'Concentric reddish-brown lesions with yellow margins along cladode ribs and fruit skin, causing blossom-end rot.',
+          prevention: 'Ensure trellis allows adequate aeration and sunlight; avoid dense tangled canopy.',
+          organicControl: 'Spray cold-pressed Neem oil (10,000 ppm @ 3 ml/L) mixed with Trichoderma viride.',
+          chemicalControl: 'Foliar spray of Carbendazim 50% WP @ 1.5 g/L or Tebuconazole @ 1 ml/L at floral bud set.',
+          severity: 'HIGH',
+        },
+        {
+          name: 'Cactus Mealybug & Soft Scale (Ferrisia virgata)',
+          type: 'PEST',
+          symptoms: 'Cottony white waxy clusters in spine areoles and floral bracts, sucking sap and causing sooty mold blackening.',
+          prevention: 'Maintain clean orchard floor; eradicate ant colonies which protect mealybugs.',
+          organicControl: 'Foliar application of entomopathogenic fungus Beauveria bassiana @ 5 g/L or fish oil rosin soap (25 ml/L).',
+          chemicalControl: 'Spray Spirotetramat 15.31% OD @ 1 ml/L or Imidacloprid 17.8% SL @ 0.5 ml/L.',
+          severity: 'MEDIUM',
+        },
+        {
+          name: 'Soft Bacterial Stem Rot (Enterobacter cloacae)',
+          type: 'BACTERIAL',
+          symptoms: 'Yellowing and water-soaking of cladodes; inner parenchymatous pulp decays into a foul-smelling liquid slime.',
+          prevention: 'Avoid mechanical wounding during weeding; ensure rapid drainage after heavy monsoon rain.',
+          organicControl: 'Chisel out decaying pulp and paint wound with 10% Bordeaux paste.',
+          chemicalControl: 'Drench and spray with Copper Oxychloride (3 g/L) + Streptocycline (200 ppm).',
+          severity: 'HIGH',
+        },
+      ];
+    }
+
+    // 2. Lauraceae (Avocado)
+    if (lowerFam.includes('laur') || lowerName.includes('avocado')) {
+      return [
+        {
+          name: 'Phytophthora Root Rot (Phytophthora cinnamomi)',
+          type: 'FUNGAL',
+          symptoms: 'Foliage turns pale green/yellow, wilts, and drops; branch dieback starting from tips; feeder roots turn black and rotten.',
+          prevention: 'Plant certified clonally propagated rootstocks (Duke 7, Dusa); plant on mounds in well-drained soils.',
+          organicControl: 'Mulch heavily with coarse wood chips; soil drench with Trichoderma harzianum @ 50 g/tree.',
+          chemicalControl: 'Trunk injection or foliar spray of Potassium Phosphite (3 g/L) or Metalaxyl soil drenching.',
+          severity: 'HIGH',
+        },
+        {
+          name: 'Avocado Anthracnose & Black Spot (Colletotrichum)',
+          type: 'FUNGAL',
+          symptoms: 'Circular black spots on ripening fruits that penetrate deeply into avocado flesh, causing bitter rot.',
+          prevention: 'Prune lower branches at least 50 cm above ground level; ensure good canopy airflow.',
+          organicControl: 'Prophylactic spray of Copper Oxychloride (2.5 g/L) during fruit set.',
+          chemicalControl: 'Spray Azoxystrobin @ 1 ml/L or Pyraclostrobin during flowering and early fruit development.',
+          severity: 'MEDIUM',
+        },
+        {
+          name: 'Avocado Thrips (Scirtothrips perseae)',
+          type: 'PEST',
+          symptoms: 'Brown leathery alligator-skin scarring on fruit skin, severely downgrading commercial market grade.',
+          prevention: 'Monitor young flush using yellow sticky cards; preserve natural predatory thrips.',
+          organicControl: 'Foliar spray of Spinosad 45% SC @ 0.3 ml/L or cold-pressed neem oil.',
+          chemicalControl: 'Spray Abamectin 1.9% EC @ 0.5 ml/L during bloom to fruit set transition.',
+          severity: 'MEDIUM',
+        },
+      ];
+    }
+
+    // 3. Cucurbitaceae (Cucumber, Watermelon, Melons, Gourds, Pumpkin)
+    if (lowerFam.includes('cucurbit') || lowerName.includes('melon') || lowerName.includes('cucumber') || lowerName.includes('gourd') || lowerName.includes('pumpkin')) {
+      return [
+        {
+          name: 'Downy Mildew (Pseudoperonospora cubensis)',
+          type: 'FUNGAL',
+          symptoms: 'Angular bright yellow chlorotic spots restricted by leaf veins; purplish-grey fungal down on lower leaf surface.',
+          prevention: 'Trellis vines to elevate foliage; avoid late evening overhead sprinkler irrigation.',
+          organicControl: 'Foliar spray of bio-agent Trichoderma viride + cow urine (10%) or copper hydroxide.',
+          chemicalControl: 'Spray Cymoxanil 8% + Mancozeb 64% WP @ 2 g/L or Metalaxyl-Mancozeb @ 2.5 g/L.',
+          severity: 'HIGH',
+        },
+        {
+          name: 'Cucurbit Fruit Fly (Bactrocera cucurbitae)',
+          type: 'PEST',
+          symptoms: 'Punctured oviposition marks oozing brown resin; maggots feed inside fruit flesh causing curved decaying fruit.',
+          prevention: 'Install cue-lure pheromone traps (15 traps/acre); destroy punctured fallen fruits.',
+          organicControl: 'Bait spray with 100g jaggery + 10g Malathion or Spinosad in 10L water applied as coarse droplets.',
+          chemicalControl: 'Foliar spray of Malathion 50% EC @ 2 ml/L or Lambda Cyhalothrin @ 1 ml/L.',
+          severity: 'HIGH',
+        },
+        {
+          name: 'Powdery Mildew (Podosphaera xanthii)',
+          type: 'FUNGAL',
+          symptoms: 'Talcum-powder-like white superficial fungal coating on leaves and petioles, causing premature leaf drying.',
+          prevention: 'Maintain wide vine spacing; grow resistant hybrid varieties.',
+          organicControl: 'Spray Wettable Sulphur 80% WDG @ 2.5 g/L or baking soda (0.5%) soap solution.',
+          chemicalControl: 'Spray Hexaconazole 5% EC @ 1 ml/L or Difenoconazole 25% EC @ 0.5 ml/L.',
+          severity: 'MEDIUM',
+        },
+        {
+          name: 'Red Pumpkin Beetle (Aulacophora foveicollis)',
+          type: 'PEST',
+          symptoms: 'Bright orange-red beetles gnaw circular holes in cotyledons and leaves; grubs bore into roots.',
+          prevention: 'Hand-pick beetles during early morning chill; dust wood ash on tender seedlings.',
+          organicControl: 'Dust seedling rows with fine wood ash mixed with Neem cake powder.',
+          chemicalControl: 'Foliar spray of Chlorpyrifos 20% EC @ 2 ml/L or Cypermethrin @ 1 ml/L.',
+          severity: 'MEDIUM',
+        },
+      ];
+    }
+
+    // 4. Solanaceae (Tomato, Potato, Brinjal, Chilli, Bell Pepper, Tobacco)
+    if (lowerFam.includes('solan') || lowerName.includes('pepper') || lowerName.includes('chilli') || lowerName.includes('tomato') || lowerName.includes('potato') || lowerName.includes('brinjal')) {
+      return [
+        {
+          name: 'Early & Late Blight (Phytophthora infestans / Alternaria)',
+          type: 'FUNGAL',
+          symptoms: 'Concentric target-board rings on leaves (Early Blight) and water-soaked dark necrotic blotches with white margin fuzz (Late Blight).',
+          prevention: 'Crop rotation with non-solanaceous crops; maintain wide ridge spacing for leaf drying.',
+          organicControl: 'Seed treatment with Trichoderma viride @ 5 g/kg seed and foliar spray of Pseudomonas fluorescens.',
+          chemicalControl: 'Prophylactic spray of Mancozeb 75% WP @ 2.5 g/L; curative spray of Dimethomorph 50% WP @ 1 g/L.',
+          severity: 'HIGH',
+        },
+        {
+          name: 'Fruit and Shoot Borer / Pinworm (Tuta absoluta / Helicoverpa)',
+          type: 'PEST',
+          symptoms: 'Wilting of apical tender shoots; transparent blister leaf mines; circular boreholes in green and ripe fruit.',
+          prevention: 'Install delta pheromone traps (15 traps/acre); clip drooping twigs weekly.',
+          organicControl: 'Foliar application of Bacillus thuringiensis (Bt) @ 2 g/L or Neem oil 10,000 ppm @ 3 ml/L.',
+          chemicalControl: 'Spray Chlorantraniliprole 18.5% SC @ 0.3 ml/L or Flubendiamide 39.35% SC @ 0.3 ml/L.',
+          severity: 'HIGH',
+        },
+        {
+          name: 'Bacterial Wilt (Ralstonia solanacearum)',
+          type: 'BACTERIAL',
+          symptoms: 'Sudden daytime wilting of entire foliage without initial yellowing; cut stem shows milky white bacterial streaming in clean water.',
+          prevention: 'Solarize raised nursery beds with polythene; grow certified resistant rootstocks.',
+          organicControl: 'Soil drenching with Pseudomonas fluorescens (10 g/L) + neem cake enrichment.',
+          chemicalControl: 'Root drenching with Streptocycline (100 ppm) + Copper Oxychloride (2.5 g/L).',
+          severity: 'HIGH',
+        },
+      ];
+    }
+
+    // 5. Fabaceae / Leguminosae (Pulses, Beans, Peas, Lentils, Soybean)
+    if (lowerFam.includes('fab') || lowerFam.includes('legum') || category === 'Pulses' || lowerName.includes('bean') || lowerName.includes('pea') || lowerName.includes('gram') || lowerName.includes('pulse')) {
+      return [
+        {
+          name: 'Gram / Legume Pod Borer (Helicoverpa armigera)',
+          type: 'PEST',
+          symptoms: 'Voracious caterpillars feed with heads inserted into green pods while body remains outside; circular holes on pods.',
+          prevention: 'Border intercropping with coriander (4:1) or marigold; install bird perches (20 per acre).',
+          organicControl: 'Install pheromone traps (5/acre); foliar spray of HaNPV @ 250 LE/ha or Bt kurstaki @ 2 g/L.',
+          chemicalControl: 'Spray Chlorantraniliprole 18.5% SC @ 0.3 ml/L or Emamectin Benzoate 5% SG @ 0.4 g/L.',
+          severity: 'HIGH',
+        },
+        {
+          name: 'Yellow Mosaic Virus (MYMV)',
+          type: 'VIRAL',
+          symptoms: 'Bright yellow mosaic chlorotic patches alternating with green on leaf blade; stunted pods with wrinkled grains.',
+          prevention: 'Plant MYMV-resistant cultivars; eradicate alternate weed hosts around field borders.',
+          organicControl: 'Spray 5% Neem Seed Kernel Extract (NSKE) to deter whitefly insect vectors (Bemisia tabaci).',
+          chemicalControl: 'Foliar spray of Thiamethoxam 25% WG @ 0.3 g/L or Acetamiprid 20% SP @ 0.3 g/L.',
+          severity: 'HIGH',
+        },
+        {
+          name: 'Fusarium Wilt & Collar Rot',
+          type: 'FUNGAL',
+          symptoms: 'Leaves turn dull green, droop and turn dry; vascular xylem bundle inside taproot displays dark brown discoloration.',
+          prevention: 'Deep summer ploughing; 3-year rotation with non-legume cereals like sorghum or maize.',
+          organicControl: 'Seed dressing with Trichoderma viride @ 8 g/kg seed + soil application of enriched FYM.',
+          chemicalControl: 'Seed treatment with Carbendazim + Mancozeb (2 g/kg seed).',
+          severity: 'HIGH',
+        },
+      ];
+    }
+
+    // 6. Poaceae / Gramineae (Cereals, Corn, Rice, Wheat, Millets, Sugarcane, Sorghum)
+    if (lowerFam.includes('poac') || lowerFam.includes('gramin') || category === 'Cereals' || lowerName.includes('corn') || lowerName.includes('maize') || lowerName.includes('wheat') || lowerName.includes('rice') || lowerName.includes('sorghum') || lowerName.includes('millet')) {
+      return [
+        {
+          name: 'Stem Borer & Fall Armyworm (Spodoptera frugiperda / Chilo partellus)',
+          type: 'PEST',
+          symptoms: 'Pinholes and ragged windowpane holes on leaves; sawdust-like frass inside whorl; central shoot dies ("dead heart").',
+          prevention: 'Intercrop with cowpea or desmodium (push-pull strategy); early synchronized planting.',
+          organicControl: 'Apply fine sand + neem cake (9:1) into central whorls; release Trichogramma egg parasitoids.',
+          chemicalControl: 'Whorl application of Chlorantraniliprole 18.5% SC @ 0.4 ml/L or Spinetoram 11.7% SC @ 0.5 ml/L.',
+          severity: 'HIGH',
+        },
+        {
+          name: 'Foliar Blight & Rust (Puccinia / Bipolaris / Pyricularia)',
+          type: 'FUNGAL',
+          symptoms: 'Spindle-shaped eye spots with grey centers or reddish-orange powdery pustules along leaf veins.',
+          prevention: 'Balanced nitrogen application (avoid excessive urea); maintain optimal plant population.',
+          organicControl: 'Foliar spray of Pseudomonas fluorescens @ 5 g/L or Bordeaux mixture (1%).',
+          chemicalControl: 'Spray Propiconazole 25% EC @ 1 ml/L or Tricyclazole 75% WP @ 0.6 g/L at first appearance.',
+          severity: 'HIGH',
+        },
+        {
+          name: 'Grain Smut & Blast Disease',
+          type: 'FUNGAL',
+          symptoms: 'Individual grains or entire panicles replaced by sooty black spore masses or neck nodes turn black and snap.',
+          prevention: 'Seed treatment with hot water (52°C for 10 min) or certified fungicides.',
+          organicControl: 'Seed dressing with Trichoderma viride @ 5 g/kg seed.',
+          chemicalControl: 'Foliar spray of Isoprothiolane 40% EC @ 1.5 ml/L or Tebuconazole @ 1 ml/L.',
+          severity: 'HIGH',
+        },
+      ];
+    }
+
+    // 7. Brassicaceae / Cruciferae (Cabbage, Cauliflower, Mustard, Radish, Broccoli)
+    if (lowerFam.includes('brassic') || lowerFam.includes('crucif') || lowerName.includes('cabbage') || lowerName.includes('cauliflower') || lowerName.includes('mustard') || lowerName.includes('radish') || lowerName.includes('broccoli')) {
+      return [
+        {
+          name: 'Diamondback Moth (DBM - Plutella xylostella)',
+          type: 'PEST',
+          symptoms: 'Small green caterpillars feed on undersides of leaves, chewing whitish windowpanes and skeletonizing foliage.',
+          prevention: 'Plant mustard as trap crop (2 rows mustard per 25 rows cabbage); install pheromone traps.',
+          organicControl: 'Foliar spray of Bacillus thuringiensis var. kurstaki (Bt) @ 2 g/L or NSKE 5%.',
+          chemicalControl: 'Spray Spinosad 45% SC @ 0.4 ml/L or Chlorantraniliprole 18.5% SC @ 0.3 ml/L.',
+          severity: 'HIGH',
+        },
+        {
+          name: 'Black Rot (Xanthomonas campestris pv. campestris)',
+          type: 'BACTERIAL',
+          symptoms: 'V-shaped chlorotic yellow-to-brown lesions on leaf margins with blackened vein network; head decay.',
+          prevention: 'Hot water seed treatment at 50°C for 30 minutes; 2-year crop rotation without crucifers.',
+          organicControl: 'Seed treatment with Pseudomonas fluorescens @ 10 g/kg seed.',
+          chemicalControl: 'Spray Copper Oxychloride 50% WP (2.5 g/L) + Streptocycline (200 ppm).',
+          severity: 'HIGH',
+        },
+        {
+          name: 'Alternaria Leaf Spot & White Rust',
+          type: 'FUNGAL',
+          symptoms: 'Concentric dark brown circular spots on leaves; white blister pustules on underside of mustard leaves.',
+          prevention: 'Avoid dense planting; remove lower infected diseased leaves.',
+          organicControl: 'Foliar spray of cow urine (10%) + Wettable Sulphur (2 g/L).',
+          chemicalControl: 'Spray Mancozeb 75% WP @ 2.5 g/L or Metalaxyl-Mancozeb @ 2 g/L.',
+          severity: 'MEDIUM',
+        },
+      ];
+    }
+
+    // 8. Rutaceae / Citrus (Orange, Lemon, Lime, Mandarin, Mosambi)
+    if (lowerFam.includes('rutac') || lowerName.includes('citrus') || lowerName.includes('orange') || lowerName.includes('lemon') || lowerName.includes('lime')) {
+      return [
+        {
+          name: 'Citrus Canker (Xanthomonas citri)',
+          type: 'BACTERIAL',
+          symptoms: 'Raised rough corky crater-like eruptive lesions surrounded by yellow oily halos on leaves, twigs, and fruit skin.',
+          prevention: 'Prune canker-affected twigs before monsoon; establish windbreak hedges around orchard.',
+          organicControl: 'Spray 1% Bordeaux mixture or Copper Hydroxide (2 g/L) after each vegetative flush.',
+          chemicalControl: 'Foliar spray of Streptocycline (200 ppm) + Copper Oxychloride (2.5 g/L).',
+          severity: 'HIGH',
+        },
+        {
+          name: 'Citrus Leaf Miner (Phyllocnistis citrella)',
+          type: 'PEST',
+          symptoms: 'Silvery serpentine zigzag tunnels in tender young leaves causing curling, distortion, and predisposing to canker.',
+          prevention: 'Avoid excessive nitrogen fertilization that stimulates continuous unseasonal flushes.',
+          organicControl: 'Foliar spray of cold-pressed Neem oil (5 ml/L) at initiation of fresh leaf flush.',
+          chemicalControl: 'Spray Imidacloprid 17.8% SL @ 0.5 ml/L or Thiamethoxam 25% WG @ 0.3 g/L.',
+          severity: 'HIGH',
+        },
+        {
+          name: 'Gummosis & Foot Rot (Phytophthora nicotianae)',
+          type: 'FUNGAL',
+          symptoms: 'Bark of trunk near ground cracks profusely, oozing golden-brown amber gum; yellowing and dieback of canopy.',
+          prevention: 'High budding (graft union at least 30 cm above ground); prevent irrigation water touching trunk.',
+          organicControl: 'Scrape diseased bark and paint with Bordeaux paste (10%) or Trichoderma viride paste.',
+          chemicalControl: 'Soil drench and trunk swab with Metalaxyl-Mancozeb (2.5 g/L) or Fosetyl-Al (2 g/L).',
+          severity: 'HIGH',
+        },
+      ];
+    }
+
+    // 9. Rosaceae / Pome & Stone Fruits (Apple, Pear, Peach, Strawberry)
+    if (lowerFam.includes('rosac') || lowerName.includes('apple') || lowerName.includes('pear') || lowerName.includes('peach') || lowerName.includes('strawberry')) {
+      return [
+        {
+          name: 'Apple & Pome Scab (Venturia inaequalis)',
+          type: 'FUNGAL',
+          symptoms: 'Velvety olive-green to black circular lesions on leaves and scabby, deformed, cracked fruit skin.',
+          prevention: 'Rake and burn fallen autumn foliage; spray urea (5%) on leaf litter to accelerate decomposition.',
+          organicControl: 'Foliar spray of wettable sulfur (3 g/L) or potassium bicarbonate.',
+          chemicalControl: 'Spray Mancozeb 75% WP (2.5 g/L) at green tip; Difenoconazole 25% EC (0.5 ml/L) at petal fall.',
+          severity: 'HIGH',
+        },
+        {
+          name: 'Fire Blight (Erwinia amylovora)',
+          type: 'BACTERIAL',
+          symptoms: 'Blossoms and shoot tips suddenly turn blackened and scorched as if burnt by fire; shepherd’s crook bend.',
+          prevention: 'Prune infected twigs 30 cm below visible blight margins; sterilize tools between cuts.',
+          organicControl: 'Foliar spray of Bordeaux mixture (0.5%) during bloom.',
+          chemicalControl: 'Spray Streptomycin sulphate (100 ppm) during 20% and 50% bloom.',
+          severity: 'HIGH',
+        },
+        {
+          name: 'Codling Moth & Fruit Borer (Cydia pomonella)',
+          type: 'PEST',
+          symptoms: 'Pinkish caterpillar bores directly into fruit core, feeding on pips and pushing reddish-brown frass outside.',
+          prevention: 'Install codlemone pheromone mating disruption dispensers; band trunks with corrugated cardboard.',
+          organicControl: 'Foliar spray of Cydia pomonella granulovirus (CpGV) or Spinosad (0.4 ml/L).',
+          chemicalControl: 'Spray Chlorantraniliprole 18.5% SC @ 0.3 ml/L or Emamectin Benzoate @ 0.4 g/L.',
+          severity: 'HIGH',
+        },
+      ];
+    }
+
+    // 10. Default High-Precision Agronomic Pathology by Category
+    if (category === 'Fruits') {
+      return [
+        {
+          name: 'Anthracnose & Fruit Rot (Colletotrichum spp.)',
+          type: 'FUNGAL',
+          symptoms: 'Circular sunken dark brown to black lesions with salmon-pink spore masses in moist weather.',
+          prevention: 'Prune dead diseased branches; ensure open canopy for sunlight penetration.',
+          organicControl: 'Foliar spray of cold-pressed Neem oil (3 ml/L) + Trichoderma viride.',
+          chemicalControl: 'Spray Carbendazim 50% WP @ 1 g/L or Azoxystrobin 23% SC @ 1 ml/L.',
+          severity: 'HIGH',
+        },
+        {
+          name: 'Fruit Fly (Bactrocera spp.)',
+          type: 'PEST',
+          symptoms: 'Punctured oviposition holes on fruit skin; maggots liquefy and ferment pulp, causing premature drop.',
+          prevention: 'Install methyl eugenol / cue-lure pheromone traps (10 traps/acre); harvest at mature green stage.',
+          organicControl: 'Protein bait spray with jaggery + Spinosad on lower canopy foliage.',
+          chemicalControl: 'Foliar spray of Malathion 50% EC @ 2 ml/L or Lambda Cyhalothrin @ 1 ml/L.',
+          severity: 'HIGH',
+        },
+        {
+          name: 'Powdery Mildew & Rust',
+          type: 'FUNGAL',
+          symptoms: 'White powdery superficial fungal coating on floral buds and tender young leaves, causing blossom drop.',
+          prevention: 'Maintain wide orchard tree spacing; avoid humid stagnant microclimates.',
+          organicControl: 'Spray Wettable Sulphur 80% WDG @ 2.5 g/L or baking soda (0.5%) soap solution.',
+          chemicalControl: 'Spray Hexaconazole 5% EC @ 1 ml/L or Difenoconazole 25% EC @ 0.5 ml/L.',
+          severity: 'MEDIUM',
+        },
+      ];
+    }
+
+    if (category === 'Vegetables') {
+      return [
+        {
+          name: 'Damping-Off & Collar Rot (Pythium / Rhizoctonia)',
+          type: 'FUNGAL',
+          symptoms: 'Water-soaked collar constriction at soil surface, causing seedlings to topple and collapse in patches.',
+          prevention: 'Prepare raised nursery beds (15 cm high); avoid waterlogging and heavy dense seeding.',
+          organicControl: 'Soil incorporation of Trichoderma harzianum enriched FYM @ 50 kg/acre.',
+          chemicalControl: 'Soil drenching with Metalaxyl 35% WS or Copper Oxychloride 50% WP @ 2.5 g/L.',
+          severity: 'HIGH',
+        },
+        {
+          name: 'Sucking Pests (Aphids, Thrips & Whiteflies)',
+          type: 'PEST',
+          symptoms: 'Curling of tender leaves, stunted shoot elongation, sticky honeydew exudation, and sooty mold.',
+          prevention: 'Install yellow and blue sticky traps (15/acre); plant barrier rows of maize or bajra.',
+          organicControl: 'Foliar spray of cold-pressed Neem Oil (10,000 ppm @ 3 ml/L) or Lecanicillium lecanii.',
+          chemicalControl: 'Spray Imidacloprid 17.8% SL @ 0.5 ml/L or Thiamethoxam 25% WG @ 0.3 g/L.',
+          severity: 'MEDIUM',
+        },
+        {
+          name: 'Foliar Leaf Spot & Blight (Alternaria / Cercospora)',
+          type: 'FUNGAL',
+          symptoms: 'Concentric necrotic circular brown spots surrounded by chlorotic yellow halos on foliage.',
+          prevention: 'Crop rotation; avoid overhead sprinkler watering during late afternoon.',
+          organicControl: 'Foliar spray of Pseudomonas fluorescens (5 g/L) or copper soap.',
+          chemicalControl: 'Spray Mancozeb 75% WP @ 2.5 g/L or Azoxystrobin @ 1 ml/L at first disease detection.',
+          severity: 'HIGH',
+        },
+      ];
+    }
+
+    // Baseline fall-back for all remaining crops
+    return [
+      {
+        name: `${cropName} Foliar Blight & Leaf Spot`,
+        type: 'FUNGAL',
+        symptoms: `Concentric necrotic spots on foliage of ${cropName}, reducing active photosynthetic green leaf area.`,
+        prevention: 'Crop rotation; maintain adequate plant spacing and field sanitation.',
+        organicControl: 'Seed treatment with Trichoderma viride @ 5 g/kg seed and foliar spray of Pseudomonas fluorescens.',
+        chemicalControl: 'Foliar spray of Mancozeb 75% WP @ 2.5 g/L or Azoxystrobin @ 1 ml/L at symptom onset.',
+        severity: 'HIGH',
+      },
+      {
+        name: `${cropName} Sucking Pests & Aphids`,
+        type: 'PEST',
+        symptoms: 'Clusters of sucking nymphs and adults feeding on tender shoots, causing foliar crinkling and leaf curling.',
+        prevention: 'Install yellow sticky traps (15 traps/acre); intercrop with marigold or cowpea.',
+        organicControl: 'Foliar spray of cold-pressed Neem Oil 10,000 ppm @ 3 ml/L water.',
+        chemicalControl: 'Foliar spray of Imidacloprid 17.8% SL @ 0.5 ml/L or Thiamethoxam @ 0.3 g/L.',
+        severity: 'MEDIUM',
+      },
+      {
+        name: `${cropName} Root Rot & Wilt Complex`,
+        type: 'FUNGAL',
+        symptoms: `Underground root decay and vascular discoloration in ${cropName}, causing sudden daytime foliage wilting.`,
+        prevention: 'Ensure raised planting beds and well-drained fertile loam; avoid water stagnation.',
+        organicControl: 'Soil drenching with Trichoderma harzianum enriched FYM @ 50 kg/acre.',
+        chemicalControl: 'Soil drench with Carbendazim 50% WP @ 2 g/L or Metalaxyl 35% WS.',
+        severity: 'HIGH',
+      },
+    ];
+  }
 }
 
 export const externalEnrichmentService = new ExternalEnrichmentService();
+
 
