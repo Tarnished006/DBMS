@@ -139,13 +139,14 @@ export function CropDetailPage() {
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                 <span>ICAR & Agrisnet Verified</span>
               </span>
-              {crop.lifeCycle && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 text-xs font-bold border border-purple-200">
-                  <Clock className="w-3 h-3" />
-                  <span>{crop.lifeCycle}</span>
+              {crop.isDynamicallyDiscovered && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-xs font-bold text-indigo-800">
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>On-Demand Botanical Synthesis</span>
                 </span>
               )}
             </div>
+
 
             {/* Title & Local Names */}
             <div>
@@ -182,6 +183,16 @@ export function CropDetailPage() {
               {crop.description ||
                 `${crop.cropName} is an essential agricultural crop grown according to verified local soil, climate, water, and agronomic management standards.`}
             </p>
+
+            {crop.isDynamicallyDiscovered && (
+              <div className="bg-gradient-to-r from-indigo-50/80 via-emerald-50/50 to-white border border-indigo-100 p-3.5 rounded-2xl flex items-start gap-2.5 text-xs text-slate-700">
+                <Sparkles className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Global Agronomy Engine:</strong> This crop guide was dynamically generated in real time from botanical taxonomy APIs and cross-linked with official ICAR & Vikaspedia agricultural portals.
+                </span>
+              </div>
+            )}
+
 
             {/* Quick Live Link Tickers (Market & Mandi Integration) */}
             <div className="pt-2 flex flex-wrap items-center gap-3">

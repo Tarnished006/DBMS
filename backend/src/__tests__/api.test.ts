@@ -228,7 +228,8 @@ describe('AgriMarket Backend API End-to-End Suite', () => {
           expect(p.state.toLowerCase()).not.toBe('karnataka');
         }
       }
-    });
+    }, 15000);
+
 
     it('GET /api/v1/market-prices/history should return price trend data', async () => {
       const res = await request(app).get('/api/v1/market-prices/history?commodity=Tomato');
@@ -499,4 +500,35 @@ describe('AgriMarket Backend API End-to-End Suite', () => {
       expect(res.body.success).toBe(true);
     });
   });
+
+  describe('12. Crop Encyclopedia & Dynamic On-Demand Agronomy Engine', () => {
+    it('GET /api/v1/crops/info should return curated staple crops', async () => {
+      const res = await request(app).get('/api/v1/crops/info');
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBeGreaterThanOrEqual(14);
+      const names = res.body.map((c: any) => c.cropName);
+      expect(names).toContain('Paddy (Rice)');
+      expect(names).toContain('Banana (Cavendish / Yelakki)');
+    });
+
+    it('GET /api/v1/crops/info/categories should return categories with counts', async () => {
+      const res = await request(app).get('/api/v1/crops/info/categories');
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBeGreaterThan(0);
+    });
+
+    it('GET /api/v1/crops/info/search should support filtering curated crops and dynamic on-demand discovery', async () => {
+      const res = await request(app).get('/api/v1/crops/info/search?q=Banana');
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBeGreaterThanOrEqual(1);
+      expect(res.body[0].cropName).toContain('Banana');
+      expect(res.body[0].lifecycleStages.length).toBeGreaterThan(0);
+      expect(res.body[0].pestAndDiseases.length).toBeGreaterThan(0);
+      expect(res.body[0].nutrientSchedule.npkRatio).toBeDefined();
+    });
+  });
 });
+

@@ -28,15 +28,79 @@ export class CropInfoService {
     return Promise.all(list.map((c) => this.enrichCrop(c)));
   }
 
+  private registerCropToMemory(crop: ComprehensiveCropData): void {
+    if (!memoryDb.crop_info.some((c) => c.id === crop.id)) {
+      memoryDb.crop_info.push({
+        id: crop.id,
+        crop_name: crop.cropName,
+        cropName: crop.cropName,
+        scientific_name: crop.scientificName,
+        scientificName: crop.scientificName,
+        family: crop.family,
+        category: crop.category,
+        kannada_name: crop.localNames.kannada,
+        hindi_name: crop.localNames.hindi,
+        localNames: crop.localNames,
+        description: crop.description,
+        image_url: crop.imageUrl,
+        imageUrl: crop.imageUrl,
+        optimal_temperature_min: crop.optimalTemperatureMin,
+        optimal_temperature_max: crop.optimalTemperatureMax,
+        rainfall_min: crop.rainfallMin,
+        rainfall_max: crop.rainfallMax,
+        soil_type: crop.soilType,
+        soil_ph: crop.soilPh,
+        water_requirement: crop.waterRequirement,
+        growth_duration_days: crop.growthDurationDays,
+        sowing_season: crop.sowingSeason,
+        harvest_season: crop.harvestSeason,
+        growing_duration: `${crop.growthDurationDays} Days`,
+        temperature_requirements: `${crop.optimalTemperatureMin}°C - ${crop.optimalTemperatureMax}°C`,
+        water_requirements: crop.waterRequirement,
+        soil_requirements: crop.soilType,
+        growth_stages: crop.growthStages,
+        mandi_commodity: crop.mandiCommodity,
+        created_date: new Date(),
+        last_modified_date: new Date(),
+        is_dynamically_discovered: crop.id.startsWith('crop-discovered-'),
+      });
+    }
+
+    if (!CROP_ENCYCLOPEDIA_DATA.some((c) => c.id === crop.id)) {
+      CROP_ENCYCLOPEDIA_DATA.push(crop);
+    }
+  }
+
   async getCropById(cropId: string): Promise<CropInfoDto> {
+    let row: any = null;
     if (isPostgres()) {
       const res = await db.query('SELECT * FROM crop_info WHERE id = $1', [cropId]);
-      if (res.rows.length === 0) throw new BusinessException('RESOURCE_NOT_FOUND', 'Crop info not found');
-      return this.enrichCrop(res.rows[0], true);
+      if (res.rows.length > 0) row = res.rows[0];
     }
-    const c = memoryDb.crop_info.find((cr) => cr.id === cropId);
-    if (!c) throw new BusinessException('RESOURCE_NOT_FOUND', 'Crop info not found');
-    return this.enrichCrop(c, true);
+    if (!row) {
+      row = memoryDb.crop_info.find((cr) => cr.id === cropId);
+    }
+
+    if (!row) {
+      // Check if crop exists in curated CROP_ENCYCLOPEDIA_DATA (e.g. newly added crops)
+      const inCurated = CROP_ENCYCLOPEDIA_DATA.find((c) => c.id === cropId);
+      if (inCurated) {
+        this.registerCropToMemory(inCurated);
+        return this.enrichCrop(inCurated, true);
+      }
+
+      // Try on-demand synthesis from Wikipedia & Gov sources
+      const cleanName = cropId.replace(/^crop-discovered-/, '').replace(/^crop-/, '').replace(/-\d+$/, '').replace(/-/g, ' ');
+      const discovered = await externalEnrichmentService.discoverAndSynthesizeCrop(cleanName);
+      if (discovered) {
+        this.registerCropToMemory(discovered);
+        return this.enrichCrop(discovered, true);
+      }
+
+      throw new BusinessException('RESOURCE_NOT_FOUND', 'Crop info not found');
+    }
+
+    return this.enrichCrop(row, true);
   }
 
   async searchCrops(query: string, category?: string): Promise<CropInfoDto[]> {
@@ -44,6 +108,8 @@ export class CropInfoService {
     const cat = category && category.toLowerCase() !== 'all' ? category.toLowerCase().trim() : null;
 
     if (!q && !cat) return this.getAllCrops();
+
+    let results: CropInfoDto[] = [];
 
     if (isPostgres()) {
       const conditions: string[] = [];
@@ -63,23 +129,58 @@ export class CropInfoService {
 
       const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
       const res = await db.query(`SELECT * FROM crop_info ${whereClause} ORDER BY crop_name ASC`, params);
-      return Promise.all(res.rows.map((r: any) => this.enrichCrop(r)));
+      results = await Promise.all(res.rows.map((r: any) => this.enrichCrop(r)));
+    } else {
+      const list = memoryDb.crop_info.filter((c) => {
+        const matchesQ =
+          !q ||
+          c.crop_name.toLowerCase().includes(q) ||
+          c.scientific_name?.toLowerCase().includes(q) ||
+          c.category?.toLowerCase().includes(q) ||
+          c.description?.toLowerCase().includes(q) ||
+          c.kannada_name?.toLowerCase().includes(q) ||
+          c.localNames?.kannada?.toLowerCase().includes(q);
+        const matchesCat = !cat || c.category?.toLowerCase().includes(cat);
+        return matchesQ && matchesCat;
+      });
+      results = await Promise.all(list.map((c) => this.enrichCrop(c)));
     }
 
-    const list = memoryDb.crop_info.filter((c) => {
-      const matchesQ =
-        !q ||
-        c.crop_name.toLowerCase().includes(q) ||
-        c.scientific_name?.toLowerCase().includes(q) ||
-        c.category?.toLowerCase().includes(q) ||
-        c.description?.toLowerCase().includes(q) ||
-        c.kannada_name?.toLowerCase().includes(q) ||
-        c.localNames?.kannada?.toLowerCase().includes(q);
-      const matchesCat = !cat || c.category?.toLowerCase().includes(cat);
-      return matchesQ && matchesCat;
-    });
+    // Dynamic Botanical Discovery & Agronomic Synthesis Engine:
+    // If 0 crops matched in DB and the user searched for any crop name (>= 2 chars),
+    // fetch botanical taxonomy & synthesize comprehensive datasheet on-the-fly!
+    if (results.length === 0 && q.length >= 2) {
+      const discovered = await externalEnrichmentService.discoverAndSynthesizeCrop(q);
+      if (discovered) {
+        this.registerCropToMemory(discovered);
+        if (isPostgres()) {
+          try {
+            await db.query(
+              `INSERT INTO crop_info (
+                id, crop_name, scientific_name, family, category, kannada_name, hindi_name,
+                description, image_url, optimal_temperature_min, optimal_temperature_max,
+                rainfall_min, rainfall_max, soil_type, soil_ph, water_requirement, growth_duration_days,
+                life_cycle, sowing_season, harvest_season, mandi_commodity, created_date, last_modified_date
+              ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,NOW(),NOW())
+              ON CONFLICT (id) DO NOTHING`,
+              [
+                discovered.id, discovered.cropName, discovered.scientificName, discovered.family,
+                discovered.category, discovered.localNames.kannada, discovered.localNames.hindi,
+                discovered.description, discovered.imageUrl, discovered.optimalTemperatureMin,
+                discovered.optimalTemperatureMax, discovered.rainfallMin, discovered.rainfallMax,
+                discovered.soilType, discovered.soilPh, discovered.waterRequirement,
+                discovered.growthDurationDays, discovered.lifeCycle, discovered.sowingSeason,
+                discovered.harvestSeason, discovered.mandiCommodity,
+              ]
+            );
+          } catch {}
+        }
+        const enriched = await this.enrichCrop(discovered, false);
+        return [enriched];
+      }
+    }
 
-    return Promise.all(list.map((c) => this.enrichCrop(c)));
+    return results;
   }
 
   async getCategories(): Promise<{ name: string; count: number }[]> {
@@ -93,6 +194,9 @@ export class CropInfoService {
   }
 
   private findMatchingCuratedCrop(row: any): ComprehensiveCropData | undefined {
+    if (row.lifecycleStages && row.pestAndDiseases) {
+      return row as ComprehensiveCropData;
+    }
     return CROP_ENCYCLOPEDIA_DATA.find(
       (c) =>
         c.id === row.id ||
@@ -101,6 +205,7 @@ export class CropInfoService {
         c.cropName.toLowerCase().includes((row.crop_name || '').toLowerCase().split(' ')[0])
     );
   }
+
 
   private async getLiveMandiPrice(commodityName?: string): Promise<{ modalPrice: number; market: string; state: string } | null> {
     if (!commodityName) return null;
@@ -268,7 +373,9 @@ export class CropInfoService {
       activeMarketplaceListingsCount: activeListingsCount,
       govAdvisoryLinks,
       wikiBotanical,
+      isDynamicallyDiscovered: Boolean(row.is_dynamically_discovered || matched?.id?.startsWith('crop-discovered-') || row.id?.startsWith('crop-discovered-')),
     };
+
   }
 }
 

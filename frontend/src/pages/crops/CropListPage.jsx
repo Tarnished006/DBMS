@@ -23,11 +23,14 @@ const CATEGORIES = [
   { id: 'ALL', label: 'All Crops' },
   { id: 'Cereal', label: 'Cereals & Millets' },
   { id: 'Pulse', label: 'Pulses & Legumes' },
+  { id: 'Oilseed', label: 'Oilseeds' },
   { id: 'Vegetable', label: 'Vegetables & Tubers' },
-  { id: 'Commercial', label: 'Commercial & Cash' },
+  { id: 'Fruit', label: 'Fruits & Horticulture' },
   { id: 'Spice', label: 'Spices & Condiments' },
-  { id: 'Plantation', label: 'Plantation & Fruit' },
+  { id: 'Commercial', label: 'Commercial & Cash' },
+  { id: 'Plantation', label: 'Plantation Crops' },
 ];
+
 
 export function CropListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -232,13 +235,20 @@ export function CropListPage() {
                   }}
                 />
 
-                {/* Top Badge: Category */}
+                {/* Top Badge: Category & Dynamic Discovery indicator */}
                 <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
                   <span className="text-[10px] font-bold uppercase tracking-wider bg-white/95 text-slate-800 px-2.5 py-1 rounded-xl backdrop-blur-md border border-white/60 shadow-soft-sm flex items-center gap-1">
                     <Tag className="w-3 h-3 text-brand-600" />
                     <span>{crop.category || 'Produce'}</span>
                   </span>
+                  {crop.isDynamicallyDiscovered && (
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-600/90 text-white px-2 py-0.5 rounded-lg flex items-center gap-1 shadow-soft-sm backdrop-blur-sm">
+                      <Sparkles className="w-3 h-3 text-amber-300" />
+                      <span>Live Synthesized</span>
+                    </span>
+                  )}
                 </div>
+
 
                 {/* Bottom Overlay: Kannada Local Name Badge */}
                 {crop.localNames?.kannada && (

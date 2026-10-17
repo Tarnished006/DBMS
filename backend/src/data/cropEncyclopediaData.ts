@@ -1670,3 +1670,7 @@ export const CROP_ENCYCLOPEDIA_DATA: ComprehensiveCropData[] = [
     commonDiseases: ['Mango Hopper', 'Anthracnose', 'Fruit Fly', 'Powdery Mildew'],
   },
 ];
+
+import { EXPANDED_CROP_ENCYCLOPEDIA_DATA } from './expandedCropEncyclopediaData.js';
+CROP_ENCYCLOPEDIA_DATA.push(...EXPANDED_CROP_ENCYCLOPEDIA_DATA);
+
