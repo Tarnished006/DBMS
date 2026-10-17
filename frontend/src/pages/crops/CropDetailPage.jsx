@@ -24,7 +24,9 @@ import {
   Globe,
   Award,
   Sparkles,
+  Compass,
 } from 'lucide-react';
+
 import { cropInfoService } from '@/services/cropInfo/cropInfoService';
 import { Breadcrumb } from '@/components/common/Breadcrumb';
 import { Button } from '@/components/common/Button';
@@ -197,20 +199,23 @@ export function CropDetailPage() {
             {/* Quick Live Link Tickers (Market & Mandi Integration) */}
             <div className="pt-2 flex flex-wrap items-center gap-3">
               {/* Live Mandi Ticker */}
-              {crop.liveMandiPrice ? (
+              {crop.liveMandiPrice?.modalPrice ? (
                 <Link
                   to={`/market-prices?commodity=${encodeURIComponent(crop.mandiCommodity || crop.cropName)}`}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-amber-50 border border-amber-200/90 text-amber-950 text-xs sm:text-sm font-bold hover:bg-amber-100 transition-colors shadow-soft-sm"
                 >
                   <TrendingUp className="w-4 h-4 text-amber-600 shrink-0" />
                   <span>
-                    Live Mandi: <strong className="text-emerald-700 font-extrabold">₹{crop.liveMandiPrice.modalPrice.toLocaleString()}/Qtl</strong>
+                    Live Mandi: <strong className="text-emerald-700 font-extrabold">₹{Number(crop.liveMandiPrice.modalPrice).toLocaleString()}/Qtl</strong>
                   </span>
-                  <span className="text-[11px] font-normal text-amber-800 hidden sm:inline">
-                    ({crop.liveMandiPrice.market})
-                  </span>
+                  {crop.liveMandiPrice.market && (
+                    <span className="text-[11px] font-normal text-amber-800 hidden sm:inline">
+                      ({crop.liveMandiPrice.market})
+                    </span>
+                  )}
                 </Link>
               ) : null}
+
 
               {/* Active Marketplace Listings */}
               <Link

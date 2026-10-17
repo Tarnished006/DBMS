@@ -296,9 +296,10 @@ export function CropListPage() {
                         <TrendingUp className="w-3.5 h-3.5 text-amber-600" />
                         <span>Live Mandi:</span>
                       </span>
-                      <span className="text-emerald-700">₹{crop.liveMandiPrice.modalPrice.toLocaleString()}/Qtl</span>
+                      <span className="text-emerald-700">₹{Number(crop.liveMandiPrice.modalPrice).toLocaleString()}/Qtl</span>
                     </div>
                   ) : null}
+
 
                   {/* CTA link */}
                   <div className="pt-2 flex items-center justify-between text-xs font-bold text-brand-600 group-hover:text-brand-700">
