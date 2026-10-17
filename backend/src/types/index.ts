@@ -356,7 +356,13 @@ export interface ProducePoolDto {
   unit: string;
   avgPricePerUnit: number;
   participatingFarmersCount: number;
+  targetCapacity?: number;
+  vehicleType?: string;
+  pickupHub?: string;
+  departureTime?: string;
+  destinationMandi?: string;
   products: ProductDto[];
   estimatedFreightSavingsPercentage: number;
 }
+
 

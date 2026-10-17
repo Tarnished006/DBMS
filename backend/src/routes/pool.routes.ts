@@ -14,4 +14,15 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
+// Farmer pledges a harvest lot directly into the consolidated pool
+router.post('/pledge', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await producePoolService.pledgeToPool(req.body);
+    res.status(201).json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
+

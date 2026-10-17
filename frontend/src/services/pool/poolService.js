@@ -6,4 +6,10 @@ export const poolService = {
     const res = await apiClient.get('/api/v1/pools', { params });
     return res.data;
   },
+
+  // Farmer pledges harvest produce to a village pool
+  async pledgeToPool(payload) {
+    const res = await apiClient.post('/api/v1/pools/pledge', payload);
+    return res.data;
+  },
 };
