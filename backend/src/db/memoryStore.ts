@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ENV } from '../config/env.js';
 import { RAW_PAN_INDIA_MANDI_RECORDS } from '../data/panIndiaMandiData.js';
 import { MASTER_AGRICULTURAL_PRODUCTS } from '../data/agriculturalProductsData.js';
+import { CROP_ENCYCLOPEDIA_DATA } from '../data/cropEncyclopediaData.js';
 
 export interface MemoryDb {
   users: any[];
@@ -329,74 +330,39 @@ export async function initMemoryStore(): Promise<void> {
     });
   }
 
-  // 7. Crop Info
-  const crops = [
-    {
-      id: uuidv4(),
-      crop_name: 'Paddy (Rice)',
-      scientific_name: 'Oryza sativa',
-      family: 'Poaceae',
-      category: 'Cereal',
-      optimal_temperature_min: 20,
-      optimal_temperature_max: 35,
-      rainfall_min: 1000,
-      rainfall_max: 1500,
-      soil_type: 'Clayey Loam',
-      water_requirement: 'High',
-      growth_duration_days: 120,
-      life_cycle: 'ANNUAL',
-      harvest_season: 'Kharif / Rabi',
-      sowing_season: 'June - July',
-      diseases: ['Blast', 'Bacterial Leaf Blight', 'Brown Spot'],
-      uses: ['Staple food grain', 'Rice bran oil', 'Straw animal fodder'],
-    },
-    {
-      id: uuidv4(),
-      crop_name: 'Cotton',
-      scientific_name: 'Gossypium hirsutum',
-      family: 'Malvaceae',
-      category: 'Fiber Crop',
-      optimal_temperature_min: 21,
-      optimal_temperature_max: 30,
-      rainfall_min: 500,
-      rainfall_max: 800,
-      soil_type: 'Black Cotton Soil',
-      water_requirement: 'Medium',
-      growth_duration_days: 160,
-      life_cycle: 'ANNUAL',
-      harvest_season: 'October - January',
-      sowing_season: 'May - June',
-      diseases: ['Bollworm', 'Fusarium Wilt', 'Leaf Curl Virus'],
-      uses: ['Textile yarn', 'Cottonseed oil', 'Animal cake'],
-    },
-    {
-      id: uuidv4(),
-      crop_name: 'Ragi (Finger Millet)',
-      scientific_name: 'Eleusine coracana',
-      family: 'Poaceae',
-      category: 'Nutri-Cereal',
-      optimal_temperature_min: 15,
-      optimal_temperature_max: 30,
-      rainfall_min: 400,
-      rainfall_max: 750,
-      soil_type: 'Red Sandy Loam',
-      water_requirement: 'Low (Drought Tolerant)',
-      growth_duration_days: 100,
-      life_cycle: 'ANNUAL',
-      harvest_season: 'September - November',
-      sowing_season: 'July - August',
-      diseases: ['Ragi Blast', 'Foot Rot'],
-      uses: ['Nutritious flour (Mudde)', 'Malted baby food', 'Fodder'],
-    },
-  ];
+  // 7. Crop Info (Seeded with comprehensive agronomic encyclopedic data)
+  for (const c of CROP_ENCYCLOPEDIA_DATA) {
+    const { uses, commonDiseases, ...rest } = c;
+    memoryDb.crop_info.push({
+      ...rest,
+      crop_name: c.cropName,
+      scientific_name: c.scientificName,
+      kannada_name: c.localNames?.kannada,
+      hindi_name: c.localNames?.hindi,
+      optimal_temperature_min: c.optimalTemperatureMin,
+      optimal_temperature_max: c.optimalTemperatureMax,
+      rainfall_min: c.rainfallMin,
+      rainfall_max: c.rainfallMax,
+      soil_type: c.soilType,
+      soil_ph: c.soilPh,
+      water_requirement: c.waterRequirement,
+      growth_duration_days: c.growthDurationDays,
+      sowing_season: c.sowingSeason,
+      harvest_season: c.harvestSeason,
+      growing_duration: `${c.growthDurationDays} Days`,
+      temperature_requirements: `${c.optimalTemperatureMin}°C - ${c.optimalTemperatureMax}°C`,
+      water_requirements: c.waterRequirement,
+      soil_requirements: c.soilType,
+      growth_stages: c.growthStages,
+      mandi_commodity: c.mandiCommodity,
+      created_date: new Date(),
+      last_modified_date: new Date(),
+    });
 
-  for (const c of crops) {
-    const { diseases, uses, ...rest } = c;
-    memoryDb.crop_info.push({ ...rest, created_date: new Date(), last_modified_date: new Date() });
-    for (const d of diseases) {
+    for (const d of commonDiseases || []) {
       memoryDb.crop_info_common_diseases.push({ crop_info_id: c.id, disease: d });
     }
-    for (const u of uses) {
+    for (const u of uses || []) {
       memoryDb.crop_info_uses.push({ crop_info_id: c.id, use_case: u });
     }
   }

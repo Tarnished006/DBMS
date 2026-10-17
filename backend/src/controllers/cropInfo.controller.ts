@@ -2,9 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import { cropInfoService } from '../services/cropInfo.service.js';
 
 export class CropInfoController {
-  async getAllCrops(_req: Request, res: Response, next: NextFunction) {
+  async getAllCrops(req: Request, res: Response, next: NextFunction) {
     try {
-      const crops = await cropInfoService.getAllCrops();
+      const category = (req.query.category || req.query.cat) as string | undefined;
+      const crops = await cropInfoService.getAllCrops(category);
       res.json(crops);
     } catch (err) {
       next(err);
@@ -14,8 +15,18 @@ export class CropInfoController {
   async searchCrops(req: Request, res: Response, next: NextFunction) {
     try {
       const query = (req.query.query || req.query.q || '') as string;
-      const crops = await cropInfoService.searchCrops(query);
+      const category = (req.query.category || req.query.cat) as string | undefined;
+      const crops = await cropInfoService.searchCrops(query, category);
       res.json(crops);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getCategories(_req: Request, res: Response, next: NextFunction) {
+    try {
+      const categories = await cropInfoService.getCategories();
+      res.json(categories);
     } catch (err) {
       next(err);
     }
