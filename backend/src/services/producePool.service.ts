@@ -248,7 +248,140 @@ export class ProducePoolService {
       slip,
     };
   }
+
+  /**
+   * Farmer initiates / requests a new dedicated community truck pool route
+   */
+  async requestRoute(data: {
+    cropName: string;
+    talukName?: string;
+    districtName?: string;
+    villageOrTown?: string;
+    farmerName?: string;
+    farmerId?: string;
+    initialQuantity: number;
+    pricePerUnit?: number;
+    targetVehicle?: string;
+    departureDate?: string;
+    destinationMandi?: string;
+  }): Promise<{ success: boolean; message: string; pool: ProducePoolDto; slip: any }> {
+    const crop = data.cropName?.trim() || 'Tomatoes';
+    const talukName = data.talukName?.trim() || 'Devanahalli';
+    const districtName = data.districtName?.trim() || 'Bengaluru Rural';
+    const village = data.villageOrTown?.trim() || `${talukName} Village Hub`;
+    const farmer = data.farmerName?.trim() || 'Initiating Farmer';
+    const qty = Number(data.initialQuantity) || 500;
+    const price = Number(data.pricePerUnit) || 30;
+    const destination = data.destinationMandi?.trim() || 'Yeshwanthpur Wholesale Terminal, Bengaluru';
+    const departure = data.departureDate?.trim() || 'Tomorrow at 06:30 AM (Weighment closes 05:45 AM)';
+
+    const newProdId = `prod-route-${Date.now()}`;
+
+    // Lookup taluk in memoryDb
+    const talukMatch = memoryDb.taluks.find(
+      (t) => t.name.toLowerCase() === talukName.toLowerCase()
+    );
+    const talukId = talukMatch ? talukMatch.id : 'taluk-devanahalli';
+
+    // Insert new product
+    const newProduct = {
+      id: newProdId,
+      category_id: 'cat-harvested',
+      farmer_id: data.farmerId || 'demo-farmer-id',
+      seller_id: data.farmerId || 'demo-farmer-id',
+      farmer_name: farmer,
+      seller_name: farmer,
+      name: crop,
+      description: `Initiating batch for pooled community truck from ${village}, ${talukName}.`,
+      price,
+      price_per_unit: price,
+      unit: 'KG',
+      status: 'ACTIVE',
+      badge: 'Grade A (Route Originator)',
+      created_date: new Date(),
+      last_modified_date: new Date(),
+    };
+    memoryDb.products.unshift(newProduct);
+
+    // Location snapshot
+    const snapId = `snap-route-${Date.now()}`;
+    memoryDb.product_location_snapshots.push({
+      id: snapId,
+      product_id: newProdId,
+      taluk_id: talukId,
+      village_or_town: village,
+      district: districtName,
+      state: 'Karnataka',
+      pin_code: '562110',
+      created_date: new Date(),
+      last_modified_date: new Date(),
+    });
+
+    // Inventory
+    memoryDb.inventory.push({
+      id: `inv-route-${Date.now()}`,
+      product_id: newProdId,
+      total_quantity: qty,
+      available_quantity: qty,
+      reserved_quantity: 0,
+      unit: 'KG',
+      created_date: new Date(),
+      last_modified_date: new Date(),
+    });
+
+    // If Postgres is connected
+    if (isPostgres()) {
+      try {
+        await db.query(
+          `INSERT INTO products (id, category_id, seller_id, name, description, price_per_unit, unit, status, created_date, last_modified_date)
+           VALUES ($1, $2, $3, $4, $5, $6, 'KG', 'ACTIVE', NOW(), NOW())`,
+          [newProdId, 'cat-1', data.farmerId || '11111111-2222-3333-4444-555555555555', crop, newProduct.description, price]
+        );
+        await db.query(
+          `INSERT INTO inventory (id, product_id, total_quantity, available_quantity, reserved_quantity, created_date, last_modified_date)
+           VALUES ($1, $2, $3, $4, 0, NOW(), NOW())`,
+          [`inv-route-${Date.now()}`, newProdId, qty, qty]
+        );
+      } catch {}
+    }
+
+    const updatedPools = await this.getConsolidatedPools();
+    const pool =
+      updatedPools.find(
+        (p) =>
+          p.cropName.toLowerCase() === crop.toLowerCase() &&
+          p.talukName?.toLowerCase() === talukName.toLowerCase()
+      ) || updatedPools[0];
+
+    const vehicle =
+      data.targetVehicle ||
+      (qty <= 2500 ? 'Tata Ace Mega (3.5 MT)' : qty <= 5000 ? 'Tata 407 LPT (5 MT)' : 'Eicher Pro 2049 (10 MT)');
+
+    const slip = {
+      slipNumber: `TRK-REQ-${Math.floor(100000 + Math.random() * 900000)}`,
+      bookingType: 'New Dedicated Community Truck Route',
+      farmerName: farmer,
+      village,
+      taluk: talukName,
+      cropName: crop,
+      initialQuantity: `${qty} KG`,
+      targetCapacity: `${pool?.targetCapacity || 3500} KG`,
+      vehicleAssigned: vehicle,
+      pickupBay: `${talukName} APMC Logistics Bay 1`,
+      departureSchedule: departure,
+      destinationMandi: destination,
+      freightSavings: 'Up to 75% Community Freight Discount',
+    };
+
+    return {
+      success: true,
+      message: `New truck pool route initiated for ${crop} in ${talukName}! Other farmers can now join.`,
+      pool,
+      slip,
+    };
+  }
 }
 
 export const producePoolService = new ProducePoolService();
+
 

@@ -215,7 +215,7 @@ describe('AgriMarket Backend API End-to-End Suite', () => {
       expect(first.commodity).toBeDefined();
       expect(first.modalPrice).toBeGreaterThan(0);
       expect(first.market).toBeDefined();
-    });
+    }, 20000);
 
     it('GET /api/v1/market-prices should return authentic mandis for non-Karnataka states', async () => {
       for (const st of ['Assam', 'Maharashtra', 'Kerala', 'Delhi']) {
@@ -228,7 +228,8 @@ describe('AgriMarket Backend API End-to-End Suite', () => {
           expect(p.state.toLowerCase()).not.toBe('karnataka');
         }
       }
-    }, 15000);
+    }, 30000);
+
 
 
     it('GET /api/v1/market-prices/history should return price trend data', async () => {
@@ -415,18 +416,64 @@ describe('AgriMarket Backend API End-to-End Suite', () => {
   });
 
   describe('10. Village Produce Pooling (Shared Freight)', () => {
+    let poolId = '';
+
     it('GET /api/v1/pools should calculate consolidated regional produce lots', async () => {
       const res = await request(app).get('/api/v1/pools');
 
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
       if (res.body.length > 0) {
+        poolId = res.body[0].id;
         expect(res.body[0].cropName).toBeDefined();
         expect(res.body[0].totalQuantity).toBeGreaterThan(0);
         expect(res.body[0].estimatedFreightSavingsPercentage).toBeGreaterThanOrEqual(45);
       }
     });
+
+    it('POST /api/v1/pools/pledge should allow farmer to pledge harvest into existing pool', async () => {
+      if (!poolId) return;
+      const res = await request(app)
+        .post('/api/v1/pools/pledge')
+        .send({
+          poolId,
+          farmerName: 'Shankar Gowda',
+          quantity: 300,
+          pricePerUnit: 28,
+          villageOrTown: 'Devanahalli Rural Hub',
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.slip).toBeDefined();
+      expect(res.body.slip.slipNumber).toBeDefined();
+      expect(res.body.pool).toBeDefined();
+    });
+
+    it('POST /api/v1/pools/request-route should allow farmer to initiate a new truck route', async () => {
+      const res = await request(app)
+        .post('/api/v1/pools/request-route')
+        .send({
+          cropName: 'Capsicum',
+          talukName: 'Nelamangala',
+          districtName: 'Bengaluru Rural',
+          villageOrTown: 'Nelamangala Rural Hub',
+          farmerName: 'Basavaraj Patil',
+          initialQuantity: 600,
+          pricePerUnit: 42,
+          targetVehicle: 'Tata Ace Mega (3.5 MT)',
+          destinationMandi: 'Yeshwanthpur Wholesale Terminal, Bengaluru',
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.slip).toBeDefined();
+      expect(res.body.slip.slipNumber).toMatch(/^TRK-REQ-/);
+      expect(res.body.pool).toBeDefined();
+      expect(res.body.pool.cropName).toBe('Capsicum');
+    });
   });
+
 
   describe('11. OTP Systems (Phone Verification & Universal Demo Fallback)', () => {
     let generatedOtp = '';

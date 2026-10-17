@@ -24,5 +24,16 @@ router.post('/pledge', async (req: Request, res: Response, next: NextFunction) =
   }
 });
 
+// Farmer requests / initiates a new truck pool route
+router.post('/request-route', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await producePoolService.requestRoute(req.body);
+    res.status(201).json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
+
 

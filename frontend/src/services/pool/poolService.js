@@ -12,4 +12,11 @@ export const poolService = {
     const res = await apiClient.post('/api/v1/pools/pledge', payload);
     return res.data;
   },
+
+  // Farmer requests / initiates a new community truck route
+  async requestRoute(payload) {
+    const res = await apiClient.post('/api/v1/pools/request-route', payload);
+    return res.data;
+  },
 };
+
