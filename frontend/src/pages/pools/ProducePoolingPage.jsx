@@ -20,8 +20,6 @@ import {
   Clock,
   Search,
   ExternalLink,
-  CalendarDays,
-  ShieldCheck,
 } from 'lucide-react';
 import { poolService } from '@/services/pool/poolService';
 import { Button } from '@/components/common/Button';
@@ -870,20 +868,6 @@ export function ProducePoolingPage() {
                     placeholder="e.g. Yeshwanthpur Wholesale Terminal, Bengaluru"
                     required
                   />
-                </div>
-              </div>
-
-              {/* Real-time Consolidation Preview */}
-              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-2 text-xs">
-                <div className="flex items-center gap-1.5 font-bold text-emerald-900">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span>How This Route Works</span>
-                </div>
-                <p className="text-emerald-800 leading-relaxed">
-                  Your initial <strong>{routeForm.initialQuantity || 0} KG</strong> of {routeForm.cropName || 'produce'} will initiate this route. The truck will be stationed at <strong>{routeForm.talukName} APMC Logistics Bay 1</strong>. Neighboring farmers can join to fill the remaining space.
-                </p>
-                <div className="text-[11px] text-emerald-700 pt-1 border-t border-emerald-200/60 font-semibold">
-                  Driver: AgriMarket Certified APMC 3PL Transporter dispatched upon reaching capacity or departure cutoff.
                 </div>
               </div>
 
