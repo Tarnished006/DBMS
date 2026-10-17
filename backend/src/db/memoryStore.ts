@@ -1,9 +1,12 @@
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
+import fs from 'fs';
+import path from 'path';
 import { ENV } from '../config/env.js';
 import { RAW_PAN_INDIA_MANDI_RECORDS } from '../data/panIndiaMandiData.js';
 import { MASTER_AGRICULTURAL_PRODUCTS } from '../data/agriculturalProductsData.js';
 import { CROP_ENCYCLOPEDIA_DATA } from '../data/cropEncyclopediaData.js';
+
 
 export interface MemoryDb {
   users: any[];
@@ -446,5 +449,111 @@ export async function initMemoryStore(): Promise<void> {
     });
   }
 
+  // Restore dynamic user data, products, and sessions from disk snapshot if available
+  restoreMemoryDbSnapshot();
+
   console.log(`[MemoryDb] Master database seeded successfully with ${memoryDb.states.length} states, ${memoryDb.markets.length} APMC markets, and ${memoryDb.market_prices.length} Mandi prices.`);
 }
+
+const SNAPSHOT_FILE = path.resolve(process.cwd(), '.memory_db_snapshot.json');
+
+export function saveMemoryDbSnapshot(): void {
+  try {
+    const dataToSave = {
+      users: memoryDb.users,
+      user_roles: memoryDb.user_roles,
+      products: memoryDb.products,
+      product_location_snapshots: memoryDb.product_location_snapshots,
+      inventory: memoryDb.inventory,
+      orders: memoryDb.orders,
+      order_items: memoryDb.order_items,
+      order_address_snapshots: memoryDb.order_address_snapshots,
+      negotiations: memoryDb.negotiations,
+      buyer_demands: memoryDb.buyer_demands,
+      demand_bids: memoryDb.demand_bids,
+      refresh_token_sessions: memoryDb.refresh_token_sessions,
+    };
+    fs.writeFileSync(SNAPSHOT_FILE, JSON.stringify(dataToSave, null, 2), 'utf-8');
+  } catch (err) {
+    // Non-fatal, silent fallback
+  }
+}
+
+export function restoreMemoryDbSnapshot(): boolean {
+  try {
+    if (fs.existsSync(SNAPSHOT_FILE)) {
+      const raw = fs.readFileSync(SNAPSHOT_FILE, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (parsed) {
+        if (Array.isArray(parsed.users)) {
+          for (const u of parsed.users) {
+            if (!memoryDb.users.some((existing) => existing.email.toLowerCase() === u.email.toLowerCase())) {
+              memoryDb.users.push(u);
+            }
+          }
+        }
+        if (Array.isArray(parsed.user_roles)) {
+          for (const ur of parsed.user_roles) {
+            if (!memoryDb.user_roles.some((existing) => existing.user_id === ur.user_id && existing.role_id === ur.role_id)) {
+              memoryDb.user_roles.push(ur);
+            }
+          }
+        }
+        if (Array.isArray(parsed.products)) {
+          for (const p of parsed.products) {
+            if (!memoryDb.products.some((existing) => existing.id === p.id)) {
+              memoryDb.products.unshift(p);
+            }
+          }
+        }
+        if (Array.isArray(parsed.product_location_snapshots)) {
+          for (const snap of parsed.product_location_snapshots) {
+            if (!memoryDb.product_location_snapshots.some((existing) => existing.id === snap.id)) {
+              memoryDb.product_location_snapshots.push(snap);
+            }
+          }
+        }
+        if (Array.isArray(parsed.inventory)) {
+          for (const inv of parsed.inventory) {
+            if (!memoryDb.inventory.some((existing) => existing.id === inv.id)) {
+              memoryDb.inventory.push(inv);
+            }
+          }
+        }
+        if (Array.isArray(parsed.orders)) {
+          for (const o of parsed.orders) {
+            if (!memoryDb.orders.some((existing) => existing.id === o.id)) {
+              memoryDb.orders.push(o);
+            }
+          }
+        }
+        if (Array.isArray(parsed.negotiations)) {
+          for (const n of parsed.negotiations) {
+            if (!memoryDb.negotiations.some((existing) => existing.id === n.id)) {
+              memoryDb.negotiations.push(n);
+            }
+          }
+        }
+        if (Array.isArray(parsed.buyer_demands)) {
+          for (const d of parsed.buyer_demands) {
+            if (!memoryDb.buyer_demands.some((existing) => existing.id === d.id)) {
+              memoryDb.buyer_demands.push(d);
+            }
+          }
+        }
+        if (Array.isArray(parsed.demand_bids)) {
+          for (const b of parsed.demand_bids) {
+            if (!memoryDb.demand_bids.some((existing) => existing.id === b.id)) {
+              memoryDb.demand_bids.push(b);
+            }
+          }
+        }
+        return true;
+      }
+    }
+  } catch (err) {
+    // Non-fatal
+  }
+  return false;
+}
+

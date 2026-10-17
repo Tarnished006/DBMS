@@ -35,6 +35,9 @@ export class AuthController {
   async register(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await authService.register(req.body);
+      if (result.accessToken && result.refreshToken) {
+        setAuthCookies(res, result.accessToken, result.refreshToken);
+      }
       res.status(201).json(result);
     } catch (err) {
       next(err);

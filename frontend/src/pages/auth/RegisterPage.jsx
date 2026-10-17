@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, Sprout, UserPlus, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Lock, Sprout, UserPlus, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import { Button } from '@/components/common/Button';
@@ -27,12 +27,13 @@ export function RegisterPage() {
     confirmPassword: '',
   });
   const [errors, setErrors] = useState({});
+  const [isExistingAccountError, setIsExistingAccountError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
+    setIsExistingAccountError(false);
 
     if (!formData.fullName.trim()) {
       setErrors((prev) => ({ ...prev, fullName: 'Full name is required' }));
@@ -65,45 +66,28 @@ export function RegisterPage() {
         accountType: accountType,
       });
       setUserMode(accountType);
-      setIsSuccess(true);
-      toast.success('Registration successful! Please check your email to verify.');
+      toast.success('Account created & signed in successfully! Welcome to AgriMarket.');
+      navigate('/dashboard', { replace: true });
     } catch (err) {
-      if (err.validationErrors) {
-        setErrors(err.validationErrors);
+      const errMsg = err?.message || '';
+      const isAlreadyExists =
+        errMsg.toLowerCase().includes('already') ||
+        errMsg.toLowerCase().includes('exists') ||
+        errMsg.toLowerCase().includes('cannot be used');
+
+      if (isAlreadyExists) {
+        setIsExistingAccountError(true);
+        toast.error('This email is already registered. Please sign in with your password.');
+      } else {
+        if (err.validationErrors) {
+          setErrors(err.validationErrors);
+        }
+        toast.error(errMsg || 'Registration failed. Please check the entered information.');
       }
-      toast.error(err.message || 'Registration failed. Please check the entered information.');
     } finally {
       setIsLoading(false);
     }
   };
-
-  if (isSuccess) {
-    return (
-      <div className="min-h-[80vh] flex items-center justify-center p-4 sm:p-6 lg:p-8 animate-fade-in">
-        <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200/80 p-8 shadow-soft-xl text-center space-y-6 animate-slide-up">
-          <div className="w-16 h-16 rounded-3xl bg-emerald-50 text-brand-600 flex items-center justify-center mx-auto shadow-soft-sm">
-            <CheckCircle2 className="w-10 h-10" />
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Verify Your Email</h2>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              We have sent a secure verification link to <strong className="text-slate-900">{formData.email}</strong>. Please check your inbox and click the link to activate your account.
-            </p>
-          </div>
-          <div className="pt-4 border-t border-slate-100 space-y-3">
-            <Link to="/login" state={{ email: formData.email }} className="block">
-              <Button size="lg" className="w-full">
-                Proceed to Sign In
-              </Button>
-            </Link>
-            <Link to="/verify-email" className="block text-xs font-semibold text-slate-500 hover:text-brand-600">
-              Need to resend verification email?
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-4 sm:p-6 lg:p-8 animate-fade-in">
@@ -120,11 +104,11 @@ export function RegisterPage() {
             Create an Account
           </h1>
           <p className="text-xs sm:text-sm text-slate-500">
-            Join AgriMarket as a grower, buyer, or agricultural enterprise
+            Join thousands of verified farmers and agricultural buyers
           </p>
         </div>
 
-        {/* OAuth2 Fast Register (Google & GitHub) */}
+        {/* OAuth2 Providers */}
         <OAuthButtons redirectPath="/dashboard" disabled={isLoading} />
 
         {/* Divider */}
@@ -134,6 +118,27 @@ export function RegisterPage() {
             or sign up with email
           </span>
         </div>
+
+        {/* Existing Account Prompt (If email already registered) */}
+        {isExistingAccountError && (
+          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs space-y-2 animate-fade-in">
+            <div className="flex items-center gap-1.5 font-bold text-amber-900">
+              <AlertCircle className="w-4 h-4 text-amber-600" />
+              <span>Account Already Exists</span>
+            </div>
+            <p className="text-amber-800 leading-snug">
+              An account with <strong>{formData.email}</strong> is already registered. You don't need to create a new one!
+            </p>
+            <Link
+              to="/login"
+              state={{ email: formData.email }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold transition-all shadow-soft-xs mt-1"
+            >
+              <span>Sign In with this Account</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        )}
 
         {/* Role Mode Selection (Farmer vs Buyer) */}
         <div className="space-y-2">
@@ -187,16 +192,16 @@ export function RegisterPage() {
               </div>
             </button>
           </div>
-          <p className="text-[11px] text-slate-400 text-center pt-0.5">
-            ✨ You can easily switch between Farmer and Buyer mode at any time!
-          </p>
         </div>
 
-        {/* Form — strictly no phone field during initial registration */}
+        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
+            id="register-fullName"
+            name="fullName"
             label="Full Name"
             placeholder="e.g. Ramesh Patil"
+            autoComplete="name"
             icon={User}
             value={formData.fullName}
             onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
@@ -206,8 +211,11 @@ export function RegisterPage() {
           />
 
           <Input
+            id="register-email"
+            name="email"
             label="Email Address"
             type="email"
+            autoComplete="email"
             placeholder="ramesh@example.com"
             icon={Mail}
             value={formData.email}
@@ -218,8 +226,11 @@ export function RegisterPage() {
           />
 
           <Input
+            id="register-password"
+            name="password"
             label="Password"
             type="password"
+            autoComplete="new-password"
             placeholder="At least 8 characters"
             icon={Lock}
             value={formData.password}
@@ -231,8 +242,11 @@ export function RegisterPage() {
           />
 
           <Input
+            id="register-confirmPassword"
+            name="confirmPassword"
             label="Confirm Password"
             type="password"
+            autoComplete="new-password"
             placeholder="Repeat password"
             icon={Lock}
             value={formData.confirmPassword}
@@ -249,14 +263,14 @@ export function RegisterPage() {
             isLoading={isLoading}
             icon={UserPlus}
           >
-            Create Account
+            Create Account & Sign In
           </Button>
         </form>
 
         {/* Footer */}
         <div className="text-center text-xs text-slate-500 pt-2 border-t border-slate-100">
           Already have an account?{' '}
-          <Link to="/login" className="font-bold text-brand-700 hover:text-brand-800">
+          <Link to="/login" state={{ email: formData.email }} className="font-bold text-brand-700 hover:text-brand-800">
             Sign In
           </Link>
         </div>
@@ -264,3 +278,4 @@ export function RegisterPage() {
     </div>
   );
 }
+export default RegisterPage;

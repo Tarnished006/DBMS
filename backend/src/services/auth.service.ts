@@ -4,12 +4,18 @@ import { hashToken, generateSecureToken } from '../utils/crypto.js';
 import { signAccessToken, signRefreshToken, verifyToken } from '../utils/jwt.js';
 import { BusinessException } from '../errors/BusinessException.js';
 import { db, isPostgres } from '../db/dbAdapter.js';
-import { memoryDb } from '../db/memoryStore.js';
+import { memoryDb, saveMemoryDbSnapshot } from '../db/memoryStore.js';
 import { ENV } from '../config/env.js';
 
 export class AuthService {
-  async register(data: { fullName: string; email: string; password: string }): Promise<{ message: string }> {
+  async register(data: { fullName: string; email: string; password: string }): Promise<{
+    message: string;
+    accessToken: string;
+    refreshToken: string;
+    user: any;
+  }> {
     const email = data.email.toLowerCase().trim();
+    let userId = uuidv4();
 
     if (isPostgres()) {
       const existing = await db.query('SELECT id FROM users WHERE email = $1', [email]);
@@ -18,14 +24,13 @@ export class AuthService {
       }
 
       const passwordHash = await hashPassword(data.password);
-      const userId = uuidv4();
       const now = new Date();
 
       await db.query(
         `INSERT INTO users (
           id, email, password, full_name, enabled, email_verified, phone_verified,
           credentials_expired, account_locked, failed_login_attempts, created_date, last_modified_date, password_changed_at
-        ) VALUES ($1, $2, $3, $4, true, false, false, false, false, 0, $5, $5, $5)`,
+        ) VALUES ($1, $2, $3, $4, true, true, false, false, false, 0, $5, $5, $5)`,
         [userId, email, passwordHash, data.fullName.trim(), now]
       );
 
@@ -64,7 +69,6 @@ export class AuthService {
       }
 
       const passwordHash = await hashPassword(data.password);
-      const userId = uuidv4();
       const now = new Date();
 
       const newUser = {
@@ -75,7 +79,7 @@ export class AuthService {
         phone_number: null,
         profile_picture_url: null,
         is_active: true,
-        is_email_verified: false,
+        is_email_verified: true,
         is_phone_verified: false,
         is_account_non_locked: true,
         failed_login_attempts: 0,
@@ -105,9 +109,24 @@ export class AuthService {
       });
 
       console.log(`[EmailVerification] Token for ${email}: ${rawToken}`);
+      saveMemoryDbSnapshot();
     }
 
-    return { message: 'User registered successfully. Please verify your email.' };
+    const userRoles = ['ROLE_USER'];
+    const accessToken = signAccessToken(userId, email, userRoles);
+    const { token: refreshToken } = signRefreshToken(userId);
+
+    return {
+      message: 'User registered successfully.',
+      accessToken,
+      refreshToken,
+      user: {
+        id: userId,
+        email,
+        fullName: data.fullName.trim(),
+        roles: userRoles,
+      },
+    };
   }
 
   async login(data: { email: string; password: string }): Promise<{

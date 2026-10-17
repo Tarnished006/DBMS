@@ -180,6 +180,14 @@ export function AuthProvider({ children }) {
   const register = async (userData) => {
     const res = await authService.register(userData);
     setHasPassword(true);
+    if (res?.accessToken) {
+      localStorage.setItem('agri_access_token', res.accessToken);
+      localStorage.setItem('agri_auth_session', 'true');
+      if (userData?.email) {
+        localStorage.setItem('agri_remembered_email', userData.email.trim());
+      }
+      await fetchUserProfile(true);
+    }
     return res;
   };
 
