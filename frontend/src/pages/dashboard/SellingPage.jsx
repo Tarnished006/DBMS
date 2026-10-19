@@ -9,8 +9,11 @@ import {
   CheckCircle2,
   AlertCircle,
   Eye,
+  ShoppingBag,
+  ClipboardList,
 } from 'lucide-react';
 import { productService } from '@/services/product/productService';
+import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
@@ -19,6 +22,8 @@ import { Spinner } from '@/components/loaders/Spinner';
 import { formatCurrency, formatQuantity } from '@/utils/formatters';
 
 export function SellingPage() {
+  const { userMode } = useAuth();
+  const isBuyer = userMode === 'BUYER';
   const toast = useToast();
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -56,6 +61,32 @@ export function SellingPage() {
     return (
       <div className="py-12 flex justify-center">
         <Spinner text="Loading your farm listings..." />
+      </div>
+    );
+  }
+
+  if (isBuyer) {
+    return (
+      <div className="bg-white rounded-3xl border border-slate-200 p-8 sm:p-12 text-center max-w-2xl mx-auto shadow-soft-sm my-6">
+        <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-4">
+          <ShoppingBag className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-900">Signed in as Wholesale Buyer</h2>
+        <p className="text-sm text-slate-600 mt-2 max-w-md mx-auto">
+          Crop listing and harvest inventory management are designed for registered Farmers & Growers. As a Wholesale Buyer, you can browse available produce in the Marketplace or publish bulk procurement tenders on the Demand Board.
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
+          <Link to="/marketplace">
+            <Button variant="primary" icon={ShoppingBag}>
+              Explore Marketplace
+            </Button>
+          </Link>
+          <Link to="/demands">
+            <Button variant="outline" icon={ClipboardList}>
+              Post Bulk Demand
+            </Button>
+          </Link>
+        </div>
       </div>
     );
   }

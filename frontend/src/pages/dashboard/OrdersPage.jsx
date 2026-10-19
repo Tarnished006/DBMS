@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ShoppingBag, Search, Filter, Sprout, ArrowRight } from 'lucide-react';
+import { ShoppingBag, Search, Filter, Sprout, ArrowRight, Package } from 'lucide-react';
 import { orderService } from '@/services/order/orderService';
 import { productService } from '@/services/product/productService';
+import { useAuth } from '@/hooks/useAuth';
 import { OrderCard } from '@/components/order/OrderCard';
 import { EmptyState } from '@/components/empty-states/EmptyState';
 import { Spinner } from '@/components/loaders/Spinner';
@@ -11,8 +12,11 @@ import { Select } from '@/components/common/Select';
 import { Button } from '@/components/common/Button';
 
 export function OrdersPage() {
+  const { user, userMode } = useAuth();
+  const isBuyer = userMode === 'BUYER';
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') === 'customer' ? 'customer' : 'purchases';
+  const defaultTab = isBuyer ? 'purchases' : (searchParams.get('tab') || 'customer');
+  const activeTab = isBuyer ? 'purchases' : (searchParams.get('tab') || defaultTab);
   const initialStatus = searchParams.get('status') || '';
 
   const [allOrders, setAllOrders] = useState([]);
@@ -154,42 +158,56 @@ export function OrdersPage() {
 
   return (
     <div className="space-y-6">
-      {/* View Switcher Tabs: My Purchases vs Customer Orders */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="inline-flex items-center gap-1.5 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80 shadow-soft-xs">
-          <button
-            type="button"
-            onClick={() => handleTabChange('purchases')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-              activeTab === 'purchases'
-                ? 'bg-white text-brand-700 shadow-soft-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-            }`}
-          >
-            <ShoppingBag className="w-4 h-4" />
-            <span>My Purchases</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleTabChange('customer')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-              activeTab === 'customer'
-                ? 'bg-white text-purple-700 shadow-soft-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-            }`}
-          >
-            <Sprout className="w-4 h-4" />
-            <span>Customer Orders on My Crops</span>
-          </button>
+      {/* Header and View Switcher */}
+      {isBuyer ? (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center gap-2">
+              <ShoppingBag className="w-6 h-6 text-blue-600" />
+              <span>My Procurement Orders</span>
+            </h1>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Track wholesale farm produce orders, transporter dispatch telemetry, and verified handovers.
+            </p>
+          </div>
         </div>
+      ) : (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="inline-flex items-center gap-1.5 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80 shadow-soft-xs">
+            <button
+              type="button"
+              onClick={() => handleTabChange('customer')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                activeTab === 'customer'
+                  ? 'bg-white text-purple-700 shadow-soft-sm'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+              }`}
+            >
+              <Sprout className="w-4 h-4" />
+              <span>Customer Orders on My Crops</span>
+            </button>
 
-        <p className="text-xs text-slate-500 font-medium">
-          {activeTab === 'customer'
-            ? 'Orders placed on your crops for fulfillment and dispatch tracking'
-            : 'Purchases placed by you across the agricultural marketplace'}
-        </p>
-      </div>
+            <button
+              type="button"
+              onClick={() => handleTabChange('purchases')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                activeTab === 'purchases'
+                  ? 'bg-white text-brand-700 shadow-soft-sm'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+              }`}
+            >
+              <Package className="w-4 h-4" />
+              <span>Farm Input Purchases</span>
+            </button>
+          </div>
+
+          <p className="text-xs text-slate-500 font-medium">
+            {activeTab === 'customer'
+              ? 'Wholesale buyer orders placed on your crops for loading and dispatch'
+              : 'Seeds, fertilizers, and farm equipment purchased for your cultivation'}
+          </p>
+        </div>
+      )}
 
       {/* Search & Filter Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">

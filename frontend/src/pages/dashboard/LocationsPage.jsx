@@ -24,7 +24,11 @@ import {
   getCurrentLocationAddress,
 } from '@/components/location/LocationMapModal';
 
+import { useAuth } from '@/hooks/useAuth';
+
 export function LocationsPage() {
+  const { userMode } = useAuth();
+  const isBuyer = userMode === 'BUYER';
   const toast = useToast();
 
   const [addresses, setAddresses] = useState([]);
@@ -48,7 +52,7 @@ export function LocationsPage() {
     pincode: '',
     country: 'India',
     locationType: 'MANUAL', // 'MANUAL' or 'MAP'
-    addressType: 'FARM',   // 'FARM', 'HOME', 'OTHER'
+    addressType: isBuyer ? 'WAREHOUSE' : 'FARM',
     latitude: null,
     longitude: null,
     defaultAddress: false,
@@ -312,13 +316,21 @@ export function LocationsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80">
         <div>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <span>Farm & Delivery Locations</span>
-            <span className="text-xs font-bold text-brand-700 bg-brand-50 border border-brand-200 px-2 py-0.5 rounded-md">
+            <span>{isBuyer ? 'Delivery & Warehouse Addresses' : 'Farm Gate Locations & Pickup Pins'}</span>
+            <span
+              className={`text-xs font-bold px-2 py-0.5 rounded-md border ${
+                isBuyer
+                  ? 'text-blue-700 bg-blue-50 border-blue-200'
+                  : 'text-brand-700 bg-brand-50 border-brand-200'
+              }`}
+            >
               {addresses.length} {addresses.length === 1 ? 'Location' : 'Locations'}
             </span>
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Manage your agricultural land, storage warehouses, and registered collection points.
+            {isBuyer
+              ? 'Manage destination warehouses, retail storage points, and delivery addresses.'
+              : 'Manage GPS-pinned farm locations, field harvest gates, and pickup points for logistics transporters.'}
           </p>
         </div>
 

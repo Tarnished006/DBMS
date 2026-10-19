@@ -4,12 +4,15 @@ import {
   Plus,
   Minus,
   RefreshCw,
-  CheckCircle2,
   AlertCircle,
   Sprout,
+  ShoppingBag,
+  ClipboardList,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { inventoryService } from '@/services/inventory/inventoryService';
 import { productService } from '@/services/product/productService';
+import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
@@ -19,6 +22,8 @@ import { EmptyState } from '@/components/empty-states/EmptyState';
 import { formatCurrency, formatQuantity } from '@/utils/formatters';
 
 export function InventoryPage() {
+  const { userMode } = useAuth();
+  const isBuyer = userMode === 'BUYER';
   const toast = useToast();
   const [inventoryList, setInventoryList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -158,11 +163,30 @@ export function InventoryPage() {
   const currentReserved = Number(selectedItem?.reservedQuantity ?? 0);
   const itemUnit = selectedItem?.unit || 'units';
 
-  let projectedAvail = currentAvail;
-  if (adjustType === 'add') {
-    projectedAvail = currentAvail + parsedQty;
-  } else if (adjustType === 'remove') {
-    projectedAvail = Math.max(0, currentAvail - parsedQty);
+  if (isBuyer) {
+    return (
+      <div className="bg-white rounded-3xl border border-slate-200 p-8 sm:p-12 text-center max-w-2xl mx-auto shadow-soft-sm my-6">
+        <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-4">
+          <Boxes className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-900">Signed in as Wholesale Buyer</h2>
+        <p className="text-sm text-slate-600 mt-2 max-w-md mx-auto">
+          Stock level adjustments and farm inventory tracking are designed for registered Farmers & Growers. As a Wholesale Buyer, you can explore available bulk lots in the Marketplace or view your procurement orders.
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
+          <Link to="/marketplace">
+            <Button variant="primary" icon={ShoppingBag}>
+              Explore Marketplace
+            </Button>
+          </Link>
+          <Link to="/orders">
+            <Button variant="outline" icon={ShoppingBag}>
+              My Orders
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (

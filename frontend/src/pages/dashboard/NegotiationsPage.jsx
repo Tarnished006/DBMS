@@ -122,28 +122,55 @@ export function NegotiationsPage() {
         </p>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs ordered by user role */}
       <div className="flex border-b border-slate-200 gap-4">
-        <button
-          onClick={() => setActiveTab('farmer')}
-          className={`pb-3 text-sm font-bold border-b-2 transition-all ${
-            activeTab === 'farmer'
-              ? 'border-emerald-600 text-emerald-700'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          Received as Farmer ({farmerOffers.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('buyer')}
-          className={`pb-3 text-sm font-bold border-b-2 transition-all ${
-            activeTab === 'buyer'
-              ? 'border-emerald-600 text-emerald-700'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          Sent as Buyer ({buyerOffers.length})
-        </button>
+        {userMode === 'BUYER' ? (
+          <>
+            <button
+              onClick={() => setActiveTab('buyer')}
+              className={`pb-3 text-sm font-bold border-b-2 transition-all ${
+                activeTab === 'buyer'
+                  ? 'border-blue-600 text-blue-700'
+                  : 'border-transparent text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              Offers Sent to Farmers ({buyerOffers.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('farmer')}
+              className={`pb-3 text-sm font-bold border-b-2 transition-all ${
+                activeTab === 'farmer'
+                  ? 'border-blue-600 text-blue-700'
+                  : 'border-transparent text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              Received on My Listings ({farmerOffers.length})
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={() => setActiveTab('farmer')}
+              className={`pb-3 text-sm font-bold border-b-2 transition-all ${
+                activeTab === 'farmer'
+                  ? 'border-emerald-600 text-emerald-700'
+                  : 'border-transparent text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              Offers Received from Buyers ({farmerOffers.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('buyer')}
+              className={`pb-3 text-sm font-bold border-b-2 transition-all ${
+                activeTab === 'buyer'
+                  ? 'border-emerald-600 text-emerald-700'
+                  : 'border-transparent text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              My Outgoing Offers ({buyerOffers.length})
+            </button>
+          </>
+        )}
       </div>
 
       {isLoading ? (

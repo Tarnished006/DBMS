@@ -23,6 +23,7 @@ import {
   Truck,
   Handshake,
   Bell,
+  Boxes,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/context/LanguageContext';
@@ -398,20 +399,20 @@ export function Navbar() {
                           className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-brand-50 hover:text-brand-700 rounded-xl transition-colors"
                         >
                           <LayoutDashboard className="w-4 h-4 text-slate-400" />
-                          <span>User Dashboard</span>
+                          <span>{userMode === 'BUYER' ? 'Buyer Overview' : 'Farm Overview'}</span>
                         </Link>
 
                         <Link
-                          to="/orders"
+                          to={userMode === 'BUYER' ? '/orders' : '/orders?tab=customer'}
                           onClick={() => setIsUserDropdownOpen(false)}
                           className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-brand-50 hover:text-brand-700 rounded-xl transition-colors"
                         >
                           <ShoppingBag className="w-4 h-4 text-slate-400" />
-                          <span>My Orders</span>
+                          <span>{userMode === 'BUYER' ? 'My Purchases' : 'Incoming Orders'}</span>
                         </Link>
 
                         <Link
-                          to="/dashboard/negotiations"
+                          to={`/dashboard/negotiations?tab=${userMode === 'BUYER' ? 'buyer' : 'farmer'}`}
                           onClick={() => setIsUserDropdownOpen(false)}
                           className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-brand-50 hover:text-brand-700 rounded-xl transition-colors"
                         >
@@ -419,14 +420,36 @@ export function Navbar() {
                           <span>{t('bargains', 'Bargain & Offers')}</span>
                         </Link>
 
-                        <Link
-                          to="/dashboard/selling"
-                          onClick={() => setIsUserDropdownOpen(false)}
-                          className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-brand-50 hover:text-brand-700 rounded-xl transition-colors"
-                        >
-                          <Layers className="w-4 h-4 text-slate-400" />
-                          <span>My Listed Products</span>
-                        </Link>
+                        {userMode === 'BUYER' ? (
+                          <Link
+                            to="/demands"
+                            onClick={() => setIsUserDropdownOpen(false)}
+                            className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-brand-50 hover:text-brand-700 rounded-xl transition-colors"
+                          >
+                            <ClipboardList className="w-4 h-4 text-slate-400" />
+                            <span>Bulk Demands</span>
+                          </Link>
+                        ) : (
+                          <>
+                            <Link
+                              to="/dashboard/selling"
+                              onClick={() => setIsUserDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-brand-50 hover:text-brand-700 rounded-xl transition-colors"
+                            >
+                              <Layers className="w-4 h-4 text-slate-400" />
+                              <span>My Listed Produce</span>
+                            </Link>
+
+                            <Link
+                              to="/dashboard/inventory"
+                              onClick={() => setIsUserDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-brand-50 hover:text-brand-700 rounded-xl transition-colors"
+                            >
+                              <Boxes className="w-4 h-4 text-slate-400" />
+                              <span>Stock & Inventory</span>
+                            </Link>
+                          </>
+                        )}
 
                         <Link
                           to="/profile"
