@@ -86,8 +86,10 @@ export function normalizeApiError(error) {
     });
   }
 
-  // Check known rule violation codes first for clear administrative feedback
-  if (RULE_VIOLATION_MESSAGES[rawCode]) {
+  // Prioritize meaningful custom message from backend if available
+  if (data?.message && !data.message.toLowerCase().includes('unexpected') && rawCode !== 'DATA_INTEGRITY_VIOLATION') {
+    message = data.message;
+  } else if (RULE_VIOLATION_MESSAGES[rawCode]) {
     message = RULE_VIOLATION_MESSAGES[rawCode];
   } else {
     // Friendly messages for common HTTP and business codes

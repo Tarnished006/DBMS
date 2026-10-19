@@ -576,6 +576,70 @@ export async function initMemoryStore(): Promise<void> {
     });
   }
 
+  // 10b. Initial Seed Buyer Demands posted by Demo Buyer (Ananya Sharma)
+  if (memoryDb.buyer_demands.length === 0) {
+    const demandDate1 = new Date(Date.now() - 6 * 60 * 60 * 1000);
+    const demandDate2 = new Date(Date.now() - 18 * 60 * 60 * 1000);
+    const demandDate3 = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    memoryDb.buyer_demands.push(
+      {
+        id: 'demand-seed-tomatoes',
+        buyer_id: buyerId,
+        crop_name: 'Kolar Salad Tomatoes',
+        category_id: 'cat-vegetables',
+        quantity_needed: 800,
+        unit: 'KG',
+        target_price_per_unit: 30,
+        quality_grade: 'GRADE_A',
+        required_by_date: '2026-11-20',
+        delivery_taluk_id: 'taluk-devanahalli',
+        delivery_city: 'Bengaluru',
+        delivery_state: 'Karnataka',
+        description: 'Wholesale requirement for daily institutional catering. Firm red salad tomatoes required with APMC transit certificate.',
+        status: 'OPEN',
+        created_date: demandDate1,
+        last_modified_date: demandDate1,
+      },
+      {
+        id: 'demand-seed-onions',
+        buyer_id: buyerId,
+        crop_name: 'Nashik Red Onions',
+        category_id: 'cat-vegetables',
+        quantity_needed: 1500,
+        unit: 'KG',
+        target_price_per_unit: 24,
+        quality_grade: 'GRADE_A',
+        required_by_date: '2026-11-25',
+        delivery_taluk_id: 'taluk-bangalore-north',
+        delivery_city: 'Bengaluru',
+        delivery_state: 'Karnataka',
+        description: 'Bulk supply needed for cloud kitchens network. Cured medium-large size onions (45mm+), zero sprout.',
+        status: 'OPEN',
+        created_date: demandDate2,
+        last_modified_date: demandDate2,
+      },
+      {
+        id: 'demand-seed-capsicum',
+        buyer_id: buyerId,
+        crop_name: 'Shimla Green Capsicum',
+        category_id: 'cat-vegetables',
+        quantity_needed: 500,
+        unit: 'KG',
+        target_price_per_unit: 42,
+        quality_grade: 'GRADE_A',
+        required_by_date: '2026-11-18',
+        delivery_taluk_id: 'taluk-mysore',
+        delivery_city: 'Mysuru',
+        delivery_state: 'Karnataka',
+        description: 'Premium bell peppers for retail supermarket chain distribution. Uniform green coloration and thick walls.',
+        status: 'OPEN',
+        created_date: demandDate3,
+        last_modified_date: demandDate3,
+      }
+    );
+  }
+
   // 11. Initial Seed Notifications
   if (memoryDb.notifications.length === 0) {
     const now = Date.now();

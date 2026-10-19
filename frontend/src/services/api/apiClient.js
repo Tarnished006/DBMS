@@ -26,12 +26,16 @@ const processQueue = (error, token = null) => {
   failedQueue = [];
 };
 
-// Request Interceptor: Attach token if stored
+// Request Interceptor: Attach token and user mode if stored
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('agri_access_token');
     if (token && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    const userMode = localStorage.getItem('agri_user_mode');
+    if (userMode) {
+      config.headers['X-User-Mode'] = userMode;
     }
     return config;
   },

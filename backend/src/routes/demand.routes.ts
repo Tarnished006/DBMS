@@ -46,11 +46,27 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-// Farmer places bid on demand
+// Farmer places bid on demand (strictly Farmers only, buyers not permitted)
 router.post('/:id/bids', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const user = (req as any).user;
+    const userModeHeader = (req.headers['x-user-mode'] as string | undefined)?.toUpperCase();
+
+    // Verify user is not operating in Buyer mode
+    const isBuyerAccount = 
+      userModeHeader === 'BUYER' ||
+      (user?.email && user.email.toLowerCase().includes('buyer') && !user.email.toLowerCase().includes('farmer')) ||
+      (user?.full_name && user.full_name.toLowerCase().includes('wholesale buyer'));
+
+    if (isBuyerAccount) {
+      return res.status(403).json({
+        code: 'ACCESS_DENIED',
+        message: 'Only registered farmers can fulfill produce demands. Buyers cannot place supply bids.',
+      });
+    }
+
     const id = req.params.id as string;
-    const bid = await demandService.placeBid((req as any).user.id, id, req.body);
+    const bid = await demandService.placeBid(user.id, id, req.body);
     res.status(201).json(bid);
   } catch (err) {
     next(err);

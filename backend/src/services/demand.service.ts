@@ -3,6 +3,7 @@ import { db, isPostgres } from '../db/dbAdapter.js';
 import { memoryDb } from '../db/memoryStore.js';
 import { BusinessException } from '../errors/BusinessException.js';
 import { BuyerDemandDto, DemandBidDto, QualityGrade } from '../types/index.js';
+import { notificationService } from './notification.service.js';
 
 export class DemandService {
   async createDemand(
@@ -176,7 +177,7 @@ export class DemandService {
   ): Promise<DemandBidDto> {
     const demand = await this.getDemandById(demandId);
     if (demand.buyerId === farmerId) {
-      throw new BusinessException('ACCESS_DENIED', 'You cannot bid on your own requirement');
+      throw new BusinessException('ACCESS_DENIED', 'You posted this requirement as a buyer; only registered farmers can fulfill or supply produce for it.');
     }
     if (demand.status !== 'OPEN') {
       throw new BusinessException('INVALID_REQUEST', 'This requirement is no longer accepting bids');
@@ -203,6 +204,22 @@ export class DemandService {
         created_date: now,
       });
     }
+
+    // Notify the buyer who posted the requirement
+    try {
+      const farmer = isPostgres()
+        ? (await db.query('SELECT full_name FROM users WHERE id = $1', [farmerId])).rows[0]
+        : memoryDb.users.find((u) => u.id === farmerId);
+      const farmerName = farmer?.full_name || 'A local verified farmer';
+      await notificationService.createNotification(
+        demand.buyerId,
+        'ORDER',
+        'New Produce Supply Bid Received 🌾',
+        `${farmerName} has offered to supply ${data.offeredQuantity} ${demand.unit} of ${demand.cropName} at ₹${data.offeredPricePerUnit}/${demand.unit}.`,
+        `/demands?id=${demandId}`,
+        { demandId, bidId: id, farmerId }
+      );
+    } catch {}
 
     return {
       id,
@@ -234,6 +251,26 @@ export class DemandService {
       const d = memoryDb.buyer_demands.find((b) => b.id === demandId);
       if (d) d.status = 'FULFILLED';
     }
+
+    // Notify the winning farmer that their supply bid was accepted
+    try {
+      const buyer = isPostgres()
+        ? (await db.query('SELECT full_name FROM users WHERE id = $1', [buyerId])).rows[0]
+        : memoryDb.users.find((u) => u.id === buyerId);
+      const buyerName = buyer?.full_name || 'Wholesale Buyer';
+      const bids = await this.getBidsForDemand(demandId);
+      const winningBid = bids.find((b) => b.id === bidId);
+      if (winningBid) {
+        await notificationService.createNotification(
+          winningBid.farmerId,
+          'ORDER',
+          'Supply Bid Accepted & Confirmed! 🎉',
+          `${buyerName} accepted your supply offer of ${winningBid.offeredQuantity} ${demand.unit} for ${demand.cropName} at ₹${winningBid.offeredPricePerUnit}/${demand.unit}. Trade terms locked!`,
+          `/demands?id=${demandId}`,
+          { demandId, bidId }
+        );
+      }
+    } catch {}
   }
 
   private async getBidsForDemand(demandId: string): Promise<DemandBidDto[]> {
