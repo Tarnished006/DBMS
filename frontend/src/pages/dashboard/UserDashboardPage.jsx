@@ -15,15 +15,19 @@ import {
   Smartphone,
   Truck,
   ClipboardList,
+  Bell,
+  Handshake,
 } from 'lucide-react';
 import { userService } from '@/services/user/userService';
 import { addressService } from '@/services/address/addressService';
 import { useAuth } from '@/hooks/useAuth';
+import { useNotifications } from '@/hooks/useNotifications';
 import { Button } from '@/components/common/Button';
 import { Spinner } from '@/components/loaders/Spinner';
 
 export function UserDashboardPage() {
   const { user, userMode } = useAuth();
+  const { notifications, unreadCount, markAsRead } = useNotifications();
   const [dashboardData, setDashboardData] = useState(null);
   const [addressCount, setAddressCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -342,6 +346,44 @@ export function UserDashboardPage() {
               Verify Phone Number
             </Button>
           </Link>
+        </div>
+      )}
+
+      {/* Real-time Order & Bargain Action Banner if unread alerts exist */}
+      {unreadCount > 0 && notifications.length > 0 && (
+        <div className="p-4 sm:p-4.5 rounded-3xl border border-amber-300 bg-gradient-to-r from-amber-50/90 via-orange-50/40 to-amber-100/30 shadow-soft-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-slide-up">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center flex-shrink-0 shadow-soft-xs">
+              <Bell className="w-5 h-5 animate-bounce" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black uppercase tracking-wider text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-200">
+                  Action Needed ({unreadCount} New)
+                </span>
+                <span className="text-xs font-bold text-slate-800">
+                  {notifications.find((n) => !n.isRead)?.title}
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 mt-0.5">
+                {notifications.find((n) => !n.isRead)?.message}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-end sm:self-auto flex-shrink-0">
+            <Link
+              to={notifications.find((n) => !n.isRead)?.link || '/bargains'}
+              onClick={() => {
+                const first = notifications.find((n) => !n.isRead);
+                if (first) markAsRead(first.id);
+              }}
+              className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-soft-xs hover:shadow-soft-sm transition-all flex items-center gap-1.5"
+            >
+              <span>Review Now</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
       )}
 

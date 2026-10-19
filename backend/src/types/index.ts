@@ -374,4 +374,16 @@ export interface ProducePoolDto {
   estimatedFreightSavingsPercentage: number;
 }
 
+export interface NotificationDto {
+  id: string;
+  userId: string;
+  type: 'NEGOTIATION' | 'ORDER' | 'LOGISTICS' | 'PRICE_ALERT' | 'SYSTEM';
+  title: string;
+  message: string;
+  link: string;
+  isRead: boolean;
+  metadata?: any;
+  createdDate: string | Date;
+}
+
 

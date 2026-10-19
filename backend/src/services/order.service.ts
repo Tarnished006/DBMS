@@ -6,6 +6,7 @@ import { OrderDto, OrderStatus } from '../types/index.js';
 import { addressService } from './address.service.js';
 import { productService } from './product.service.js';
 import { inventoryService } from './inventory.service.js';
+import { notificationService } from './notification.service.js';
 
 export class OrderService {
   async createOrder(buyerId: string, data: any): Promise<OrderDto> {
@@ -60,6 +61,7 @@ export class OrderService {
     const enrichedItems: Array<{
       productId: string;
       productName: string;
+      sellerId?: string;
       quantity: number;
       unitPrice: number;
       subtotal: number;
@@ -118,6 +120,7 @@ export class OrderService {
       enrichedItems.push({
         productId: prod.id,
         productName: prod.name,
+        sellerId: prod.sellerId,
         quantity: qty,
         unitPrice,
         subtotal,
@@ -247,7 +250,33 @@ export class OrderService {
       });
     }
 
-    return this.getOrderById(orderId, buyerId, true);
+    const createdOrder = await this.getOrderById(orderId, buyerId, true);
+
+    const orderRef = `AGR-${createdOrder.id.slice(0, 6).toUpperCase()}`;
+
+    notificationService.createNotification(
+      buyerId,
+      'ORDER',
+      'Order Placed Successfully 📦',
+      `Order #${orderRef} placed for ₹${finalAmount}. Fulfillment tracking is live.`,
+      '/orders',
+      { orderId, orderNumber: orderRef }
+    ).catch(() => {});
+
+    for (const it of enrichedItems) {
+      if (it.sellerId && it.sellerId !== buyerId) {
+        notificationService.createNotification(
+          it.sellerId,
+          'ORDER',
+          'New Wholesale Order Received 📦',
+          `Order #${orderRef} placed for ${it.quantity} units of ${it.productName}.`,
+          '/orders',
+          { orderId, orderNumber: orderRef }
+        ).catch(() => {});
+      }
+    }
+
+    return createdOrder;
   }
 
   async getOrderById(orderId: string, userId: string, isAdmin = false): Promise<OrderDto> {
@@ -433,6 +462,16 @@ export class OrderService {
         }
       }
     }
+
+    const orderRef = `AGR-${order.id.slice(0, 6).toUpperCase()}`;
+    notificationService.createNotification(
+      order.buyerId,
+      'ORDER',
+      `Order #${orderRef} ${targetStatus} 📦`,
+      `Your order status has been updated to ${targetStatus}.`,
+      '/orders',
+      { orderId, targetStatus }
+    ).catch(() => {});
 
     return this.getOrderById(orderId, '', true);
   }

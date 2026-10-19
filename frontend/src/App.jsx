@@ -3,6 +3,7 @@ import { BrowserRouter, useLocation } from 'react-router-dom';
 import { AuthProvider } from '@/context/AuthContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { LanguageProvider } from '@/context/LanguageContext';
+import { NotificationProvider } from '@/context/NotificationContext';
 import { ErrorBoundary } from '@/components/errors/ErrorBoundary';
 import { AppRoutes } from '@/routes/AppRoutes';
 
@@ -29,7 +30,9 @@ export function App() {
         <ToastProvider>
           <LanguageProvider>
             <AuthProvider>
-              <AppRoutes />
+              <NotificationProvider>
+                <AppRoutes />
+              </NotificationProvider>
             </AuthProvider>
           </LanguageProvider>
         </ToastProvider>

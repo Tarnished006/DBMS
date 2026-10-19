@@ -22,13 +22,17 @@ import {
   ClipboardList,
   Truck,
   Handshake,
+  Bell,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/context/LanguageContext';
+import { useNotifications } from '@/hooks/useNotifications';
 import { Button } from '@/components/common/Button';
+import { NotificationDropdown } from './NotificationDropdown';
 
 export function Navbar() {
   const { user, isAuthenticated, isAdmin, logout, userMode } = useAuth();
+  const { unreadCount } = useNotifications();
   const { language, setLanguage, toggleLanguage, t, languages } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
@@ -340,6 +344,9 @@ export function Navbar() {
 
             {isAuthenticated ? (
               <>
+                {/* Real-time Order & Bargain Notifications Dropdown */}
+                <NotificationDropdown />
+
                 {/* User Menu: Small Picture Only, No Name */}
                 <div className="relative flex-shrink-0">
                   <button
@@ -562,6 +569,30 @@ export function Navbar() {
                 {userMode === 'FARMER' ? 'Farmer' : 'Buyer'}
               </span>
             </div>
+          )}
+
+          {/* Mobile Notifications Alert */}
+          {isAuthenticated && (
+            <Link
+              to="/bargains"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center justify-between p-3 rounded-2xl bg-white border border-slate-200/90 mb-1 hover:bg-slate-50 transition-colors"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                  <Bell className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-800">Alerts & Negotiations</p>
+                  <p className="text-[10px] text-slate-500 font-medium">Bargains, order updates & Mandi rates</p>
+                </div>
+              </div>
+              {unreadCount > 0 && (
+                <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-rose-100 text-rose-700">
+                  {unreadCount} new
+                </span>
+              )}
+            </Link>
           )}
 
           {/* Mobile Sell Crop Quick CTA (Farmer Mode) */}

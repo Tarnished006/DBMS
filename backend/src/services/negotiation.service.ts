@@ -3,6 +3,7 @@ import { db, isPostgres } from '../db/dbAdapter.js';
 import { memoryDb, saveMemoryDbSnapshot } from '../db/memoryStore.js';
 import { BusinessException } from '../errors/BusinessException.js';
 import { NegotiationDto } from '../types/index.js';
+import { notificationService } from './notification.service.js';
 
 export class NegotiationService {
   async createOffer(
@@ -100,6 +101,15 @@ export class NegotiationService {
       });
       saveMemoryDbSnapshot();
     }
+
+    notificationService.createNotification(
+      farmerId,
+      'NEGOTIATION',
+      'New Price Offer Received 🤝',
+      `A buyer offered ₹${proposedPrice} for ${quantity} ${unit || 'KG'} of ${produceName}.`,
+      '/bargains',
+      { negotiationId: id, produceName, proposedPrice, quantity }
+    ).catch(() => {});
 
     return this.getNegotiationById(id);
   }
@@ -212,6 +222,15 @@ export class NegotiationService {
       }
     }
 
+    notificationService.createNotification(
+      n.buyerId,
+      'NEGOTIATION',
+      'Counter-Offer Received 🤝',
+      `Farmer counter-offered ₹${counterPrice} for ${n.produceName}.`,
+      '/bargains',
+      { negotiationId, produceName: n.produceName, counterPrice }
+    ).catch(() => {});
+
     return this.getNegotiationById(negotiationId);
   }
 
@@ -253,6 +272,16 @@ export class NegotiationService {
       }
     }
 
+    const otherUserId = userId === n.farmerId ? n.buyerId : n.farmerId;
+    notificationService.createNotification(
+      otherUserId,
+      'NEGOTIATION',
+      'Bargain Finalized & Accepted! 🤝',
+      `Price locked at ₹${finalPrice} for ${n.produceName}! 1-Click Checkout is ready.`,
+      '/bargains',
+      { negotiationId, produceName: n.produceName, finalPrice }
+    ).catch(() => {});
+
     return this.getNegotiationById(negotiationId);
   }
 
@@ -278,6 +307,16 @@ export class NegotiationService {
         saveMemoryDbSnapshot();
       }
     }
+
+    const otherUserId = userId === n.farmerId ? n.buyerId : n.farmerId;
+    notificationService.createNotification(
+      otherUserId,
+      'NEGOTIATION',
+      'Offer Declined',
+      `Negotiation for ${n.produceName} was declined.`,
+      '/bargains',
+      { negotiationId, produceName: n.produceName }
+    ).catch(() => {});
 
     return this.getNegotiationById(negotiationId);
   }

@@ -601,5 +601,46 @@ describe('AgriMarket Backend API End-to-End Suite', () => {
       expect(res.body[0].nutrientSchedule.npkRatio).toBeDefined();
     });
   });
+
+  describe('13. Real-Time Multi-Party Notification Engine', () => {
+    it('GET /api/v1/notifications should return 401 or 404 without auth', async () => {
+      const res = await request(app).get('/api/v1/notifications');
+      expect([401, 404]).toContain(res.status);
+    });
+
+    it('GET /api/v1/notifications should return seeded notifications for authenticated user', async () => {
+      const res = await request(app)
+        .get('/api/v1/notifications')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBeGreaterThanOrEqual(1);
+      const types = res.body.map((n: any) => n.type);
+      expect(types).toContain('NEGOTIATION');
+    });
+
+    it('PUT /api/v1/notifications/:id/read and /read-all should update notification read status', async () => {
+      const listRes = await request(app)
+        .get('/api/v1/notifications')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      const firstUnread = listRes.body.find((n: any) => !n.isRead);
+      if (firstUnread) {
+        const readRes = await request(app)
+          .put(`/api/v1/notifications/${firstUnread.id}/read`)
+          .set('Authorization', `Bearer ${userToken}`);
+        expect(readRes.status).toBe(200);
+        expect(readRes.body.success).toBe(true);
+      }
+
+      const markAllRes = await request(app)
+        .put('/api/v1/notifications/read-all')
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(markAllRes.status).toBe(200);
+      expect(markAllRes.body.success).toBe(true);
+    });
+  });
 });
+
 

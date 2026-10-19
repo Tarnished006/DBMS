@@ -42,6 +42,7 @@ export interface MemoryDb {
   negotiations: any[];
   buyer_demands: any[];
   demand_bids: any[];
+  notifications: any[];
 }
 
 export const memoryDb: MemoryDb = {
@@ -78,6 +79,7 @@ export const memoryDb: MemoryDb = {
   negotiations: [],
   buyer_demands: [],
   demand_bids: [],
+  notifications: [],
 };
 
 let initialized = false;
@@ -494,6 +496,7 @@ export function saveMemoryDbSnapshot(): void {
       negotiations: memoryDb.negotiations,
       buyer_demands: memoryDb.buyer_demands,
       demand_bids: memoryDb.demand_bids,
+      notifications: memoryDb.notifications,
       refresh_token_sessions: memoryDb.refresh_token_sessions,
     };
     fs.writeFileSync(SNAPSHOT_FILE, JSON.stringify(dataToSave, null, 2), 'utf-8');
@@ -568,6 +571,13 @@ export function restoreMemoryDbSnapshot(): boolean {
           for (const b of parsed.demand_bids) {
             if (!memoryDb.demand_bids.some((existing) => existing.id === b.id)) {
               memoryDb.demand_bids.push(b);
+            }
+          }
+        }
+        if (Array.isArray(parsed.notifications)) {
+          for (const notif of parsed.notifications) {
+            if (!memoryDb.notifications.some((existing) => existing.id === notif.id)) {
+              memoryDb.notifications.push(notif);
             }
           }
         }
