@@ -28,7 +28,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/common/Button';
 
 export function Navbar() {
-  const { user, isAuthenticated, isAdmin, logout, userMode, toggleUserMode } = useAuth();
+  const { user, isAuthenticated, isAdmin, logout, userMode } = useAuth();
   const { language, setLanguage, toggleLanguage, t, languages } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
@@ -264,26 +264,6 @@ export function Navbar() {
               )}
             </div>
 
-            {/* Mode Switcher Button (Farmer Mode <-> Buyer Mode) */}
-            <button
-              type="button"
-              onClick={toggleUserMode}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-soft-xs cursor-pointer flex-shrink-0 ${
-                userMode === 'FARMER'
-                  ? 'border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800'
-                  : 'border-blue-300 bg-blue-50 hover:bg-blue-100 text-blue-800'
-              }`}
-              title={
-                userMode === 'FARMER'
-                  ? 'Active: Farmer Mode. Click to switch to Buyer Mode 🛒'
-                  : 'Active: Buyer Mode. Click to switch to Farmer Mode 🚜'
-              }
-            >
-              <span className="text-sm">{userMode === 'FARMER' ? '🚜' : '🛒'}</span>
-              <span className="hidden sm:inline font-extrabold">
-                {userMode === 'FARMER' ? t('farmer', 'Farmer') : t('buyer', 'Buyer')}
-              </span>
-            </button>
 
             {/* Prominent Sell Crop CTA for Farmers */}
             {userMode === 'FARMER' && (
@@ -391,21 +371,18 @@ export function Navbar() {
                           <p className="text-[11px] text-slate-500 truncate">{user?.email}</p>
                         </div>
 
-                        {/* Current Mode Badge & Switch Action */}
-                        <div className="px-3 py-2 mb-1.5 bg-slate-50 rounded-xl flex items-center justify-between border border-slate-100">
-                          <span className="text-[11px] font-extrabold text-slate-800 flex items-center gap-1">
-                            {userMode === 'FARMER' ? '🚜 Farmer' : '🛒 Buyer'}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              toggleUserMode();
-                              setIsUserDropdownOpen(false);
-                            }}
-                            className="text-[11px] font-bold text-brand-700 hover:text-brand-900 underline cursor-pointer"
+                        {/* Account Type Badge (Read-Only) */}
+                        <div className="px-3 py-1.5 mb-1.5 bg-slate-50 rounded-xl flex items-center justify-between border border-slate-100">
+                          <span className="text-[11px] font-semibold text-slate-500">Account</span>
+                          <span
+                            className={`text-[11px] font-extrabold px-2 py-0.5 rounded-lg flex items-center gap-1 ${
+                              userMode === 'FARMER'
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                : 'bg-blue-100 text-blue-800 border border-blue-200'
+                            }`}
                           >
-                            Switch to {userMode === 'FARMER' ? 'Buyer 🛒' : 'Farmer 🚜'}
-                          </button>
+                            {userMode === 'FARMER' ? '🚜 Farmer' : '🛒 Wholesale Buyer'}
+                          </span>
                         </div>
 
                         <Link
@@ -561,27 +538,31 @@ export function Navbar() {
             </div>
           )}
 
-          {/* Mobile Mode Switcher Card */}
-          <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-slate-50 to-emerald-50/40 border border-slate-200/90 mb-1">
-            <div className="flex items-center gap-2.5">
-              <span className="text-xl">{userMode === 'FARMER' ? '🚜' : '🛒'}</span>
-              <div>
-                <p className="text-xs font-black text-slate-900">
-                  {userMode === 'FARMER' ? t('farmerMode', 'Farmer Mode') : t('buyerMode', 'Buyer Mode')}
-                </p>
-                <p className="text-[10px] text-slate-500 font-medium">
-                  {userMode === 'FARMER' ? 'Selling & APMC Mandi rates' : 'Produce & Bulk shopping'}
-                </p>
+          {/* Mobile Account Type Display if authenticated */}
+          {isAuthenticated && (
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-slate-50 to-emerald-50/40 border border-slate-200/90 mb-1">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl">{userMode === 'FARMER' ? '🚜' : '🛒'}</span>
+                <div>
+                  <p className="text-xs font-black text-slate-900">
+                    {userMode === 'FARMER' ? 'Farmer Account' : 'Wholesale Buyer Account'}
+                  </p>
+                  <p className="text-[10px] text-slate-500 font-medium">
+                    {userMode === 'FARMER' ? 'Selling & APMC Mandi rates' : 'Produce & Bulk shopping'}
+                  </p>
+                </div>
               </div>
+              <span
+                className={`text-[10px] font-extrabold px-2 py-0.5 rounded-lg ${
+                  userMode === 'FARMER'
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                    : 'bg-blue-100 text-blue-800 border border-blue-200'
+                }`}
+              >
+                {userMode === 'FARMER' ? 'Farmer' : 'Buyer'}
+              </span>
             </div>
-            <button
-              type="button"
-              onClick={toggleUserMode}
-              className="px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-white border border-slate-200 text-brand-700 hover:bg-brand-50 shadow-soft-xs cursor-pointer"
-            >
-              Switch ⇄
-            </button>
-          </div>
+          )}
 
           {/* Mobile Sell Crop Quick CTA (Farmer Mode) */}
           {userMode === 'FARMER' && (

@@ -23,7 +23,7 @@ import { Button } from '@/components/common/Button';
 import { Spinner } from '@/components/loaders/Spinner';
 
 export function UserDashboardPage() {
-  const { user, userMode, toggleUserMode } = useAuth();
+  const { user, userMode } = useAuth();
   const [dashboardData, setDashboardData] = useState(null);
   const [addressCount, setAddressCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -345,7 +345,7 @@ export function UserDashboardPage() {
         </div>
       )}
 
-      {/* Dynamic Mode Status Banner & Switcher */}
+      {/* Role Context Notification Banner */}
       <div
         className={`p-4 sm:p-5 rounded-3xl border shadow-soft-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors ${
           userMode === 'FARMER'
@@ -364,7 +364,7 @@ export function UserDashboardPage() {
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-base sm:text-lg font-black text-slate-900">
-                {userMode === 'FARMER' ? 'Farmer Mode Active' : 'Buyer Mode Active'}
+                {userMode === 'FARMER' ? 'Farmer / Grower Account' : 'Wholesale Buyer Account'}
               </h3>
               <span
                 className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full ${
@@ -373,24 +373,34 @@ export function UserDashboardPage() {
                     : 'bg-blue-100 text-blue-800 border border-blue-300'
                 }`}
               >
-                {userMode === 'FARMER' ? 'Selling & Rates' : 'Shopping & Demands'}
+                {userMode === 'FARMER' ? 'Selling & Mandi Rates' : 'Bulk Sourcing & Demands'}
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
               {userMode === 'FARMER'
-                ? 'Your dashboard highlights crop listings, incoming customer orders, and APMC market prices.'
-                : 'Your dashboard highlights purchases, shipments, and direct grower marketplace deals.'}
+                ? 'Your account is configured for crop listings, incoming wholesale orders, and APMC market prices.'
+                : 'Your account is configured for bulk purchasing, logistics tracking, and direct farmer bargains.'}
             </p>
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={toggleUserMode}
-          className="flex-shrink-0 px-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-slate-800 hover:text-slate-900 hover:bg-slate-50 font-extrabold text-xs sm:text-sm shadow-soft-xs hover:shadow-soft-sm transition-all cursor-pointer flex items-center gap-2"
-        >
-          <span>Switch to {userMode === 'FARMER' ? 'Buyer Mode 🛒' : 'Farmer Mode 🚜'}</span>
-        </button>
+        {userMode === 'FARMER' ? (
+          <Link
+            to="/sell"
+            className="flex-shrink-0 px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm shadow-soft-xs hover:shadow-soft-sm transition-all flex items-center gap-2"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>+ List New Crop</span>
+          </Link>
+        ) : (
+          <Link
+            to="/marketplace"
+            className="flex-shrink-0 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs sm:text-sm shadow-soft-xs hover:shadow-soft-sm transition-all flex items-center gap-2"
+          >
+            <ShoppingBag className="w-4 h-4" />
+            <span>Explore Marketplace</span>
+          </Link>
+        )}
       </div>
 
       {/* Farmer Quick Actions Bar */}

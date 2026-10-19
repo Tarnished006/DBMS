@@ -56,6 +56,25 @@ export function AuthProvider({ children }) {
     });
   }, []);
 
+  // Automatically sync userMode based on logged-in user account
+  useEffect(() => {
+    if (user?.email) {
+      const email = user.email.toLowerCase();
+      const name = (user.fullName || '').toLowerCase();
+      const storedAccountType = localStorage.getItem(`agri_mode_${user.id}`) || localStorage.getItem('agri_user_mode');
+
+      if (email.includes('buyer') || name.includes('buyer')) {
+        setUserModeState('BUYER');
+        try { localStorage.setItem('agri_user_mode', 'BUYER'); } catch {}
+      } else if (email.includes('farmer') || name.includes('farmer') || email.includes('admin') || email === 'user@agrimarket.com') {
+        setUserModeState('FARMER');
+        try { localStorage.setItem('agri_user_mode', 'FARMER'); } catch {}
+      } else if (storedAccountType === 'BUYER' || storedAccountType === 'FARMER') {
+        setUserModeState(storedAccountType);
+      }
+    }
+  }, [user]);
+
   const setHasPassword = useCallback((val) => {
     setHasPasswordState(val);
     try {
@@ -178,6 +197,12 @@ export function AuthProvider({ children }) {
 
   // Register handler (strictly no phone number)
   const register = async (userData) => {
+    if (userData?.accountType) {
+      setUserModeState(userData.accountType);
+      try {
+        localStorage.setItem('agri_user_mode', userData.accountType);
+      } catch {}
+    }
     const res = await authService.register(userData);
     setHasPassword(true);
     if (res?.accessToken) {
@@ -185,6 +210,11 @@ export function AuthProvider({ children }) {
       localStorage.setItem('agri_auth_session', 'true');
       if (userData?.email) {
         localStorage.setItem('agri_remembered_email', userData.email.trim());
+      }
+      if (res?.user?.id && userData?.accountType) {
+        try {
+          localStorage.setItem(`agri_mode_${res.user.id}`, userData.accountType);
+        } catch {}
       }
       await fetchUserProfile(true);
     }
