@@ -2,7 +2,7 @@ import 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import { v2 as cloudinary } from 'cloudinary';
 import { db, isPostgres } from '../db/dbAdapter.js';
-import { memoryDb } from '../db/memoryStore.js';
+import { memoryDb, saveMemoryDbSnapshot } from '../db/memoryStore.js';
 import { BusinessException } from '../errors/BusinessException.js';
 import { ProductImageDto } from '../types/index.js';
 import { productService } from './product.service.js';
@@ -83,6 +83,7 @@ export class ProductImageService {
         created_date: now,
         last_modified_date: now,
       });
+      saveMemoryDbSnapshot();
     }
 
     return {

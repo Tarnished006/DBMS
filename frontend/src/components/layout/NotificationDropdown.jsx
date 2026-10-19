@@ -270,7 +270,7 @@ export function NotificationDropdown() {
           {/* Footer Quick Link to Bargains / Orders */}
           <div className="p-2.5 bg-slate-50 border-t border-slate-100 grid grid-cols-2 gap-2 text-center">
             <Link
-              to="/bargains"
+              to="/dashboard/negotiations"
               onClick={() => setIsOpen(false)}
               className="py-1.5 px-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-white hover:shadow-soft-xs transition-all border border-slate-200/80"
             >

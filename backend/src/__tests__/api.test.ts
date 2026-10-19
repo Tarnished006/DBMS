@@ -312,9 +312,11 @@ describe('AgriMarket Backend API End-to-End Suite', () => {
     let negotiationId = '';
 
     it('POST /api/v1/negotiations should allow buyer to make a proposed price offer', async () => {
-      const catalogRes = await request(app).get('/api/v1/products');
-      const farmerProd = catalogRes.body.content.find((p: any) => p.farmerId !== '11111111-2222-3333-4444-555555555555');
-      testProduceId = farmerProd ? farmerProd.id : catalogRes.body.content[0].id;
+      const catalogRes = await request(app).get('/api/v1/products?size=50');
+      const farmerProd = catalogRes.body.content.find(
+        (p: any) => p.farmerId !== '11111111-2222-3333-4444-555555555555' && (p.availableQuantity || p.quantity || 0) >= 50
+      );
+      testProduceId = farmerProd ? farmerProd.id : 'prod-sona-masoori-seed';
 
       // userToken acts as buyer making offer to farmer (adminToken owns seed products)
       const res = await request(app)

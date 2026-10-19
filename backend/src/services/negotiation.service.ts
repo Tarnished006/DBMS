@@ -51,7 +51,7 @@ export class NegotiationService {
       if (!p) {
         throw new BusinessException('PRODUCT_NOT_FOUND', 'Selected produce not found');
       }
-      farmerId = p.seller_id;
+      farmerId = p.farmer_id || p.seller_id;
       produceName = p.name;
       currentPrice = p.price_per_unit;
     }
@@ -107,7 +107,7 @@ export class NegotiationService {
       'NEGOTIATION',
       'New Price Offer Received 🤝',
       `A buyer offered ₹${proposedPrice} for ${quantity} ${unit || 'KG'} of ${produceName}.`,
-      '/bargains',
+      '/dashboard/negotiations',
       { negotiationId: id, produceName, proposedPrice, quantity }
     ).catch(() => {});
 
@@ -227,7 +227,7 @@ export class NegotiationService {
       'NEGOTIATION',
       'Counter-Offer Received 🤝',
       `Farmer counter-offered ₹${counterPrice} for ${n.produceName}.`,
-      '/bargains',
+      '/dashboard/negotiations',
       { negotiationId, produceName: n.produceName, counterPrice }
     ).catch(() => {});
 
@@ -278,7 +278,7 @@ export class NegotiationService {
       'NEGOTIATION',
       'Bargain Finalized & Accepted! 🤝',
       `Price locked at ₹${finalPrice} for ${n.produceName}! 1-Click Checkout is ready.`,
-      '/bargains',
+      '/dashboard/negotiations',
       { negotiationId, produceName: n.produceName, finalPrice }
     ).catch(() => {});
 
@@ -314,7 +314,7 @@ export class NegotiationService {
       'NEGOTIATION',
       'Offer Declined',
       `Negotiation for ${n.produceName} was declined.`,
-      '/bargains',
+      '/dashboard/negotiations',
       { negotiationId, produceName: n.produceName }
     ).catch(() => {});
 

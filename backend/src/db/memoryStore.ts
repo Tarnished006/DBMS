@@ -307,14 +307,18 @@ export async function initMemoryStore(): Promise<void> {
       last_modified_date: new Date(),
     });
 
-    const reserved = Math.max(1, Math.floor(raw.quantity * 0.05));
+    const reserved = Math.floor(raw.quantity * 0.05);
+    const isHarvestCrop = raw.categoryName === 'Harvested Products' || raw.categoryName === 'Pre-Harvested Products';
+    const ownerId = raw.sellerId || (isHarvestCrop ? userId : adminId);
+    const ownerName = raw.sellerName || (isHarvestCrop ? normalUser.full_name : adminUser.full_name);
+
     const prodRecord = {
       id: raw.id,
       category_id: categoryId,
-      farmer_id: raw.sellerId || adminId,
-      seller_id: raw.sellerId || adminId,
-      seller_name: raw.sellerName,
-      farmer_name: raw.sellerName,
+      farmer_id: ownerId,
+      seller_id: ownerId,
+      seller_name: ownerName,
+      farmer_name: ownerName,
       name: raw.name,
       description: raw.description,
       price: raw.price,
@@ -474,6 +478,202 @@ export async function initMemoryStore(): Promise<void> {
     });
   }
 
+  // 9. Initial Seed Negotiations between Demo Farmer (Ramesh Gowda) and Demo Buyer (Ananya Sharma)
+  if (memoryDb.negotiations.length === 0) {
+    const neg1Id = 'neg-seed-kolar-tomatoes';
+    memoryDb.negotiations.push({
+      id: neg1Id,
+      produce_id: 'prod-kolar-salad-tomatoes',
+      buyer_id: buyerId,
+      farmer_id: userId,
+      quantity: 500,
+      unit: 'KG',
+      proposed_price: 28,
+      counter_price: 30,
+      final_price: null,
+      status: 'COUNTERED',
+      buyer_notes: 'Urgent bulk procurement for Bangalore retail distribution center. Need prompt dispatch.',
+      farmer_notes: 'Grade-A farm sorted lot. Can offer ₹30/KG with same-day APMC vehicle loading.',
+      created_date: new Date(Date.now() - 40 * 60 * 1000),
+      last_modified_date: new Date(Date.now() - 15 * 60 * 1000),
+    });
+
+    const neg2Id = 'neg-seed-red-onions';
+    memoryDb.negotiations.push({
+      id: neg2Id,
+      produce_id: 'prod-nashik-red-onions',
+      buyer_id: buyerId,
+      farmer_id: userId,
+      quantity: 1000,
+      unit: 'KG',
+      proposed_price: 22,
+      counter_price: null,
+      final_price: 22,
+      status: 'ACCEPTED',
+      buyer_notes: 'Procuring 10 quintals for Mysore wholesale depot.',
+      farmer_notes: 'Offer accepted. Verified moisture-free farm stock ready for truck pickup.',
+      created_date: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      last_modified_date: new Date(Date.now() - 50 * 60 * 1000),
+    });
+  }
+
+  // 10. Initial Seed Order between Demo Buyer (Ananya Sharma) and Demo Farmer (Ramesh Gowda)
+  if (memoryDb.orders.length === 0) {
+    const orderId = 'order-seed-88301';
+    const orderDate = new Date(Date.now() - 3 * 60 * 60 * 1000);
+    memoryDb.orders.push({
+      id: orderId,
+      buyer_id: buyerId,
+      status: 'CONFIRMED',
+      created_date: orderDate,
+      last_modified_date: orderDate,
+    });
+
+    memoryDb.order_items.push({
+      id: 'order-item-88301-1',
+      order_id: orderId,
+      product_id: 'prod-nashik-red-onions',
+      quantity: 300,
+      unit_price: 26,
+      created_date: orderDate,
+      last_modified_date: orderDate,
+    });
+
+    memoryDb.order_address_snapshots.push({
+      id: 'addr-snap-88301',
+      order_id: orderId,
+      address_line1: 'Devanahalli APMC Logistics Bay 1',
+      address_line2: 'Airport Corridor Industrial Road',
+      landmark: 'Next to Central Cold Storage',
+      taluk_id: 'taluk-devanahalli',
+      pin_code: '562110',
+      latitude: 13.2454,
+      longitude: 77.7126,
+      created_date: orderDate,
+      last_modified_date: orderDate,
+    });
+
+    memoryDb.payments.push({
+      id: 'pay-seed-88301',
+      order_id: orderId,
+      amount: 7800,
+      currency: 'INR',
+      provider: 'MOCK',
+      status: 'COMPLETED',
+      created_date: orderDate,
+      last_modified_date: orderDate,
+    });
+
+    memoryDb.deliveries.push({
+      id: 'del-seed-88301',
+      order_id: orderId,
+      status: 'IN_TRANSIT',
+      tracking_number: 'TRK-AGR88301',
+      carrier_name: 'Certified APMC 3PL Transporter',
+      otp_verified: false,
+      created_date: orderDate,
+      last_modified_date: orderDate,
+    });
+  }
+
+  // 11. Initial Seed Notifications
+  if (memoryDb.notifications.length === 0) {
+    const now = Date.now();
+    const min = 60 * 1000;
+    const hour = 60 * min;
+
+    memoryDb.notifications.push(
+      {
+        id: uuidv4(),
+        userId: userId,
+        type: 'NEGOTIATION',
+        title: 'Counter-Offer Awaiting Approval 🤝',
+        message: 'Ananya Sharma (Wholesale Buyer) offered ₹28/KG on Kolar Salad Tomatoes (500 KG). You countered ₹30/KG.',
+        link: '/dashboard/negotiations',
+        isRead: false,
+        metadata: { negotiationId: 'neg-seed-kolar-tomatoes', produceName: 'Kolar Salad Tomatoes', counterPrice: 30 },
+        createdDate: new Date(now - 15 * min),
+      },
+      {
+        id: uuidv4(),
+        userId: userId,
+        type: 'NEGOTIATION',
+        title: 'Wholesale Offer Accepted! 🤝',
+        message: 'You accepted Ananya Sharma’s offer of ₹22/KG on 1,000 KG Nashik Red Onions! Ready for dispatch.',
+        link: '/dashboard/negotiations',
+        isRead: false,
+        metadata: { negotiationId: 'neg-seed-red-onions', produceName: 'Nashik Red Onions', agreedPrice: 22 },
+        createdDate: new Date(now - 50 * min),
+      },
+      {
+        id: uuidv4(),
+        userId: userId,
+        type: 'ORDER',
+        title: 'Wholesale Order Placed 📦',
+        message: 'Order #AGR-88301 placed for 300 KG Nashik Red Onions. Awaiting your dispatch confirmation.',
+        link: '/orders',
+        isRead: false,
+        metadata: { orderId: 'order-seed-88301', orderNumber: 'AGR-88301' },
+        createdDate: new Date(now - 3 * hour),
+      },
+      {
+        id: uuidv4(),
+        userId: userId,
+        type: 'PRICE_ALERT',
+        title: 'Mandi Price Movement 📈',
+        message: 'Kolar APMC Mandi Tomato rates surged +12% today (₹34.50/KG). Optimal time to sell.',
+        link: '/market-prices',
+        isRead: true,
+        metadata: { mandi: 'Kolar Mandi', commodity: 'Tomato' },
+        createdDate: new Date(now - 5 * hour),
+      },
+      {
+        id: uuidv4(),
+        userId: buyerId,
+        type: 'NEGOTIATION',
+        title: 'Farmer Counter-Offer Received 🤝',
+        message: 'Farmer Ramesh Gowda counter-offered ₹30/KG for 500 KG Kolar Salad Tomatoes. 1-Click Accept ready.',
+        link: '/dashboard/negotiations',
+        isRead: false,
+        metadata: { negotiationId: 'neg-seed-kolar-tomatoes', produceName: 'Kolar Salad Tomatoes', counterPrice: 30 },
+        createdDate: new Date(now - 15 * min),
+      },
+      {
+        id: uuidv4(),
+        userId: buyerId,
+        type: 'NEGOTIATION',
+        title: 'Bargain Finalized & Accepted! 🤝',
+        message: 'Farmer Ramesh Gowda accepted your offer of ₹22/KG on 1,000 KG Nashik Red Onions! 1-Click Checkout ready.',
+        link: '/dashboard/negotiations',
+        isRead: false,
+        metadata: { negotiationId: 'neg-seed-red-onions', produceName: 'Nashik Red Onions', agreedPrice: 22 },
+        createdDate: new Date(now - 50 * min),
+      },
+      {
+        id: uuidv4(),
+        userId: buyerId,
+        type: 'ORDER',
+        title: 'Order Status Update 🚚',
+        message: 'Order #AGR-88301 confirmed by grower. Certified APMC 3PL Transporter dispatched from Devanahalli.',
+        link: '/orders',
+        isRead: false,
+        metadata: { orderId: 'order-seed-88301', orderNumber: 'AGR-88301' },
+        createdDate: new Date(now - 3 * hour),
+      },
+      {
+        id: uuidv4(),
+        userId: buyerId,
+        type: 'PRICE_ALERT',
+        title: 'Mandi Supply Inflow 🌾',
+        message: 'Fresh Grade-A Shimla Capsicum arrivals reached Bangalore Binny Mill APMC at ₹42.00/KG.',
+        link: '/market-prices',
+        isRead: true,
+        metadata: { mandi: 'Binny Mill APMC', commodity: 'Capsicum' },
+        createdDate: new Date(now - 5 * hour),
+      }
+    );
+  }
+
   // Restore dynamic user data, products, and sessions from disk snapshot if available
   restoreMemoryDbSnapshot();
 
@@ -527,6 +727,13 @@ export function restoreMemoryDbSnapshot(): boolean {
         }
         if (Array.isArray(parsed.products)) {
           for (const p of parsed.products) {
+            if (
+              (p.seller_id === '38b5459e-f2de-4f86-be60-f0bd926020ec' || p.farmer_id === '38b5459e-f2de-4f86-be60-f0bd926020ec') &&
+              (p.category_id === 'cat-harvested' || p.category_id === 'cat-pre-harvested' || p.id?.includes('salad') || p.id?.includes('onion') || p.id?.includes('mango') || p.id?.includes('tomato'))
+            ) {
+              p.seller_id = '11111111-2222-3333-4444-555555555555';
+              p.farmer_id = '11111111-2222-3333-4444-555555555555';
+            }
             if (!memoryDb.products.some((existing) => existing.id === p.id)) {
               memoryDb.products.unshift(p);
             }

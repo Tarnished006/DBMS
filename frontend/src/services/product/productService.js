@@ -20,15 +20,23 @@ export const productService = {
   },
 
   // Get products owned by authenticated user
-  async getMyProducts() {
-    const response = await apiClient.get('/api/v1/products/me');
-    return response.data;
+  async getMyProducts(params) {
+    const response = await apiClient.get('/api/v1/products/me', { params });
+    const data = response.data;
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.content)) return data.content;
+    if (Array.isArray(data?.products)) return data.products;
+    return [];
   },
 
   // Search products owned by authenticated user
   async searchMyProducts(params) {
     const response = await apiClient.get('/api/v1/products/me/search', { params });
-    return response.data;
+    const data = response.data;
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.content)) return data.content;
+    if (Array.isArray(data?.products)) return data.products;
+    return [];
   },
 
   // Create a new product

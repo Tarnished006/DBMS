@@ -12,6 +12,8 @@ import {
   MessageCircle,
   Phone,
 } from 'lucide-react';
+import { useLocation, useSearchParams } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 import { negotiationService } from '@/services/negotiation/negotiationService';
 import { Button } from '@/components/common/Button';
 import { Spinner } from '@/components/loaders/Spinner';
@@ -19,7 +21,10 @@ import { formatCurrency, formatDate } from '@/utils/formatters';
 import { useToast } from '@/hooks/useToast';
 
 export function NegotiationsPage() {
-  const [activeTab, setActiveTab] = useState('farmer'); // 'farmer' | 'buyer'
+  const { user, userMode } = useAuth();
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || (userMode === 'BUYER' ? 'buyer' : 'farmer');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [farmerOffers, setFarmerOffers] = useState([]);
   const [buyerOffers, setBuyerOffers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);

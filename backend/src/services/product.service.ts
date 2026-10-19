@@ -1,8 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
 import { db, isPostgres } from '../db/dbAdapter.js';
-import { memoryDb } from '../db/memoryStore.js';
+import { memoryDb, saveMemoryDbSnapshot } from '../db/memoryStore.js';
 import { BusinessException } from '../errors/BusinessException.js';
 import { ProductDto } from '../types/index.js';
+import { notificationService } from './notification.service.js';
 
 export class ProductService {
   async createProduct(sellerId: string, data: any): Promise<ProductDto> {
@@ -229,7 +230,30 @@ export class ProductService {
         created_date: now,
         last_modified_date: now,
       });
+
+      if (data.imageUrl || data.image_url) {
+        memoryDb.product_images.push({
+          id: uuidv4(),
+          product_id: productId,
+          image_url: data.imageUrl || data.image_url,
+          is_primary: true,
+          display_order: 1,
+          created_at: now,
+          updated_at: now,
+        });
+      }
+
+      saveMemoryDbSnapshot();
     }
+
+    notificationService.createNotification(
+      sellerId,
+      'SYSTEM',
+      'Crop Listed Successfully 🌾',
+      `Your produce "${data.name?.trim() || 'Crop'}" has been listed on the APMC Marketplace. Wholesale buyers can now view it, place orders, or propose bargains.`,
+      '/dashboard/selling',
+      { productId }
+    ).catch(() => {});
 
     return this.getProductById(productId);
   }

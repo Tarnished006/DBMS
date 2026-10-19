@@ -27,7 +27,8 @@ export function SellingPage() {
     setIsLoading(true);
     try {
       const data = await productService.getMyProducts();
-      setProducts(data || []);
+      const list = Array.isArray(data) ? data : data?.content || data?.products || [];
+      setProducts(list);
     } catch (err) {
       toast.error('Failed to load your listed products.');
     } finally {

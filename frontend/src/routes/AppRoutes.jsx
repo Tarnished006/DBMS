@@ -132,6 +132,7 @@ export function AppRoutes() {
         {/* Reverse Marketplace & Logistics Pooling */}
         <Route path="/demands" element={<DemandBoardPage />} />
         <Route path="/pools" element={<ProducePoolingPage />} />
+        <Route path="/bargains" element={<Navigate to="/dashboard/negotiations" replace />} />
 
         {/* Order Details & Tracking (Direct routes within Layout) */}
         <Route

@@ -574,7 +574,7 @@ export function Navbar() {
           {/* Mobile Notifications Alert */}
           {isAuthenticated && (
             <Link
-              to="/bargains"
+              to="/dashboard/negotiations"
               onClick={() => setIsMobileMenuOpen(false)}
               className="flex items-center justify-between p-3 rounded-2xl bg-white border border-slate-200/90 mb-1 hover:bg-slate-50 transition-colors"
             >
