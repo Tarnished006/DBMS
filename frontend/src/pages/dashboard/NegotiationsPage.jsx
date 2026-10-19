@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/useToast';
 export function NegotiationsPage() {
   const { user, userMode } = useAuth();
   const [searchParams] = useSearchParams();
+  const targetId = searchParams.get('id');
   const initialTab = searchParams.get('tab') || (userMode === 'BUYER' ? 'buyer' : 'farmer');
   const [activeTab, setActiveTab] = useState(initialTab);
   const [farmerOffers, setFarmerOffers] = useState([]);
@@ -54,6 +55,42 @@ export function NegotiationsPage() {
     loadOffers();
   }, []);
 
+  // Synchronize active tab with URL query parameters or auto-detect by negotiation ID
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    const idParam = searchParams.get('id');
+
+    if (idParam) {
+      if (farmerOffers.some((o) => o.id === idParam)) {
+        setActiveTab('farmer');
+        return;
+      } else if (buyerOffers.some((o) => o.id === idParam)) {
+        setActiveTab('buyer');
+        return;
+      }
+    }
+
+    if (tabParam === 'farmer' || tabParam === 'buyer') {
+      setActiveTab(tabParam);
+    } else if (farmerOffers.length > 0 && buyerOffers.length === 0) {
+      setActiveTab('farmer');
+    } else if (buyerOffers.length > 0 && farmerOffers.length === 0) {
+      setActiveTab('buyer');
+    } else {
+      setActiveTab(userMode === 'BUYER' ? 'buyer' : 'farmer');
+    }
+  }, [searchParams, userMode, farmerOffers, buyerOffers]);
+
+  // Smooth-scroll to target negotiation card when navigated from a notification
+  useEffect(() => {
+    if (targetId && !isLoading) {
+      const el = document.getElementById(`neg-${targetId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [targetId, isLoading, activeTab]);
+
   const handleAccept = async (id) => {
     try {
       await negotiationService.acceptOffer(id);
@@ -83,7 +120,11 @@ export function NegotiationsPage() {
     setIsSubmitting(true);
     try {
       await negotiationService.counterOffer(selectedOffer.id, counterPrice, counterNotes);
-      toast.success('Counter-offer sent to buyer!');
+      toast.success(
+        activeTab === 'buyer'
+          ? 'Revised offer sent to farmer!'
+          : 'Counter-offer sent to buyer!'
+      );
       setSelectedOffer(null);
       setCounterPrice('');
       setCounterNotes('');
@@ -198,15 +239,27 @@ export function NegotiationsPage() {
               `Namaskara ${partnerName}! Regarding our AgriMarket negotiation for ${item.produceName} (${item.quantity} ${item.unit} at ₹${dealRate}/${item.unit})...`
             );
 
+            const isTarget = targetId === item.id;
+
             return (
               <div
+                id={`neg-${item.id}`}
                 key={item.id}
-                className="bg-white rounded-2xl border border-slate-200 p-5 shadow-soft-xs hover:border-emerald-200 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+                className={`bg-white rounded-2xl border p-5 shadow-soft-xs transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                  isTarget
+                    ? 'border-emerald-500 ring-2 ring-emerald-500/60 bg-emerald-50/20 shadow-md'
+                    : 'border-slate-200 hover:border-emerald-200'
+                }`}
               >
                 <div className="space-y-1.5 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-extrabold text-slate-900 text-base">{item.produceName}</span>
                     {getStatusBadge(item.status)}
+                    {isTarget && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-600 text-white shadow-xs animate-pulse">
+                        📍 Selected from Notification
+                      </span>
+                    )}
                     <span className="text-xs text-slate-400">• {formatDate(item.createdDate)}</span>
                   </div>
 
@@ -301,6 +354,13 @@ export function NegotiationsPage() {
                     <>
                       <Button
                         size="sm"
+                        variant="outline"
+                        onClick={() => setSelectedOffer(item)}
+                      >
+                        Revise Offer
+                      </Button>
+                      <Button
+                        size="sm"
                         variant="primary"
                         onClick={() => handleAccept(item.id)}
                       >
@@ -323,19 +383,29 @@ export function NegotiationsPage() {
         </div>
       )}
 
-      {/* Counter-Offer Modal */}
+      {/* Counter-Offer / Revise Offer Modal */}
       {selectedOffer && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-soft-xl">
-            <h3 className="font-bold text-slate-900 text-lg">Send Counter-Offer</h3>
+            <h3 className="font-bold text-slate-900 text-lg">
+              {activeTab === 'buyer' ? 'Revise Offer to Farmer' : 'Send Counter-Offer to Buyer'}
+            </h3>
             <p className="text-xs text-slate-500">
-              Buyer proposed <strong>{formatCurrency(selectedOffer.proposedPrice)}/{selectedOffer.unit}</strong> for {selectedOffer.quantity} {selectedOffer.unit}. What is your counter rate?
+              {activeTab === 'buyer' ? (
+                <>
+                  Farmer counter-offered <strong>{formatCurrency(selectedOffer.counterPrice || selectedOffer.producePrice)}/{selectedOffer.unit}</strong> for {selectedOffer.quantity} {selectedOffer.unit}. What is your revised offer rate?
+                </>
+              ) : (
+                <>
+                  Buyer proposed <strong>{formatCurrency(selectedOffer.proposedPrice)}/{selectedOffer.unit}</strong> for {selectedOffer.quantity} {selectedOffer.unit}. What is your counter rate?
+                </>
+              )}
             </p>
 
             <form onSubmit={handleCounterSubmit} className="space-y-3">
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">
-                  Counter Rate (₹ / {selectedOffer.unit})
+                  {activeTab === 'buyer' ? 'Revised Offer Rate' : 'Counter Rate'} (₹ / {selectedOffer.unit})
                 </label>
                 <input
                   type="number"
@@ -343,20 +413,20 @@ export function NegotiationsPage() {
                   required
                   value={counterPrice}
                   onChange={(e) => setCounterPrice(e.target.value)}
-                  placeholder="e.g. 32"
+                  placeholder={activeTab === 'buyer' ? 'e.g. 29' : 'e.g. 32'}
                   className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">
-                  Note to Buyer (Optional)
+                  Note to {activeTab === 'buyer' ? 'Farmer' : 'Buyer'} (Optional)
                 </label>
                 <textarea
                   rows={2}
                   value={counterNotes}
                   onChange={(e) => setCounterNotes(e.target.value)}
-                  placeholder="e.g. Rate valid for farm-gate pickup this Thursday"
+                  placeholder={activeTab === 'buyer' ? 'e.g. Can take entire batch if rate is ₹29/KG' : 'e.g. Rate valid for farm-gate pickup this Thursday'}
                   className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
@@ -376,7 +446,7 @@ export function NegotiationsPage() {
                   size="sm"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? 'Sending...' : 'Send Counter-Offer'}
+                  {isSubmitting ? 'Sending...' : activeTab === 'buyer' ? 'Send Revised Offer' : 'Send Counter-Offer'}
                 </Button>
               </div>
             </form>

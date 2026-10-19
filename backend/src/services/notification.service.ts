@@ -7,9 +7,6 @@ export class NotificationService {
   async getUserNotifications(userId: string): Promise<NotificationDto[]> {
     if (!userId) return [];
 
-    // Ensure demo accounts have initial notifications if list is empty
-    this.ensureDemoNotifications(userId);
-
     if (isPostgres()) {
       try {
         const res = await db.query(
@@ -125,114 +122,26 @@ export class NotificationService {
     return true;
   }
 
-  private ensureDemoNotifications(userId: string): void {
-    const existing = memoryDb.notifications.filter((n) => n.userId === userId);
-    if (existing.length > 0) return;
-
-    const farmerId = '11111111-2222-3333-4444-555555555555';
-    const buyerId = '22222222-3333-4444-5555-666666666666';
-
-    const now = Date.now();
-    const min = 60 * 1000;
-    const hour = 60 * min;
-
-    if (userId === farmerId) {
-      memoryDb.notifications.push(
-        {
-          id: uuidv4(),
-          userId: farmerId,
-          type: 'NEGOTIATION',
-          title: 'Counter-Offer Awaiting Approval 🤝',
-          message: 'Ananya Sharma (Wholesale Buyer) offered ₹28/KG on Kolar Salad Tomatoes (500 KG). You countered ₹30/KG.',
-          link: '/dashboard/negotiations',
-          isRead: false,
-          metadata: { negotiationId: 'neg-seed-kolar-tomatoes', produceName: 'Kolar Salad Tomatoes', counterPrice: 30 },
-          createdDate: new Date(now - 15 * min),
-        },
-        {
-          id: uuidv4(),
-          userId: farmerId,
-          type: 'NEGOTIATION',
-          title: 'Wholesale Offer Accepted! 🤝',
-          message: 'You accepted Ananya Sharma’s offer of ₹22/KG on 1,000 KG Nashik Red Onions! Ready for dispatch.',
-          link: '/dashboard/negotiations',
-          isRead: false,
-          metadata: { negotiationId: 'neg-seed-red-onions', produceName: 'Nashik Red Onions', agreedPrice: 22 },
-          createdDate: new Date(now - 50 * min),
-        },
-        {
-          id: uuidv4(),
-          userId: farmerId,
-          type: 'ORDER',
-          title: 'Wholesale Order Placed 📦',
-          message: 'Order #AGR-88301 placed for 300 KG Nashik Red Onions. Awaiting your dispatch confirmation.',
-          link: '/orders',
-          isRead: false,
-          metadata: { orderId: 'order-seed-88301', orderNumber: 'AGR-88301' },
-          createdDate: new Date(now - 3 * hour),
-        },
-        {
-          id: uuidv4(),
-          userId: farmerId,
-          type: 'PRICE_ALERT',
-          title: 'Mandi Price Movement 📈',
-          message: 'Kolar APMC Mandi Tomato rates surged +12% today (₹34.50/KG). Optimal time to sell.',
-          link: '/market-prices',
-          isRead: true,
-          metadata: { mandi: 'Kolar Mandi', commodity: 'Tomato' },
-          createdDate: new Date(now - 5 * hour),
-        }
-      );
-      saveMemoryDbSnapshot();
-    } else if (userId === buyerId) {
-      memoryDb.notifications.push(
-        {
-          id: uuidv4(),
-          userId: buyerId,
-          type: 'NEGOTIATION',
-          title: 'Farmer Counter-Offer Received 🤝',
-          message: 'Farmer Ramesh Gowda counter-offered ₹30/KG for 500 KG Kolar Salad Tomatoes. 1-Click Accept ready.',
-          link: '/dashboard/negotiations',
-          isRead: false,
-          metadata: { negotiationId: 'neg-seed-kolar-tomatoes', produceName: 'Kolar Salad Tomatoes', counterPrice: 30 },
-          createdDate: new Date(now - 15 * min),
-        },
-        {
-          id: uuidv4(),
-          userId: buyerId,
-          type: 'NEGOTIATION',
-          title: 'Bargain Finalized & Accepted! 🤝',
-          message: 'Farmer Ramesh Gowda accepted your offer of ₹22/KG on 1,000 KG Nashik Red Onions! 1-Click Checkout ready.',
-          link: '/dashboard/negotiations',
-          isRead: false,
-          metadata: { negotiationId: 'neg-seed-red-onions', produceName: 'Nashik Red Onions', agreedPrice: 22 },
-          createdDate: new Date(now - 50 * min),
-        },
-        {
-          id: uuidv4(),
-          userId: buyerId,
-          type: 'ORDER',
-          title: 'Order Status Update 🚚',
-          message: 'Order #AGR-88301 confirmed by grower. Certified APMC 3PL Transporter dispatched from Devanahalli.',
-          link: '/orders',
-          isRead: false,
-          metadata: { orderId: 'order-seed-88301', orderNumber: 'AGR-88301' },
-          createdDate: new Date(now - 3 * hour),
-        },
-        {
-          id: uuidv4(),
-          userId: buyerId,
-          type: 'PRICE_ALERT',
-          title: 'Mandi Supply Inflow 🌾',
-          message: 'Fresh Grade-A Shimla Capsicum arrivals reached Bangalore Binny Mill APMC at ₹42.00/KG.',
-          link: '/market-prices',
-          isRead: true,
-          metadata: { mandi: 'Binny Mill APMC', commodity: 'Capsicum' },
-          createdDate: new Date(now - 5 * hour),
-        }
-      );
-      saveMemoryDbSnapshot();
+  async clearAll(userId: string): Promise<boolean> {
+    if (isPostgres()) {
+      try {
+        await db.query(`DELETE FROM notifications WHERE user_id = $1`, [userId]);
+      } catch {}
     }
+    memoryDb.notifications = memoryDb.notifications.filter((n) => n.userId !== userId);
+    saveMemoryDbSnapshot();
+    return true;
+  }
+
+  async deleteNotification(userId: string, id: string): Promise<boolean> {
+    if (isPostgres()) {
+      try {
+        await db.query(`DELETE FROM notifications WHERE id = $1 AND user_id = $2`, [id, userId]);
+      } catch {}
+    }
+    memoryDb.notifications = memoryDb.notifications.filter((n) => !(n.id === id && n.userId === userId));
+    saveMemoryDbSnapshot();
+    return true;
   }
 }
 

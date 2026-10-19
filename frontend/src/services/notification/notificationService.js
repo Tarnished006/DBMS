@@ -31,4 +31,25 @@ export const notificationService = {
       return null;
     }
   },
+
+  // Clear all notifications for the authenticated user
+  async clearAll() {
+    try {
+      const res = await apiClient.delete('/api/v1/notifications');
+      return res.data;
+    } catch {
+      return null;
+    }
+  },
+
+  // Delete a single notification
+  async deleteNotification(id) {
+    if (!id) return;
+    try {
+      const res = await apiClient.delete(`/api/v1/notifications/${id}`);
+      return res.data;
+    } catch {
+      return null;
+    }
+  },
 };

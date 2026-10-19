@@ -31,11 +31,13 @@ export const negotiationService = {
     return res.data;
   },
 
-  // Farmer sends a counter-offer
-  async counterOffer(negotiationId, counterPrice, farmerNotes) {
+  // Farmer or Buyer sends a counter-offer
+  async counterOffer(negotiationId, counterPrice, notes) {
     const res = await apiClient.patch(`/api/v1/negotiations/${negotiationId}/counter`, {
       counterPrice: Number(counterPrice),
-      farmerNotes,
+      farmerNotes: notes,
+      buyerNotes: notes,
+      notes,
     });
     return res.data;
   },

@@ -73,6 +73,20 @@ export function NotificationProvider({ children }) {
     } catch {}
   }, []);
 
+  const clearAll = useCallback(async () => {
+    setNotifications([]);
+    try {
+      await notificationService.clearAll();
+    } catch {}
+  }, []);
+
+  const deleteNotification = useCallback(async (id) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    try {
+      await notificationService.deleteNotification(id);
+    } catch {}
+  }, []);
+
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return (
@@ -84,6 +98,8 @@ export function NotificationProvider({ children }) {
         fetchNotifications,
         markAsRead,
         markAllAsRead,
+        clearAll,
+        deleteNotification,
       }}
     >
       {children}

@@ -107,7 +107,7 @@ export class NegotiationService {
       'NEGOTIATION',
       'New Price Offer Received 🤝',
       `A buyer offered ₹${proposedPrice} for ${quantity} ${unit || 'KG'} of ${produceName}.`,
-      '/dashboard/negotiations',
+      `/dashboard/negotiations?tab=farmer&id=${id}`,
       { negotiationId: id, produceName, proposedPrice, quantity }
     ).catch(() => {});
 
@@ -186,50 +186,82 @@ export class NegotiationService {
   }
 
   async counterOffer(
-    farmerId: string,
+    userId: string,
     negotiationId: string,
     counterPrice: number,
-    farmerNotes?: string
+    notes?: string
   ): Promise<NegotiationDto> {
     if (!counterPrice || counterPrice <= 0) {
       throw new BusinessException('INVALID_REQUEST', 'Counter price must be positive');
     }
 
     const n = await this.getNegotiationById(negotiationId);
-    if (n.farmerId !== farmerId) {
-      throw new BusinessException('ACCESS_DENIED', 'Only the farmer can counter-offer this proposal');
-    }
-    if (n.status !== 'PENDING') {
-      throw new BusinessException('INVALID_REQUEST', `Cannot counter-offer when status is ${n.status}`);
+    const isFarmer = n.farmerId === userId;
+    const isBuyer = n.buyerId === userId;
+
+    if (!isFarmer && !isBuyer) {
+      throw new BusinessException('ACCESS_DENIED', 'You are not a participant in this negotiation');
     }
 
     const now = new Date();
-    if (isPostgres()) {
-      await db.query(
-        `UPDATE negotiations
-         SET counter_price = $1, farmer_notes = $2, status = 'COUNTERED', last_modified_date = $3
-         WHERE id = $4`,
-        [counterPrice, farmerNotes?.trim() || null, now, negotiationId]
-      );
-    } else {
-      const mem = memoryDb.negotiations.find((neg) => neg.id === negotiationId);
-      if (mem) {
-        mem.counter_price = counterPrice;
-        mem.farmer_notes = farmerNotes?.trim() || null;
-        mem.status = 'COUNTERED';
-        mem.last_modified_date = now;
-        saveMemoryDbSnapshot();
-      }
-    }
 
-    notificationService.createNotification(
-      n.buyerId,
-      'NEGOTIATION',
-      'Counter-Offer Received 🤝',
-      `Farmer counter-offered ₹${counterPrice} for ${n.produceName}.`,
-      '/dashboard/negotiations',
-      { negotiationId, produceName: n.produceName, counterPrice }
-    ).catch(() => {});
+    if (isFarmer) {
+      // Farmer counters the buyer's offer
+      if (isPostgres()) {
+        await db.query(
+          `UPDATE negotiations
+           SET counter_price = $1, farmer_notes = $2, status = 'COUNTERED', last_modified_date = $3
+           WHERE id = $4`,
+          [counterPrice, notes?.trim() || null, now, negotiationId]
+        );
+      } else {
+        const mem = memoryDb.negotiations.find((neg) => neg.id === negotiationId);
+        if (mem) {
+          mem.counter_price = counterPrice;
+          mem.farmer_notes = notes?.trim() || null;
+          mem.status = 'COUNTERED';
+          mem.last_modified_date = now;
+          saveMemoryDbSnapshot();
+        }
+      }
+
+      notificationService.createNotification(
+        n.buyerId,
+        'NEGOTIATION',
+        `Farmer Counter-Offer: ₹${counterPrice}/${n.unit || 'KG'} 🤝`,
+        `Farmer ${n.farmerName} counter-offered ₹${counterPrice} for ${n.produceName}. 1-Click Accept ready.`,
+        `/dashboard/negotiations?tab=buyer&id=${negotiationId}`,
+        { negotiationId, produceName: n.produceName, counterPrice }
+      ).catch(() => {});
+    } else {
+      // Buyer revises their offer to the farmer
+      if (isPostgres()) {
+        await db.query(
+          `UPDATE negotiations
+           SET proposed_price = $1, buyer_notes = $2, status = 'PENDING', last_modified_date = $3
+           WHERE id = $4`,
+          [counterPrice, notes?.trim() || null, now, negotiationId]
+        );
+      } else {
+        const mem = memoryDb.negotiations.find((neg) => neg.id === negotiationId);
+        if (mem) {
+          mem.proposed_price = counterPrice;
+          mem.buyer_notes = notes?.trim() || null;
+          mem.status = 'PENDING';
+          mem.last_modified_date = now;
+          saveMemoryDbSnapshot();
+        }
+      }
+
+      notificationService.createNotification(
+        n.farmerId,
+        'NEGOTIATION',
+        `Buyer Revised Offer: ₹${counterPrice}/${n.unit || 'KG'} 🤝`,
+        `Buyer ${n.buyerName} revised offer to ₹${counterPrice} for ${n.produceName}.`,
+        `/dashboard/negotiations?tab=farmer&id=${negotiationId}`,
+        { negotiationId, produceName: n.produceName, proposedPrice: counterPrice }
+      ).catch(() => {});
+    }
 
     return this.getNegotiationById(negotiationId);
   }
@@ -240,9 +272,9 @@ export class NegotiationService {
     let finalPrice = 0;
 
     if (n.status === 'PENDING') {
-      // Farmer accepts buyer's original proposed price
+      // Farmer accepts buyer's original or revised proposed price
       if (n.farmerId !== userId) {
-        throw new BusinessException('ACCESS_DENIED', 'Only the farmer can accept the initial offer');
+        throw new BusinessException('ACCESS_DENIED', 'Only the farmer can accept the initial or revised offer');
       }
       finalPrice = n.proposedPrice;
     } else if (n.status === 'COUNTERED') {
@@ -273,12 +305,14 @@ export class NegotiationService {
     }
 
     const otherUserId = userId === n.farmerId ? n.buyerId : n.farmerId;
+    const isBuyerRecipient = otherUserId === n.buyerId;
+
     notificationService.createNotification(
       otherUserId,
       'NEGOTIATION',
       'Bargain Finalized & Accepted! 🤝',
-      `Price locked at ₹${finalPrice} for ${n.produceName}! 1-Click Checkout is ready.`,
-      '/dashboard/negotiations',
+      `Price locked at ₹${finalPrice}/${n.unit || 'KG'} for ${n.produceName}! 1-Click Checkout is ready.`,
+      `/dashboard/negotiations?tab=${isBuyerRecipient ? 'buyer' : 'farmer'}&id=${negotiationId}`,
       { negotiationId, produceName: n.produceName, finalPrice }
     ).catch(() => {});
 

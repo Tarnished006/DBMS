@@ -49,12 +49,13 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response, next: Nex
 router.patch('/:id/counter', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = req.params.id as string;
-    const { counterPrice, farmerNotes } = req.body;
+    const counterPrice = req.body.counterPrice || req.body.price;
+    const notes = req.body.farmerNotes || req.body.buyerNotes || req.body.notes;
     const result = await negotiationService.counterOffer(
       (req as any).user.id,
       id,
       counterPrice,
-      farmerNotes
+      notes
     );
     res.json(result);
   } catch (err) {

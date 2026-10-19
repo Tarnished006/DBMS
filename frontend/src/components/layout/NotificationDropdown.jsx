@@ -10,6 +10,7 @@ import {
   ExternalLink,
   Clock,
   Sparkles,
+  Trash2,
 } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
 
@@ -30,7 +31,7 @@ function formatRelativeTime(dateInput) {
 }
 
 export function NotificationDropdown() {
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll, deleteNotification } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('ALL'); // 'ALL' | 'NEGOTIATION' | 'ORDER' | 'PRICE_ALERT'
   const dropdownRef = useRef(null);
@@ -146,17 +147,30 @@ export function NotificationDropdown() {
               )}
             </div>
 
-            {unreadCount > 0 && (
-              <button
-                type="button"
-                onClick={markAllAsRead}
-                className="inline-flex items-center gap-1 text-[11px] font-bold text-brand-700 hover:text-brand-900 cursor-pointer transition-colors"
-                title="Mark all notifications as read"
-              >
-                <CheckCheck className="w-3.5 h-3.5" />
-                <span>Mark all read</span>
-              </button>
-            )}
+            <div className="flex items-center gap-2.5">
+              {unreadCount > 0 && (
+                <button
+                  type="button"
+                  onClick={markAllAsRead}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-brand-700 hover:text-brand-900 cursor-pointer transition-colors"
+                  title="Mark all notifications as read"
+                >
+                  <CheckCheck className="w-3.5 h-3.5" />
+                  <span>Mark read</span>
+                </button>
+              )}
+              {notifications.length > 0 && (
+                <button
+                  type="button"
+                  onClick={clearAll}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-rose-600 cursor-pointer transition-colors"
+                  title="Clear all notifications"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Clear all</span>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Quick Filter Tabs */}
@@ -241,10 +255,23 @@ export function NotificationDropdown() {
                       >
                         {n.title}
                       </p>
-                      <span className="text-[10px] text-slate-400 font-medium flex-shrink-0 flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {formatRelativeTime(n.createdDate)}
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteNotification(n.id);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-slate-400 hover:text-rose-600 transition-opacity"
+                          title="Dismiss notification"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                        <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {formatRelativeTime(n.createdDate)}
+                        </span>
+                      </div>
                     </div>
 
                     <p className="text-[11px] text-slate-600 line-clamp-2 leading-relaxed">

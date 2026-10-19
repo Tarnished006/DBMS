@@ -61,4 +61,41 @@ router.put('/read-all', async (req: AuthenticatedRequest, res: Response) => {
   }
 });
 
+/**
+ * DELETE /api/v1/notifications
+ * Clears all notifications for the authenticated user
+ */
+router.delete('/', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    await notificationService.clearAll(userId);
+    res.json({ success: true, message: 'All notifications cleared' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to clear notifications' });
+  }
+});
+
+/**
+ * DELETE /api/v1/notifications/:id
+ * Deletes a single notification
+ */
+router.delete('/:id', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const id = req.params.id;
+    if (typeof id === 'string') {
+      await notificationService.deleteNotification(userId, id);
+    }
+    res.json({ success: true, message: 'Notification deleted' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to delete notification' });
+  }
+});
+
 export default router;
