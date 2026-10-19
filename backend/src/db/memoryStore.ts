@@ -142,6 +142,29 @@ export async function initMemoryStore(): Promise<void> {
   memoryDb.users.push(normalUser);
   memoryDb.user_roles.push({ user_id: userId, role_id: roleUser.id });
 
+  // Demo Buyer User (Wholesale / Consumer Buyer)
+  const buyerPasswordHash = await bcrypt.hash('Buyer@123', 10);
+  const buyerId = '22222222-3333-4444-5555-666666666666';
+  const buyerUser = {
+    id: buyerId,
+    email: 'buyer@agrimarket.com',
+    password: buyerPasswordHash,
+    full_name: 'Ananya Sharma (Wholesale Buyer)',
+    phone_number: '9876501234',
+    profile_picture_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&q=80',
+    is_active: true,
+    is_email_verified: true,
+    is_phone_verified: true,
+    is_account_non_locked: true,
+    failed_login_attempts: 0,
+    temporary_locked_until: null,
+    created_date: new Date(),
+    last_modified_date: new Date(),
+    password_updated_at: new Date(),
+  };
+  memoryDb.users.push(buyerUser);
+  memoryDb.user_roles.push({ user_id: buyerId, role_id: roleUser.id });
+
   // 3. States, Districts, Taluks
   const stateKA = {
     id: 'state-karnataka',

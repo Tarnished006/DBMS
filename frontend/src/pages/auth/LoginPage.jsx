@@ -8,7 +8,7 @@ import { Input } from '@/components/common/Input';
 import { OAuthButtons } from '@/components/auth/OAuthButtons';
 
 export function LoginPage() {
-  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { login, setUserMode, isAuthenticated, isLoading: authLoading } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -66,15 +66,24 @@ export function LoginPage() {
     }
   };
 
-  const handleQuickLogin = async (email, password) => {
+  const handleQuickLogin = async (email, password, mode) => {
     setFormData({ email, password });
     setIsLoading(true);
     try {
       if (rememberMe) {
         localStorage.setItem('agri_remembered_email', email);
       }
+      if (mode) {
+        setUserMode(mode);
+      }
       await login({ email, password });
-      toast.success(`Signed in as ${email.includes('admin') ? 'Administrator' : 'Farmer'}!`);
+      const roleLabel =
+        mode === 'BUYER'
+          ? 'Buyer (Ananya)'
+          : email.includes('admin')
+          ? 'Administrator'
+          : 'Farmer (Ramesh)';
+      toast.success(`Signed in as ${roleLabel}!`);
       navigate(redirectPath, { replace: true });
     } catch (err) {
       toast.error(err.message || 'Quick login failed.');
@@ -115,20 +124,30 @@ export function LoginPage() {
             <button
               type="button"
               disabled={isLoading}
-              onClick={() => handleQuickLogin('user@agrimarket.com', 'User@123')}
-              className="px-3 py-2 text-xs font-bold rounded-xl border border-slate-200 hover:border-brand-500 hover:bg-brand-50/60 bg-white text-slate-800 hover:text-brand-800 transition-all shadow-soft-xs flex items-center justify-center gap-1.5"
+              onClick={() => handleQuickLogin('user@agrimarket.com', 'User@123', 'FARMER')}
+              className="px-3 py-2 text-xs font-bold rounded-xl border border-emerald-200 hover:border-emerald-500 hover:bg-emerald-50/70 bg-white text-slate-800 hover:text-emerald-800 transition-all shadow-soft-xs flex items-center justify-center gap-1.5"
             >
               <span>🚜</span>
-              <span>Farmer Demo</span>
+              <span>Farmer (Ramesh)</span>
             </button>
             <button
               type="button"
               disabled={isLoading}
-              onClick={() => handleQuickLogin('admin@agrimarket.com', 'Admin@123')}
-              className="px-3 py-2 text-xs font-bold rounded-xl border border-slate-200 hover:border-slate-800 hover:bg-slate-100 bg-white text-slate-800 hover:text-slate-950 transition-all shadow-soft-xs flex items-center justify-center gap-1.5"
+              onClick={() => handleQuickLogin('buyer@agrimarket.com', 'Buyer@123', 'BUYER')}
+              className="px-3 py-2 text-xs font-bold rounded-xl border border-blue-200 hover:border-blue-500 hover:bg-blue-50/70 bg-white text-slate-800 hover:text-blue-800 transition-all shadow-soft-xs flex items-center justify-center gap-1.5"
             >
-              <span>🛡️</span>
-              <span>Admin Demo</span>
+              <span>🛒</span>
+              <span>Buyer (Ananya)</span>
+            </button>
+          </div>
+          <div className="text-center pt-0.5">
+            <button
+              type="button"
+              disabled={isLoading}
+              onClick={() => handleQuickLogin('admin@agrimarket.com', 'Admin@123')}
+              className="text-[11px] font-medium text-slate-400 hover:text-slate-600 underline"
+            >
+              Sign in as Administrator
             </button>
           </div>
         </div>
