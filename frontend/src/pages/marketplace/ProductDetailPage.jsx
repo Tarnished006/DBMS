@@ -87,6 +87,12 @@ export function ProductDetailPage() {
   const maxAvailable = availability?.availableQuantity ?? availability?.available_quantity ?? product?.quantity ?? 0;
   const isAvailable = maxAvailable > 0 && product?.status === 'ACTIVE';
 
+  const isOwner =
+    user?.id &&
+    (user.id === product?.sellerId ||
+      user.id === product?.seller_id ||
+      user.id === product?.farmerId);
+
   const handleBuyNow = () => {
     if (!isAvailable) {
       toast.error('This product is currently out of stock.');
@@ -99,6 +105,10 @@ export function ProductDetailPage() {
     if (!isAuthenticated) {
       toast.info('Please sign in to make a counter-offer to the farmer.');
       navigate(`/login?redirect=/products/${productId}`);
+      return;
+    }
+    if (isOwner) {
+      toast.info('You are the seller of this listing. Price negotiations are placed by prospective buyers.');
       return;
     }
     setOfferPrice(product?.price ? String(Math.round(product.price * 0.95)) : '');
@@ -121,13 +131,14 @@ export function ProductDetailPage() {
 
     setIsSubmittingOffer(true);
     try {
-      await negotiationService.initiateNegotiation({
-        productId,
+      await negotiationService.createOffer({
+        produceId: productId,
+        quantity: q,
         proposedPrice: p,
-        proposedQuantity: q,
-        notes: offerNotes.trim() || undefined,
+        unit: product?.unit || 'KG',
+        buyerNotes: offerNotes.trim() || undefined,
       });
-      toast.success('Bargain offer sent directly to farmer! Check Bargain & Offers to track.');
+      toast.success('Bargain offer sent directly to farmer! Track status in your Dashboard > Negotiations.');
       setIsOfferModalOpen(false);
     } catch (err) {
       toast.error(err.message || 'Failed to submit offer');

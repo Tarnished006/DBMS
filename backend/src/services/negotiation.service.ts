@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { db, isPostgres } from '../db/dbAdapter.js';
-import { memoryDb } from '../db/memoryStore.js';
+import { memoryDb, saveMemoryDbSnapshot } from '../db/memoryStore.js';
 import { BusinessException } from '../errors/BusinessException.js';
 import { NegotiationDto } from '../types/index.js';
 
@@ -8,18 +8,26 @@ export class NegotiationService {
   async createOffer(
     buyerId: string,
     data: {
-      produceId: string;
-      quantity: number;
+      produceId?: string;
+      productId?: string;
+      quantity?: number;
+      proposedQuantity?: number;
       proposedPrice: number;
       unit?: string;
       buyerNotes?: string;
+      notes?: string;
     }
   ): Promise<NegotiationDto> {
-    if (!data.produceId || !data.quantity || !data.proposedPrice) {
+    const produceId = (data.produceId || data.productId)?.trim();
+    const quantity = Number(data.quantity || data.proposedQuantity);
+    const proposedPrice = Number(data.proposedPrice);
+    const buyerNotes = (data.buyerNotes || data.notes)?.trim();
+
+    if (!produceId || !quantity || !proposedPrice) {
       throw new BusinessException('INVALID_REQUEST', 'Produce ID, quantity, and proposed price are required');
     }
 
-    if (data.quantity <= 0 || data.proposedPrice <= 0) {
+    if (quantity <= 0 || proposedPrice <= 0) {
       throw new BusinessException('INVALID_REQUEST', 'Quantity and price must be greater than zero');
     }
 
@@ -29,7 +37,7 @@ export class NegotiationService {
 
     if (isPostgres()) {
       const pRes = await db.query('SELECT id, seller_id, name, price_per_unit FROM products WHERE id = $1', [
-        data.produceId,
+        produceId,
       ]);
       if (pRes.rows.length === 0) {
         throw new BusinessException('PRODUCT_NOT_FOUND', 'Selected produce not found');
@@ -38,7 +46,7 @@ export class NegotiationService {
       produceName = pRes.rows[0].name;
       currentPrice = parseFloat(pRes.rows[0].price_per_unit);
     } else {
-      const p = memoryDb.products.find((prod) => prod.id === data.produceId);
+      const p = memoryDb.products.find((prod) => prod.id === produceId);
       if (!p) {
         throw new BusinessException('PRODUCT_NOT_FOUND', 'Selected produce not found');
       }
@@ -63,33 +71,34 @@ export class NegotiationService {
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'PENDING', $8, $9, $9)`,
         [
           id,
-          data.produceId,
+          produceId,
           buyerId,
           farmerId,
-          data.quantity,
+          quantity,
           unit,
-          data.proposedPrice,
-          data.buyerNotes?.trim() || null,
+          proposedPrice,
+          buyerNotes || null,
           now,
         ]
       );
     } else {
       memoryDb.negotiations.push({
         id,
-        produce_id: data.produceId,
+        produce_id: produceId,
         buyer_id: buyerId,
         farmer_id: farmerId,
-        quantity: data.quantity,
+        quantity,
         unit,
-        proposed_price: data.proposedPrice,
+        proposed_price: proposedPrice,
         counter_price: null,
         final_price: null,
         status: 'PENDING',
-        buyer_notes: data.buyerNotes?.trim() || null,
+        buyer_notes: buyerNotes || null,
         farmer_notes: null,
         created_date: now,
         last_modified_date: now,
       });
+      saveMemoryDbSnapshot();
     }
 
     return this.getNegotiationById(id);
@@ -199,6 +208,7 @@ export class NegotiationService {
         mem.farmer_notes = farmerNotes?.trim() || null;
         mem.status = 'COUNTERED';
         mem.last_modified_date = now;
+        saveMemoryDbSnapshot();
       }
     }
 
@@ -239,6 +249,7 @@ export class NegotiationService {
         mem.status = 'ACCEPTED';
         mem.final_price = finalPrice;
         mem.last_modified_date = now;
+        saveMemoryDbSnapshot();
       }
     }
 
@@ -264,6 +275,7 @@ export class NegotiationService {
       if (mem) {
         mem.status = 'REJECTED';
         mem.last_modified_date = now;
+        saveMemoryDbSnapshot();
       }
     }
 

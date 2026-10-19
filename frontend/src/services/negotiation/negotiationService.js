@@ -3,8 +3,20 @@ import apiClient from '../api/apiClient';
 export const negotiationService = {
   // Propose an offer on a farmer's produce listing
   async createOffer(data) {
-    const res = await apiClient.post('/api/v1/negotiations', data);
+    const payload = {
+      produceId: data.produceId || data.productId,
+      quantity: Number(data.quantity || data.proposedQuantity),
+      proposedPrice: Number(data.proposedPrice),
+      unit: data.unit || 'KG',
+      buyerNotes: data.buyerNotes || data.notes,
+    };
+    const res = await apiClient.post('/api/v1/negotiations', payload);
     return res.data;
+  },
+
+  // Alias for initiateNegotiation to ensure backward and call-site compatibility
+  async initiateNegotiation(data) {
+    return this.createOffer(data);
   },
 
   // Get offers received by the farmer
