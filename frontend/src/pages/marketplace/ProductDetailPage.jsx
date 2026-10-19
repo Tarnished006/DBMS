@@ -17,6 +17,8 @@ import {
   Handshake,
   Award,
   X,
+  MessageCircle,
+  CalendarClock,
 } from 'lucide-react';
 import { productService } from '@/services/product/productService';
 import { inventoryService } from '@/services/inventory/inventoryService';
@@ -92,6 +94,17 @@ export function ProductDetailPage() {
     (user.id === product?.sellerId ||
       user.id === product?.seller_id ||
       user.id === product?.farmerId);
+
+  const isPreHarvest =
+    product?.harvestStatus === 'PRE_HARVEST_CONTRACT' ||
+    Boolean(product?.categoryName?.toLowerCase().includes('pre-harvest'));
+
+  const sellerPhone = product?.sellerPhone || product?.farmerPhone || '9845012345';
+  const cleanSellerPhone = String(sellerPhone).replace(/[^0-9]/g, '').slice(-10) || '9845012345';
+  const sellerDisplayName = product?.sellerName || product?.farmerName || 'Farmer';
+  const whatsappProductMsg = encodeURIComponent(
+    `Namaskara ${sellerDisplayName}! I am inquiring regarding your AgriMarket listing: "${product?.name}" (${formatCurrency(product?.price)}/${product?.unit || 'kg'}). Is this lot currently available for ordering?`
+  );
 
   const handleBuyNow = () => {
     if (!isAvailable) {
@@ -224,10 +237,15 @@ export function ProductDetailPage() {
           <div className="md:col-span-7 space-y-4">
             {/* Badges & Share Row */}
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-brand-700 bg-brand-50 px-2.5 py-1 rounded-lg border border-brand-200">
                   {product.categoryName || 'Agricultural Produce'}
                 </span>
+                {isPreHarvest && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-300">
+                    <CalendarClock className="w-3.5 h-3.5 text-amber-600" /> Pre-Harvest Contract
+                  </span>
+                )}
                 {isAvailable ? (
                   <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
                     <CheckCircle2 className="w-3.5 h-3.5" /> In Stock
@@ -249,17 +267,35 @@ export function ProductDetailPage() {
               </button>
             </div>
 
-            {/* Product Title */}
-            <div>
+            {/* Product Title & Grower Info */}
+            <div className="space-y-1.5">
               <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-snug">
                 {product.name}
               </h1>
-              {product.location && (
-                <div className="flex items-center gap-1 text-xs font-medium text-slate-500 mt-1">
-                  <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                  <span>Farm Origin: {product.location}</span>
+              <div className="flex items-center justify-between flex-wrap gap-2 pt-0.5">
+                <div className="flex items-center gap-2 text-xs font-medium text-slate-500 flex-wrap">
+                  {product.location && (
+                    <div className="flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                      <span>Farm Origin: {product.location}</span>
+                    </div>
+                  )}
+                  <span className="text-slate-300">•</span>
+                  <span>Grower: <strong className="text-slate-800">{sellerDisplayName}</strong></span>
                 </div>
-              )}
+
+                {/* WhatsApp Quick Connect Button */}
+                <a
+                  href={`https://wa.me/91${cleanSellerPhone}?text=${whatsappProductMsg}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 text-xs font-bold transition-all shadow-soft-xs"
+                  title={`Chat with ${sellerDisplayName} on WhatsApp`}
+                >
+                  <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>WhatsApp Grower</span>
+                </a>
+              </div>
             </div>
 
             {/* Compact Price & Stock Card */}
@@ -285,6 +321,26 @@ export function ProductDetailPage() {
                 </div>
               </div>
             </div>
+
+            {/* Pre-Harvest Forward Contract Banner */}
+            {isPreHarvest && (
+              <div className="p-3.5 bg-amber-50/90 rounded-2xl border border-amber-200/90 text-xs text-amber-900 space-y-1.5 shadow-soft-xs animate-fade-in">
+                <div className="font-extrabold flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-amber-950">
+                    <CalendarClock className="w-4 h-4 text-amber-700" />
+                    <span>Advance Contract Farming Booking</span>
+                  </div>
+                  {product.expectedHarvestDate && (
+                    <span className="text-[11px] font-bold text-amber-800 bg-amber-100/90 px-2 py-0.5 rounded-md border border-amber-200">
+                      Harvest: {new Date(product.expectedHarvestDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
+                  )}
+                </div>
+                <p className="text-amber-800 text-[11px] leading-relaxed">
+                  Lock in this guaranteed floor price today. Produce is currently maturing in the grower's field and will be harvested fresh and dispatched immediately upon harvest readiness.
+                </p>
+              </div>
+            )}
 
             {/* Purchase Quantity Selector */}
             <div className="space-y-2 pt-1">
@@ -342,7 +398,11 @@ export function ProductDetailPage() {
                     onClick={handleBuyNow}
                     icon={ShoppingBag}
                   >
-                    {isAvailable ? `Buy Now — ${formatCurrency(totalPrice)}` : 'Out of Stock'}
+                    {!isAvailable
+                      ? 'Out of Stock'
+                      : isPreHarvest
+                      ? `Advance Book Contract — ${formatCurrency(totalPrice)}`
+                      : `Buy Now — ${formatCurrency(totalPrice)}`}
                   </Button>
 
                   <Button

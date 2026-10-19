@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, TrendingUp, Sparkles, Activity } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, Sparkles, Activity, Lightbulb } from 'lucide-react';
 import { marketPriceService } from '@/services/marketPrice/marketPriceService';
 import { PriceTrendChart } from '@/components/market/PriceTrendChart';
 import { MandiPriceByMarket } from '@/components/market/MandiPriceByMarket';
@@ -198,6 +198,77 @@ export function MarketPriceDetailPage() {
         </div>
       ) : (
         <>
+          {/* Sell Now vs Hold Mandi Intelligence Advisor */}
+          {trendData?.trendAdvisory && (
+            <div
+              className={`rounded-2xl border p-4 sm:p-5 shadow-soft-xs transition-all animate-fade-in ${
+                trendData.trendAdvisory.recommendation === 'HOLD'
+                  ? 'bg-emerald-50/90 border-emerald-300 text-emerald-950'
+                  : trendData.trendAdvisory.recommendation === 'SELL_NOW'
+                  ? 'bg-amber-50/90 border-amber-300 text-amber-950'
+                  : 'bg-blue-50/90 border-blue-300 text-blue-950'
+              }`}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-black/5">
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold shadow-soft-xs ${
+                      trendData.trendAdvisory.recommendation === 'HOLD'
+                        ? 'bg-emerald-600 text-white'
+                        : trendData.trendAdvisory.recommendation === 'SELL_NOW'
+                        ? 'bg-amber-600 text-white'
+                        : 'bg-blue-600 text-white'
+                    }`}
+                  >
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-extrabold uppercase tracking-wider opacity-75">
+                      Mandi Intelligence Harvest Advisor
+                    </div>
+                    <div className="text-sm sm:text-base font-black flex items-center gap-2">
+                      <span>{trendData.trendAdvisory.title}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-soft-xs ${
+                      trendData.trendAdvisory.recommendation === 'HOLD'
+                        ? 'bg-emerald-600 text-white'
+                        : trendData.trendAdvisory.recommendation === 'SELL_NOW'
+                        ? 'bg-amber-600 text-white'
+                        : 'bg-blue-600 text-white'
+                    }`}
+                  >
+                    {trendData.trendAdvisory.recommendation === 'HOLD' && <TrendingUp className="w-3.5 h-3.5" />}
+                    {trendData.trendAdvisory.recommendation === 'SELL_NOW' && <TrendingDown className="w-3.5 h-3.5" />}
+                    {trendData.trendAdvisory.recommendation === 'STABLE' && <Activity className="w-3.5 h-3.5" />}
+                    <span>{trendData.trendAdvisory.recommendation.replace('_', ' ')}</span>
+                  </span>
+                  <span className="text-xs font-extrabold px-2 py-0.5 rounded-md bg-white/80 border border-black/10">
+                    {trendData.trendAdvisory.changePercentage > 0 ? '+' : ''}
+                    {trendData.trendAdvisory.changePercentage}%
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-3 text-xs space-y-2">
+                <p className="leading-relaxed opacity-90">
+                  {trendData.trendAdvisory.reasoning}
+                </p>
+                <div className="p-2.5 rounded-xl bg-white/80 border border-black/5 flex items-start gap-2 text-[11px] font-medium">
+                  <Lightbulb className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="font-bold">Advisor Action: </strong>
+                    <span>{trendData.trendAdvisory.suggestedAction}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* 2-Column Responsive Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* Left Column: Real Interactive Price Trend Chart */}

@@ -109,8 +109,8 @@ export class NegotiationService {
       const res = await db.query(
         `SELECT n.*,
                 p.name as produce_name, p.price_per_unit as produce_price,
-                b.full_name as buyer_name, b.email as buyer_email,
-                f.full_name as farmer_name
+                b.full_name as buyer_name, b.email as buyer_email, b.phone_number as buyer_phone,
+                f.full_name as farmer_name, f.phone_number as farmer_phone
          FROM negotiations n
          LEFT JOIN products p ON p.id = n.produce_id
          LEFT JOIN users b ON b.id = n.buyer_id
@@ -136,8 +136,8 @@ export class NegotiationService {
       const res = await db.query(
         `SELECT n.*,
                 p.name as produce_name, p.price_per_unit as produce_price,
-                b.full_name as buyer_name, b.email as buyer_email,
-                f.full_name as farmer_name
+                b.full_name as buyer_name, b.email as buyer_email, b.phone_number as buyer_phone,
+                f.full_name as farmer_name, f.phone_number as farmer_phone
          FROM negotiations n
          LEFT JOIN products p ON p.id = n.produce_id
          LEFT JOIN users b ON b.id = n.buyer_id
@@ -158,8 +158,8 @@ export class NegotiationService {
       const res = await db.query(
         `SELECT n.*,
                 p.name as produce_name, p.price_per_unit as produce_price,
-                b.full_name as buyer_name, b.email as buyer_email,
-                f.full_name as farmer_name
+                b.full_name as buyer_name, b.email as buyer_email, b.phone_number as buyer_phone,
+                f.full_name as farmer_name, f.phone_number as farmer_phone
          FROM negotiations n
          LEFT JOIN products p ON p.id = n.produce_id
          LEFT JOIN users b ON b.id = n.buyer_id
@@ -291,8 +291,10 @@ export class NegotiationService {
       buyerId: row.buyer_id,
       buyerName: row.buyer_name || 'Buyer',
       buyerEmail: row.buyer_email,
+      buyerPhone: row.buyer_phone || '9876543210',
       farmerId: row.farmer_id,
       farmerName: row.farmer_name || 'Farmer',
+      farmerPhone: row.farmer_phone || '9845012345',
       quantity: parseFloat(row.quantity),
       unit: row.unit || 'KG',
       proposedPrice: parseFloat(row.proposed_price),
@@ -319,8 +321,10 @@ export class NegotiationService {
       buyerId: n.buyer_id,
       buyerName: buyer?.full_name || 'Buyer',
       buyerEmail: buyer?.email,
+      buyerPhone: buyer?.phone_number || '9876543210',
       farmerId: n.farmer_id,
       farmerName: farmer?.full_name || 'Farmer',
+      farmerPhone: farmer?.phone_number || '9845012345',
       quantity: n.quantity,
       unit: n.unit,
       proposedPrice: n.proposed_price,

@@ -232,12 +232,16 @@ describe('AgriMarket Backend API End-to-End Suite', () => {
 
 
 
-    it('GET /api/v1/market-prices/history should return price trend data', async () => {
+    it('GET /api/v1/market-prices/history should return price trend data with Mandi Intelligence Advisory', async () => {
       const res = await request(app).get('/api/v1/market-prices/history?commodity=Tomato');
       expect(res.status).toBe(200);
       expect(res.body.commodity).toBe('Tomato');
       expect(Array.isArray(res.body.prices)).toBe(true);
       expect(res.body.prices.length).toBeGreaterThanOrEqual(2);
+      expect(res.body.trendAdvisory).toBeDefined();
+      expect(['HOLD', 'SELL_NOW', 'STABLE']).toContain(res.body.trendAdvisory.recommendation);
+      expect(typeof res.body.trendAdvisory.changePercentage).toBe('number');
+      expect(typeof res.body.trendAdvisory.reasoning).toBe('string');
     });
   });
 
@@ -363,6 +367,26 @@ describe('AgriMarket Backend API End-to-End Suite', () => {
       expect(res.status).toBe(200);
       expect(res.body.status).toBe('ACCEPTED');
       expect(res.body.finalPrice).toBe(32);
+    });
+
+    it('POST /api/v1/checkout with accepted negotiationId should lock in negotiated unit price', async () => {
+      const checkoutRes = await request(app)
+        .post('/api/v1/checkout')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          productId: testProduceId,
+          quantity: 10,
+          negotiationId: negotiationId,
+          shippingAddress: {
+            addressLine1: 'Field 12, Rural Devanahalli',
+            talukId: 'taluk-devanahalli',
+            pinCode: '562110',
+          },
+        });
+
+      expect(checkoutRes.status).toBe(201);
+      expect(checkoutRes.body.id).toBeDefined();
+      expect(checkoutRes.body.items[0].unitPrice).toBe(32);
     });
   });
 

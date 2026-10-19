@@ -108,6 +108,9 @@ export class ProductService {
     if (data.locationType) locationType = data.locationType;
     if (data.addressType) addressType = data.addressType;
 
+    const harvestStatus = data.harvestStatus || data.harvest_status || 'READY_NOW';
+    const expectedHarvestDate = data.expectedHarvestDate || data.expected_harvest_date || null;
+
     if (isPostgres()) {
       if (talukId) {
         const tRes = await db.query('SELECT id, name FROM taluks WHERE id = $1', [talukId]);
@@ -182,6 +185,10 @@ export class ProductService {
         price_per_unit: price,
         unit: data.unit.trim(),
         status: 'ACTIVE',
+        harvest_status: harvestStatus,
+        harvestStatus: harvestStatus,
+        expected_harvest_date: expectedHarvestDate,
+        expectedHarvestDate: expectedHarvestDate,
         product_location_snapshot_id: snapshotId,
         created_date: now,
         last_modified_date: now,
@@ -575,6 +582,15 @@ export class ProductService {
     const price = parseFloat(row.price ?? row.price_per_unit ?? 0);
     const sellerId = row.farmer_id || row.seller_id;
     const sellerName = row.seller_name || 'Farmer';
+    const harvestStatus =
+      row.harvest_status ||
+      row.harvestStatus ||
+      (row.category_name?.toLowerCase().includes('pre-harvest') ? 'PRE_HARVEST_CONTRACT' : 'READY_NOW');
+    const expectedHarvestDate =
+      row.expected_harvest_date ||
+      row.expectedHarvestDate ||
+      (harvestStatus === 'PRE_HARVEST_CONTRACT' ? '2026-11-20' : null);
+    const sellerPhone = row.seller_phone || row.farmer_phone || '9845012345';
 
     return {
       id: row.id,
@@ -588,6 +604,10 @@ export class ProductService {
       farmer_id: sellerId,
       sellerName,
       farmerName: sellerName,
+      sellerPhone,
+      farmerPhone: sellerPhone,
+      harvestStatus,
+      expectedHarvestDate,
       name: row.name,
       description: row.description,
       badge: row.badge,
@@ -680,6 +700,15 @@ export class ProductService {
     const price = prod.price ?? prod.price_per_unit ?? 0;
     const sellerId = prod.farmer_id || prod.seller_id;
     const sellerName = prod.seller_name || prod.farmer_name || seller?.full_name || 'Farmer';
+    const harvestStatus =
+      prod.harvest_status ||
+      prod.harvestStatus ||
+      (cat?.name?.toLowerCase().includes('pre-harvest') ? 'PRE_HARVEST_CONTRACT' : 'READY_NOW');
+    const expectedHarvestDate =
+      prod.expected_harvest_date ||
+      prod.expectedHarvestDate ||
+      (harvestStatus === 'PRE_HARVEST_CONTRACT' ? '2026-11-20' : null);
+    const sellerPhone = prod.seller_phone || prod.farmer_phone || seller?.phone_number || '9845012345';
 
     return {
       id: prod.id,
@@ -693,6 +722,10 @@ export class ProductService {
       farmer_id: sellerId,
       sellerName,
       farmerName: sellerName,
+      sellerPhone,
+      farmerPhone: sellerPhone,
+      harvestStatus,
+      expectedHarvestDate,
       name: prod.name,
       description: prod.description,
       badge: prod.badge,

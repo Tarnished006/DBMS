@@ -88,6 +88,9 @@ export function CheckoutPage() {
   const { productId } = useParams();
   const [searchParams] = useSearchParams();
   const initialQty = parseInt(searchParams.get('qty') || '1', 10);
+  const negotiationId = searchParams.get('negotiationId');
+  const negotiatedPriceParam = searchParams.get('price');
+  const negotiatedPrice = negotiatedPriceParam ? parseFloat(negotiatedPriceParam) : null;
 
   const { user } = useAuth();
   const toast = useToast();
@@ -375,12 +378,14 @@ export function CheckoutPage() {
         productId,
         quantity,
         addressId: selectedAddressId,
+        negotiationId: negotiationId || undefined,
       });
 
       const order = await orderService.placeOrder({
         productId,
         quantity,
         addressId: selectedAddressId,
+        negotiationId: negotiationId || undefined,
       });
 
       setCreatedOrderId(order.id);
@@ -435,7 +440,9 @@ export function CheckoutPage() {
     );
   }
 
-  const unitPrice = product.price || 0;
+  const effectiveUnitPrice =
+    negotiatedPrice !== null && negotiatedPrice > 0 ? negotiatedPrice : product.price || 0;
+  const unitPrice = effectiveUnitPrice;
   const subtotal = unitPrice * quantity;
   const chosenDelivery = DELIVERY_OPTIONS.find((d) => d.id === selectedDeliveryId) || DELIVERY_OPTIONS[0];
   const deliveryFee = chosenDelivery.price;
@@ -454,6 +461,35 @@ export function CheckoutPage() {
           { label: 'Direct Checkout' },
         ]}
       />
+
+      {/* Agreed Negotiated Price Banner */}
+      {negotiationId && negotiatedPrice !== null && (
+        <div className="bg-emerald-50 border border-emerald-300 rounded-2xl p-4 flex items-center justify-between gap-4 text-emerald-900 shadow-soft-xs animate-fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg">
+              🤝
+            </div>
+            <div>
+              <div className="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+                <span>Agreed Bargain Rate Applied</span>
+                <span className="bg-emerald-200 text-emerald-900 text-[10px] font-black uppercase px-2 py-0.5 rounded-full">
+                  Locked Deal
+                </span>
+              </div>
+              <p className="text-xs text-emerald-700 mt-0.5">
+                Bargain price of <strong>₹{negotiatedPrice}/{product.unit || 'unit'}</strong> verified & locked via Negotiation #{negotiationId.slice(0, 8)}.
+              </p>
+            </div>
+          </div>
+          <div className="text-right hidden sm:block">
+            <span className="text-xs text-emerald-600 font-medium">Standard Rate: </span>
+            <span className="text-xs line-through text-slate-400 font-bold">₹{product.price}</span>
+            <div className="text-sm font-black text-emerald-800">
+              Save ₹{Math.max(0, ((product.price || 0) - negotiatedPrice) * quantity).toLocaleString('en-IN')}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* STEP PROGRESS HEADER (Matching User Wireframe) */}
       <div className="max-w-3xl mx-auto pt-2 pb-6">

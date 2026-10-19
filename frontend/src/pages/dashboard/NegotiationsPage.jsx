@@ -1,5 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Handshake, ArrowRight, CheckCircle2, XCircle, Clock, MessageSquare, AlertCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import {
+  Handshake,
+  ArrowRight,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  MessageSquare,
+  AlertCircle,
+  ShoppingBag,
+  MessageCircle,
+  Phone,
+} from 'lucide-react';
 import { negotiationService } from '@/services/negotiation/negotiationService';
 import { Button } from '@/components/common/Button';
 import { Spinner } from '@/components/loaders/Spinner';
@@ -145,99 +157,137 @@ export function NegotiationsPage() {
         </div>
       ) : (
         <div className="grid gap-4">
-          {currentList.map((item) => (
-            <div
-              key={item.id}
-              className="bg-white rounded-2xl border border-slate-200 p-5 shadow-soft-xs hover:border-emerald-200 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
-            >
-              <div className="space-y-1.5 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-extrabold text-slate-900 text-base">{item.produceName}</span>
-                  {getStatusBadge(item.status)}
-                  <span className="text-xs text-slate-400">• {formatDate(item.createdDate)}</span>
+          {currentList.map((item) => {
+            const partnerName = activeTab === 'farmer' ? item.buyerName || 'Buyer' : item.farmerName || 'Farmer';
+            const rawPhone = activeTab === 'farmer' ? item.buyerPhone || '9876543210' : item.farmerPhone || '9845012345';
+            const cleanPhone = String(rawPhone).replace(/[^0-9]/g, '').slice(-10) || '9845012345';
+            const dealRate = item.finalPrice || item.counterPrice || item.proposedPrice;
+            const waMsg = encodeURIComponent(
+              `Namaskara ${partnerName}! Regarding our AgriMarket negotiation for ${item.produceName} (${item.quantity} ${item.unit} at ₹${dealRate}/${item.unit})...`
+            );
+
+            return (
+              <div
+                key={item.id}
+                className="bg-white rounded-2xl border border-slate-200 p-5 shadow-soft-xs hover:border-emerald-200 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+              >
+                <div className="space-y-1.5 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-extrabold text-slate-900 text-base">{item.produceName}</span>
+                    {getStatusBadge(item.status)}
+                    <span className="text-xs text-slate-400">• {formatDate(item.createdDate)}</span>
+                  </div>
+
+                  <div className="text-xs text-slate-600 flex items-center gap-3 flex-wrap">
+                    <span>Quantity: <strong>{item.quantity} {item.unit}</strong></span>
+                    <span>Listing Rate: <strong>{formatCurrency(item.producePrice)}/{item.unit}</strong></span>
+                    <span className="text-emerald-700 font-bold">
+                      Proposed Rate: <strong>{formatCurrency(item.proposedPrice)}/{item.unit}</strong>
+                    </span>
+                    {item.counterPrice && (
+                      <span className="text-blue-700 font-bold">
+                        Counter Rate: <strong>{formatCurrency(item.counterPrice)}/{item.unit}</strong>
+                      </span>
+                    )}
+                    {item.finalPrice && (
+                      <span className="text-emerald-800 font-black">
+                        Final Agreed: <strong>{formatCurrency(item.finalPrice)}/{item.unit}</strong>
+                      </span>
+                    )}
+                  </div>
+
+                  {item.buyerNotes && (
+                    <p className="text-xs text-slate-500 italic bg-slate-50 p-2 rounded-lg">
+                      Buyer Note: "{item.buyerNotes}"
+                    </p>
+                  )}
+                  {item.farmerNotes && (
+                    <p className="text-xs text-blue-600 italic bg-blue-50/50 p-2 rounded-lg">
+                      Farmer Note: "{item.farmerNotes}"
+                    </p>
+                  )}
                 </div>
 
-                <div className="text-xs text-slate-600 flex items-center gap-3 flex-wrap">
-                  <span>Quantity: <strong>{item.quantity} {item.unit}</strong></span>
-                  <span>Listing Rate: <strong>{formatCurrency(item.producePrice)}/{item.unit}</strong></span>
-                  <span className="text-emerald-700 font-bold">
-                    Proposed Rate: <strong>{formatCurrency(item.proposedPrice)}/{item.unit}</strong>
-                  </span>
-                  {item.counterPrice && (
-                    <span className="text-blue-700 font-bold">
-                      Counter Rate: <strong>{formatCurrency(item.counterPrice)}/{item.unit}</strong>
-                    </span>
+                {/* Action & Quick Connect Buttons */}
+                <div className="flex items-center gap-2 flex-wrap self-end md:self-center">
+                  {/* Direct WhatsApp Quick-Connect */}
+                  <a
+                    href={`https://wa.me/91${cleanPhone}?text=${waMsg}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-xs font-bold transition-all shadow-soft-xs"
+                    title={`Chat with ${partnerName} on WhatsApp`}
+                  >
+                    <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>WhatsApp</span>
+                  </a>
+
+                  {/* 1-Click Checkout at Negotiated Bargain Rate for Buyer */}
+                  {activeTab === 'buyer' && item.status === 'ACCEPTED' && (
+                    <Link
+                      to={`/checkout/${item.produceId}?negotiationId=${item.id}&qty=${item.quantity}&price=${dealRate}`}
+                    >
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-soft-xs"
+                        icon={ShoppingBag}
+                      >
+                        Proceed to Checkout ({formatCurrency(dealRate)}/{item.unit})
+                      </Button>
+                    </Link>
                   )}
-                  {item.finalPrice && (
-                    <span className="text-emerald-800 font-black">
-                      Final Agreed: <strong>{formatCurrency(item.finalPrice)}/{item.unit}</strong>
-                    </span>
+
+                  {activeTab === 'farmer' && item.status === 'PENDING' && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSelectedOffer(item)}
+                      >
+                        Counter Offer
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        onClick={() => handleAccept(item.id)}
+                      >
+                        Accept
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-rose-600"
+                        onClick={() => handleReject(item.id)}
+                      >
+                        Reject
+                      </Button>
+                    </>
+                  )}
+
+                  {activeTab === 'buyer' && item.status === 'COUNTERED' && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        onClick={() => handleAccept(item.id)}
+                      >
+                        Accept Counter-Rate ({formatCurrency(item.counterPrice)})
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-rose-600"
+                        onClick={() => handleReject(item.id)}
+                      >
+                        Decline
+                      </Button>
+                    </>
                   )}
                 </div>
-
-                {item.buyerNotes && (
-                  <p className="text-xs text-slate-500 italic bg-slate-50 p-2 rounded-lg">
-                    Buyer Note: "{item.buyerNotes}"
-                  </p>
-                )}
-                {item.farmerNotes && (
-                  <p className="text-xs text-blue-600 italic bg-blue-50/50 p-2 rounded-lg">
-                    Farmer Note: "{item.farmerNotes}"
-                  </p>
-                )}
               </div>
-
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2 self-end md:self-center">
-                {activeTab === 'farmer' && item.status === 'PENDING' && (
-                  <>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setSelectedOffer(item)}
-                    >
-                      Counter Offer
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="primary"
-                      onClick={() => handleAccept(item.id)}
-                    >
-                      Accept
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-rose-600"
-                      onClick={() => handleReject(item.id)}
-                    >
-                      Reject
-                    </Button>
-                  </>
-                )}
-
-                {activeTab === 'buyer' && item.status === 'COUNTERED' && (
-                  <>
-                    <Button
-                      size="sm"
-                      variant="primary"
-                      onClick={() => handleAccept(item.id)}
-                    >
-                      Accept Counter-Rate ({formatCurrency(item.counterPrice)})
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-rose-600"
-                      onClick={() => handleReject(item.id)}
-                    >
-                      Decline
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

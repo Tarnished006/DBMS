@@ -184,6 +184,10 @@ export const ProductCreateSchema = z
     longitude: z.coerce.number().optional().nullable(),
     locationType: z.string().trim().optional().nullable(),
     addressType: z.string().trim().optional().nullable(),
+    harvestStatus: z.string().trim().optional().nullable(),
+    harvest_status: z.string().trim().optional().nullable(),
+    expectedHarvestDate: z.string().trim().optional().nullable(),
+    expected_harvest_date: z.string().trim().optional().nullable(),
   })
   .refine((data) => Boolean(data.categoryId || data.category_id), {
     message: 'Category is required',
@@ -210,27 +214,48 @@ export const ProductUpdateSchema = z.object({
   price_per_unit: z.coerce.number().positive().optional(),
   unit: z.string().trim().optional(),
   status: z.enum(['DRAFT', 'ACTIVE', 'INACTIVE', 'ARCHIVED']).optional(),
+  harvestStatus: z.string().trim().optional().nullable(),
+  harvest_status: z.string().trim().optional().nullable(),
+  expectedHarvestDate: z.string().trim().optional().nullable(),
+  expected_harvest_date: z.string().trim().optional().nullable(),
 });
 
-export const OrderCreateSchema = z.object({
-  addressId: z.string().trim().optional(),
-  shippingAddress: z
-    .object({
-      addressLine1: z.string().trim().min(3),
-      addressLine2: z.string().trim().optional().nullable(),
-      landmark: z.string().trim().optional().nullable(),
-      talukId: z.string().trim().min(1),
-      pinCode: z.string().trim().regex(/^[0-9]{6}$/),
-      latitude: z.number().optional().nullable(),
-      longitude: z.number().optional().nullable(),
-    })
-    .optional(),
-  items: z
-    .array(
-      z.object({
-        productId: z.string().trim().min(1),
-        quantity: z.number().positive('Quantity must be greater than 0'),
+export const OrderCreateSchema = z
+  .object({
+    addressId: z.string().trim().optional(),
+    address_id: z.string().trim().optional(),
+    shippingAddress: z
+      .object({
+        addressLine1: z.string().trim().min(3),
+        addressLine2: z.string().trim().optional().nullable(),
+        landmark: z.string().trim().optional().nullable(),
+        talukId: z.string().trim().min(1),
+        pinCode: z.string().trim().regex(/^[0-9]{6}$/),
+        latitude: z.number().optional().nullable(),
+        longitude: z.number().optional().nullable(),
       })
-    )
-    .min(1, 'Order must contain at least one item'),
-});
+      .optional(),
+    items: z
+      .array(
+        z.object({
+          productId: z.string().trim().optional(),
+          product_id: z.string().trim().optional(),
+          quantity: z.number().positive('Quantity must be greater than 0'),
+          negotiationId: z.string().trim().optional(),
+          negotiation_id: z.string().trim().optional(),
+        })
+      )
+      .optional(),
+    productId: z.string().trim().optional(),
+    product_id: z.string().trim().optional(),
+    quantity: z.number().positive().optional(),
+    negotiationId: z.string().trim().optional(),
+    negotiation_id: z.string().trim().optional(),
+  })
+  .refine(
+    (data) => (data.items && data.items.length > 0) || Boolean(data.productId || data.product_id),
+    {
+      message: 'Order must contain at least one item',
+      path: ['items'],
+    }
+  );

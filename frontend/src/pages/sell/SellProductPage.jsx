@@ -46,6 +46,8 @@ export function SellProductPage() {
         unit: 'KG',
         quantity: '',
         location: '',
+        harvestStatus: 'READY_NOW',
+        expectedHarvestDate: '',
     });
 
     const [selectedFiles, setSelectedFiles] = useState([]);
@@ -524,6 +526,16 @@ export function SellProductPage() {
                 pricePerUnit: parseFloat(formData.price),
                 unit: formData.unit,
                 quantity: parseFloat(formData.quantity),
+                harvestStatus: formData.harvestStatus,
+                harvest_status: formData.harvestStatus,
+                expectedHarvestDate:
+                    formData.harvestStatus === 'PRE_HARVEST_CONTRACT'
+                        ? formData.expectedHarvestDate || undefined
+                        : undefined,
+                expected_harvest_date:
+                    formData.harvestStatus === 'PRE_HARVEST_CONTRACT'
+                        ? formData.expectedHarvestDate || undefined
+                        : undefined,
             };
 
             if (selectedAddressId) {
@@ -710,6 +722,89 @@ export function SellProductPage() {
                             required
                             disabled={isCategoriesLoading}
                         />
+                    </div>
+
+                    {/* Harvest Availability & Forward Contract Mode */}
+                    <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/90 space-y-3">
+                        <div>
+                            <label className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
+                                Harvest Availability Mode
+                            </label>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                                Declare whether this produce is harvested and ready for dispatch, or currently maturing for forward-contract booking.
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label
+                                className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                                    formData.harvestStatus === 'READY_NOW'
+                                        ? 'bg-emerald-50/80 border-emerald-400 ring-2 ring-emerald-200 shadow-soft-xs'
+                                        : 'bg-white border-slate-200 hover:bg-slate-100'
+                                }`}
+                            >
+                                <input
+                                    type="radio"
+                                    name="harvestStatus"
+                                    value="READY_NOW"
+                                    checked={formData.harvestStatus === 'READY_NOW'}
+                                    onChange={() => handleFieldChange('harvestStatus', 'READY_NOW')}
+                                    className="mt-0.5 text-emerald-600 focus:ring-emerald-500"
+                                />
+                                <div>
+                                    <div className="text-xs font-bold text-slate-900">
+                                        Ready for Immediate Delivery
+                                    </div>
+                                    <div className="text-[11px] text-slate-500 mt-0.5">
+                                        Crop is harvested and stored in your farm/warehouse for immediate buyer dispatch.
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label
+                                className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                                    formData.harvestStatus === 'PRE_HARVEST_CONTRACT'
+                                        ? 'bg-amber-50/80 border-amber-400 ring-2 ring-amber-200 shadow-soft-xs'
+                                        : 'bg-white border-slate-200 hover:bg-slate-100'
+                                }`}
+                            >
+                                <input
+                                    type="radio"
+                                    name="harvestStatus"
+                                    value="PRE_HARVEST_CONTRACT"
+                                    checked={formData.harvestStatus === 'PRE_HARVEST_CONTRACT'}
+                                    onChange={() => handleFieldChange('harvestStatus', 'PRE_HARVEST_CONTRACT')}
+                                    className="mt-0.5 text-amber-600 focus:ring-amber-500"
+                                />
+                                <div>
+                                    <div className="text-xs font-bold text-amber-950 flex items-center gap-1">
+                                        <span>🌱 Pre-Harvest Forward Contract</span>
+                                    </div>
+                                    <div className="text-[11px] text-slate-500 mt-0.5">
+                                        Crop is in the field. Pre-book buyers at guaranteed floor rates ahead of harvest.
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+
+                        {formData.harvestStatus === 'PRE_HARVEST_CONTRACT' && (
+                            <div className="pt-2 border-t border-slate-200/60 animate-fade-in space-y-1">
+                                <label className="text-xs font-bold text-slate-700 block">
+                                    Expected Harvest &amp; Delivery Date <span className="text-rose-500">*</span>
+                                </label>
+                                <input
+                                    type="date"
+                                    min={new Date().toISOString().split('T')[0]}
+                                    value={formData.expectedHarvestDate}
+                                    onChange={(e) => handleFieldChange('expectedHarvestDate', e.target.value)}
+                                    className="w-full sm:w-64 px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                                    required={formData.harvestStatus === 'PRE_HARVEST_CONTRACT'}
+                                />
+                                <p className="text-[11px] text-slate-500">
+                                    Buyers will advance-book this lot and expect fulfillment around this date.
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     <div className="space-y-3 pt-3 border-t border-slate-100">

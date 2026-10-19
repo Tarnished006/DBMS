@@ -285,6 +285,13 @@ export interface MarketPriceTrendDto {
   district?: string;
   market?: string;
   prices: HistoricalPricePointDto[];
+  trendAdvisory?: {
+    recommendation: 'HOLD' | 'SELL_NOW' | 'STABLE';
+    changePercentage: number;
+    title: string;
+    reasoning: string;
+    suggestedAction: string;
+  };
 }
 
 export type NegotiationStatus = 'PENDING' | 'COUNTERED' | 'ACCEPTED' | 'REJECTED' | 'CONVERTED_TO_ORDER';
@@ -297,8 +304,10 @@ export interface NegotiationDto {
   buyerId: string;
   buyerName?: string;
   buyerEmail?: string;
+  buyerPhone?: string | null;
   farmerId: string;
   farmerName?: string;
+  farmerPhone?: string | null;
   quantity: number;
   unit: string;
   proposedPrice: number;

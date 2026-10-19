@@ -2,11 +2,13 @@ import apiClient from '../api/apiClient';
 
 export const orderService = {
   // Place an order (Direct Buy Flow)
-  async placeOrder({ productId, quantity, addressId }) {
+  async placeOrder({ productId, quantity, addressId, negotiationId }) {
     const response = await apiClient.post('/api/v1/orders', {
       product_id: productId,
       quantity,
       address_id: addressId,
+      negotiation_id: negotiationId || undefined,
+      negotiationId: negotiationId || undefined,
     });
     return response.data;
   },

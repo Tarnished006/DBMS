@@ -9,15 +9,25 @@ import { inventoryService } from './inventory.service.js';
 
 export class OrderService {
   async createOrder(buyerId: string, data: any): Promise<OrderDto> {
-    const items = data.items || [];
-    if (items.length === 0) {
+    let rawItems = data.items || [];
+    if (rawItems.length === 0 && (data.productId || data.product_id)) {
+      rawItems = [
+        {
+          productId: data.productId || data.product_id,
+          quantity: data.quantity || 1,
+          negotiationId: data.negotiationId || data.negotiation_id,
+        },
+      ];
+    }
+    if (rawItems.length === 0) {
       throw new BusinessException('VALIDATION_ERROR', 'Order must contain at least one item');
     }
 
     // 1. Resolve Address
     let addressSnapshotData: any = null;
-    if (data.addressId) {
-      const addr = await addressService.getAddressById(buyerId, data.addressId);
+    const resolvedAddressId = data.addressId || data.address_id;
+    if (resolvedAddressId) {
+      const addr = await addressService.getAddressById(buyerId, resolvedAddressId);
       addressSnapshotData = {
         addressLine1: addr.addressLine1,
         addressLine2: addr.addressLine2,
@@ -57,9 +67,11 @@ export class OrderService {
 
     let totalAmount = 0;
 
-    for (const item of items) {
-      const prod = await productService.getProductById(item.productId);
-      const avail = await inventoryService.checkAvailability(item.productId, item.quantity);
+    for (const item of rawItems) {
+      const prodId = item.productId || item.product_id;
+      const qty = Number(item.quantity);
+      const prod = await productService.getProductById(prodId);
+      const avail = await inventoryService.checkAvailability(prodId, qty);
       if (!avail.available) {
         throw new BusinessException(
           'INSUFFICIENT_STOCK',
@@ -67,14 +79,46 @@ export class OrderService {
         );
       }
 
-      const unitPrice = prod.pricePerUnit;
-      const subtotal = unitPrice * item.quantity;
+      let unitPrice = prod.pricePerUnit;
+
+      // Check if item has an accepted negotiation attached
+      const negId = item.negotiationId || item.negotiation_id || data.negotiationId || data.negotiation_id;
+      if (negId) {
+        let negRecord: any = null;
+        if (isPostgres()) {
+          const nRes = await db.query('SELECT * FROM negotiations WHERE id = $1', [negId]);
+          if (nRes.rows.length > 0) negRecord = nRes.rows[0];
+        } else {
+          negRecord = memoryDb.negotiations.find((n) => n.id === negId);
+        }
+
+        if (
+          negRecord &&
+          (negRecord.produce_id === prodId || negRecord.produceId === prodId) &&
+          (negRecord.buyer_id === buyerId || negRecord.buyerId === buyerId) &&
+          negRecord.status === 'ACCEPTED'
+        ) {
+          const agreedPrice = Number(
+            negRecord.final_price ??
+              negRecord.finalPrice ??
+              negRecord.counter_price ??
+              negRecord.counterPrice ??
+              negRecord.proposed_price ??
+              negRecord.proposedPrice
+          );
+          if (agreedPrice > 0) {
+            unitPrice = agreedPrice;
+          }
+        }
+      }
+
+      const subtotal = unitPrice * qty;
       totalAmount += subtotal;
 
       enrichedItems.push({
         productId: prod.id,
         productName: prod.name,
-        quantity: item.quantity,
+        quantity: qty,
         unitPrice,
         subtotal,
       });
