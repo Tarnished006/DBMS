@@ -39,26 +39,39 @@ export function createApp(): Express {
     })
   );
 
-  // 2. CORS configuration matching Spring Boot Security
-  app.use(
-    cors({
-      origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps, curl, or same-origin)
-        if (!origin) return callback(null, true);
-        if (
-          ENV.CORS_ALLOWED_ORIGINS.includes(origin) ||
-          origin.startsWith('http://localhost:') ||
-          origin.startsWith('http://127.0.0.1:')
-        ) {
-          return callback(null, true);
-        }
-        return callback(null, true); // Dev-friendly permissive origin
-      },
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Authorization', 'Content-Type', 'Accept', 'Origin', 'X-Requested-With', 'X-CSRF-TOKEN'],
-    })
-  );
+  // 2. CORS configuration matching Spring Boot Security & Cloud Deployments
+  const corsOptions: cors.CorsOptions = {
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, or same-origin)
+      if (!origin) return callback(null, true);
+      if (
+        ENV.CORS_ALLOWED_ORIGINS.includes(origin) ||
+        origin.startsWith('http://localhost:') ||
+        origin.startsWith('http://127.0.0.1:') ||
+        origin.endsWith('.onrender.com') ||
+        origin.includes('render.com')
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, true); // Dev-friendly permissive origin
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Authorization',
+      'Content-Type',
+      'Accept',
+      'Origin',
+      'X-Requested-With',
+      'X-CSRF-TOKEN',
+      'X-User-Mode',
+      'x-user-mode',
+    ],
+    exposedHeaders: ['Authorization', 'Set-Cookie'],
+  };
+
+  app.use(cors(corsOptions));
+  app.options('*', cors(corsOptions));
 
   // 3. Parsers
   app.use(express.json({ limit: '10mb' }));
