@@ -8,6 +8,7 @@ import {
   Sprout,
   ShoppingBag,
   ClipboardList,
+  CheckCircle2,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { inventoryService } from '@/services/inventory/inventoryService';
@@ -162,6 +163,10 @@ export function InventoryPage() {
   const currentAvail = Number(selectedItem?.availableQuantity ?? 0);
   const currentReserved = Number(selectedItem?.reservedQuantity ?? 0);
   const itemUnit = selectedItem?.unit || 'units';
+  const projectedAvail =
+    adjustType === 'add'
+      ? currentAvail + parsedQty
+      : Math.max(0, currentAvail - parsedQty);
 
   if (isBuyer) {
     return (
