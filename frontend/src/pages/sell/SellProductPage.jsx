@@ -12,6 +12,8 @@ import {
     Loader2,
     Phone,
     AlertCircle,
+    ShoppingBag,
+    ClipboardList,
 } from 'lucide-react';
 import { productService } from '@/services/product/productService';
 import { categoryService } from '@/services/category/categoryService';
@@ -30,7 +32,8 @@ import {
 } from '@/components/location/LocationMapModal';
 
 export function SellProductPage() {
-    const { user, refreshProfile, updateUser } = useAuth();
+    const { user, userMode, refreshProfile, updateUser } = useAuth();
+    const isBuyer = userMode === 'BUYER' || user?.email?.toLowerCase().includes('buyer');
     const toast = useToast();
     const navigate = useNavigate();
 
@@ -633,6 +636,41 @@ export function SellProductPage() {
         : newLocationDetails
             ? 'New Location'
             : 'Select Location';
+
+    if (isBuyer) {
+        return (
+            <div className="max-w-2xl mx-auto px-4 sm:px-6 py-12 space-y-6 animate-fade-in">
+                <Breadcrumb
+                    items={[
+                        { label: 'Dashboard', to: '/dashboard' },
+                        { label: 'Marketplace', to: '/marketplace' },
+                        { label: 'Farmer Direct Selling' },
+                    ]}
+                />
+                <div className="bg-white rounded-3xl border border-slate-200 p-8 sm:p-12 text-center shadow-soft-sm">
+                    <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-4">
+                        <ShoppingBag className="w-8 h-8" />
+                    </div>
+                    <h2 className="text-xl font-bold text-slate-900">Signed in as Wholesale Buyer</h2>
+                    <p className="text-sm text-slate-600 mt-2 max-w-md mx-auto">
+                        Harvest listing and farm lot sales are reserved for registered Farmers & Agricultural Producers. As a Wholesale Buyer, you can post bulk crop procurement tenders or order fresh lots directly on the Marketplace.
+                    </p>
+                    <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
+                        <Link to="/demands">
+                            <Button variant="primary" icon={ClipboardList}>
+                                Post Bulk Crop Demand
+                            </Button>
+                        </Link>
+                        <Link to="/marketplace">
+                            <Button variant="outline" icon={ShoppingBag}>
+                                Explore Marketplace
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-6 animate-fade-in">

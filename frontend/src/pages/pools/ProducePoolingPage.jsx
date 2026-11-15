@@ -20,6 +20,7 @@ import {
   Clock,
   Search,
   ExternalLink,
+  ClipboardList,
 } from 'lucide-react';
 import { poolService } from '@/services/pool/poolService';
 import { Button } from '@/components/common/Button';
@@ -63,7 +64,8 @@ const VEHICLE_OPTIONS = [
 ];
 
 export function ProducePoolingPage() {
-  const { user } = useAuth();
+  const { user, userMode } = useAuth();
+  const isBuyer = userMode === 'BUYER' || user?.email?.toLowerCase().includes('buyer');
   const { success, error } = useToast();
 
   const [pools, setPools] = useState([]);
@@ -124,6 +126,10 @@ export function ProducePoolingPage() {
   }
 
   function handleOpenPledge(pool) {
+    if (isBuyer) {
+      error?.('Produce pooling and truck pledges are for farmers shipping harvest. As a Wholesale Buyer, you can purchase pooled batches directly from the manifest below.');
+      return;
+    }
     if (pledgingPoolId === pool.id) {
       setPledgingPoolId(null);
     } else {
@@ -182,6 +188,10 @@ export function ProducePoolingPage() {
   }
 
   function handleOpenRequestRouteModal() {
+    if (isBuyer) {
+      error?.('Requesting village transport routes is for farmers shipping harvest. As a Wholesale Buyer, you can publish procurement requirements on the Demand Board.');
+      return;
+    }
     setRouteForm({
       cropName: 'Capsicum',
       talukName: 'Devanahalli',
@@ -310,18 +320,46 @@ export function ProducePoolingPage() {
           </div>
 
           <div className="pt-3">
-            <Button
-              variant="secondary"
-              size="md"
-              icon={Truck}
-              onClick={handleOpenRequestRouteModal}
-              className="bg-emerald-400 text-slate-950 hover:bg-emerald-300 font-black shadow-soft-lg"
-            >
-              + Request New Truck Route for My Village
-            </Button>
+            {isBuyer ? (
+              <Link to="/demands">
+                <Button
+                  variant="secondary"
+                  size="md"
+                  icon={ClipboardList}
+                  className="bg-blue-400 text-slate-950 hover:bg-blue-300 font-black shadow-soft-lg"
+                >
+                  + Post Bulk Crop Procurement Demand
+                </Button>
+              </Link>
+            ) : (
+              <Button
+                variant="secondary"
+                size="md"
+                icon={Truck}
+                onClick={handleOpenRequestRouteModal}
+                className="bg-emerald-400 text-slate-950 hover:bg-emerald-300 font-black shadow-soft-lg"
+              >
+                + Request New Truck Route for My Village
+              </Button>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Buyer Guidance Notice */}
+      {isBuyer && (
+        <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-xs text-blue-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-soft-xs">
+          <div className="flex items-center gap-2.5">
+            <Truck className="w-5 h-5 text-blue-600 flex-shrink-0" />
+            <span>
+              <strong>Logistics Consolidation Hub:</strong> Produce pooling coordinates shared farm transport for smallholders shipping harvest to APMC terminals. As a Wholesale Buyer, you can purchase verified lots from the manifests below or publish your own demand contracts.
+            </span>
+          </div>
+          <Link to="/demands" className="flex-shrink-0 font-bold text-blue-700 hover:text-blue-800 underline">
+            Go to Demand Board &rarr;
+          </Link>
+        </div>
+      )}
 
       {/* Search & Filter Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-soft-xs">
@@ -339,14 +377,26 @@ export function ProducePoolingPage() {
           <div className="text-xs text-slate-500 font-semibold">
             Showing <strong>{filteredPools.length}</strong> active regional produce pools
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            icon={Truck}
-            onClick={handleOpenRequestRouteModal}
-          >
-            + Request Truck
-          </Button>
+          {isBuyer ? (
+            <Link to="/demands">
+              <Button
+                variant="outline"
+                size="sm"
+                icon={ClipboardList}
+              >
+                + Post Demand
+              </Button>
+            </Link>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              icon={Truck}
+              onClick={handleOpenRequestRouteModal}
+            >
+              + Request Truck
+            </Button>
+          )}
         </div>
       </div>
 
@@ -505,15 +555,27 @@ export function ProducePoolingPage() {
                     </Button>
 
                     <div className="flex items-center gap-2 w-full sm:w-auto">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        icon={Plus}
-                        onClick={() => handleOpenPledge(pool)}
-                        className="w-full sm:w-auto"
-                      >
-                        {isPledging ? 'Close Pledge Form' : '+ Join Truck (Pledge Harvest)'}
-                      </Button>
+                      {!isBuyer ? (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          icon={Plus}
+                          onClick={() => handleOpenPledge(pool)}
+                          className="w-full sm:w-auto"
+                        >
+                          {isPledging ? 'Close Pledge Form' : '+ Join Truck (Pledge Harvest)'}
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          icon={Receipt}
+                          onClick={() => handleToggleManifest(pool.id)}
+                          className="w-full sm:w-auto"
+                        >
+                          {isManifestOpen ? 'Viewing Manifest' : 'Inspect & Buy Lots'}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>

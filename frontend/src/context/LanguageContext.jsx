@@ -35,6 +35,7 @@ const translations = {
     farmer: 'Farmer',
     buyer: 'Buyer',
     sellCrop: '+ Sell Crop',
+    postDemand: '+ Post Demand',
     switchToFarmer: 'Switch to Farmer 🚜',
     switchToBuyer: 'Switch to Buyer 🛒',
     // Search
@@ -98,6 +99,7 @@ const translations = {
     farmer: 'ರೈತ',
     buyer: 'ಖರೀದಿದಾರ',
     sellCrop: '+ ಬೆಳೆ ಮಾರಾಟ',
+    postDemand: '+ ಬೇಡಿಕೆ ಸಲ್ಲಿಸಿ',
     switchToFarmer: 'ರೈತ ಮೋಡ್‌ಗೆ ಬದಲಿಸಿ 🚜',
     switchToBuyer: 'ಖರೀದಿದಾರ ಮೋಡ್‌ಗೆ ಬದಲಿಸಿ 🛒',
     // Search
@@ -161,6 +163,7 @@ const translations = {
     farmer: 'किसान',
     buyer: 'खरीदार',
     sellCrop: '+ फसल बेचें',
+    postDemand: '+ मांग पोस्ट करें',
     switchToFarmer: 'किसान मोड में बदलें 🚜',
     switchToBuyer: 'खरीदार मोड में बदलें 🛒',
     // Search

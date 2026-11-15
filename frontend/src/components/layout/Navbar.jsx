@@ -116,24 +116,31 @@ export function Navbar() {
     }
   };
 
-  const navLinks =
-    userMode === 'FARMER'
-      ? [
-          { to: '/market-prices', label: t('mandiPrices', 'Mandi Prices'), icon: TrendingUp },
-          { to: '/pools', label: t('producePools', 'Produce Pools'), icon: Truck },
-          { to: '/demands', label: t('demandBoard', 'Buyer Demands'), icon: ClipboardList },
-          { to: '/marketplace', label: t('marketplace', 'Marketplace'), icon: ShoppingBag },
-          { to: '/crops', label: t('cropGuide', 'Crop Guide'), icon: BookOpen },
-          { to: '/weather', label: t('weather', 'Weather'), icon: CloudSun },
-        ]
-      : [
-          { to: '/marketplace', label: t('marketplace', 'Marketplace'), icon: ShoppingBag },
-          { to: '/demands', label: t('demandBoard', 'Demand Board'), icon: ClipboardList },
-          { to: '/pools', label: t('producePools', 'Produce Pools'), icon: Truck },
-          { to: '/market-prices', label: t('mandiPrices', 'Mandi Prices'), icon: TrendingUp },
-          { to: '/crops', label: t('cropGuide', 'Crop Guide'), icon: BookOpen },
-          { to: '/weather', label: t('weather', 'Weather'), icon: CloudSun },
-        ];
+  const isBuyer = userMode === 'BUYER' || user?.email?.toLowerCase().includes('buyer');
+
+  const navLinks = isBuyer
+    ? [
+        { to: '/marketplace', label: t('marketplace', 'Marketplace'), icon: ShoppingBag },
+        { to: '/demands', label: t('demandBoard', 'Demand Board'), icon: ClipboardList },
+        { to: '/market-prices', label: t('mandiPrices', 'Mandi Prices'), icon: TrendingUp },
+      ]
+    : userMode === 'FARMER'
+    ? [
+        { to: '/market-prices', label: t('mandiPrices', 'Mandi Prices'), icon: TrendingUp },
+        { to: '/pools', label: t('producePools', 'Produce Pools'), icon: Truck },
+        { to: '/demands', label: t('demandBoard', 'Buyer Demands'), icon: ClipboardList },
+        { to: '/marketplace', label: t('marketplace', 'Marketplace'), icon: ShoppingBag },
+        { to: '/crops', label: t('cropGuide', 'Crop Guide'), icon: BookOpen },
+        { to: '/weather', label: t('weather', 'Weather'), icon: CloudSun },
+      ]
+    : [
+        { to: '/marketplace', label: t('marketplace', 'Marketplace'), icon: ShoppingBag },
+        { to: '/demands', label: t('demandBoard', 'Demand Board'), icon: ClipboardList },
+        { to: '/pools', label: t('producePools', 'Produce Pools'), icon: Truck },
+        { to: '/market-prices', label: t('mandiPrices', 'Mandi Prices'), icon: TrendingUp },
+        { to: '/crops', label: t('cropGuide', 'Crop Guide'), icon: BookOpen },
+        { to: '/weather', label: t('weather', 'Weather'), icon: CloudSun },
+      ];
 
   const primaryNavLinks = navLinks.slice(0, 4);
   const secondaryNavLinks = navLinks.slice(4);
@@ -270,8 +277,19 @@ export function Navbar() {
             </div>
 
 
+            {/* Prominent Post Demand CTA for Buyers */}
+            {isBuyer && (
+              <Link
+                to="/demands"
+                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white text-xs font-black shadow-soft-sm transition-all hover:scale-105 flex-shrink-0"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>{t('postDemand', '+ Post Demand')}</span>
+              </Link>
+            )}
+
             {/* Prominent Sell Crop CTA for Farmers */}
-            {userMode === 'FARMER' && (
+            {!isBuyer && userMode === 'FARMER' && (
               <Link
                 to="/sell"
                 className="hidden sm:inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-brand-600 to-emerald-700 hover:from-brand-700 hover:to-emerald-800 text-white text-xs font-black shadow-soft-sm transition-all hover:scale-105 flex-shrink-0"
@@ -384,12 +402,12 @@ export function Navbar() {
                           <span className="text-[11px] font-semibold text-slate-500">Account</span>
                           <span
                             className={`text-[11px] font-extrabold px-2 py-0.5 rounded-lg flex items-center gap-1 ${
-                              userMode === 'FARMER'
+                              !isBuyer && userMode === 'FARMER'
                                 ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                                 : 'bg-blue-100 text-blue-800 border border-blue-200'
                             }`}
                           >
-                            {userMode === 'FARMER' ? '🚜 Farmer' : '🛒 Wholesale Buyer'}
+                            {!isBuyer && userMode === 'FARMER' ? '🚜 Farmer' : '🛒 Wholesale Buyer'}
                           </span>
                         </div>
 
@@ -399,20 +417,20 @@ export function Navbar() {
                           className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-brand-50 hover:text-brand-700 rounded-xl transition-colors"
                         >
                           <LayoutDashboard className="w-4 h-4 text-slate-400" />
-                          <span>{userMode === 'BUYER' ? 'Buyer Overview' : 'Farm Overview'}</span>
+                          <span>{isBuyer ? 'Buyer Overview' : 'Farm Overview'}</span>
                         </Link>
 
                         <Link
-                          to={userMode === 'BUYER' ? '/orders' : '/orders?tab=customer'}
+                          to={isBuyer ? '/orders' : '/orders?tab=customer'}
                           onClick={() => setIsUserDropdownOpen(false)}
                           className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-brand-50 hover:text-brand-700 rounded-xl transition-colors"
                         >
                           <ShoppingBag className="w-4 h-4 text-slate-400" />
-                          <span>{userMode === 'BUYER' ? 'My Purchases' : 'Incoming Orders'}</span>
+                          <span>{isBuyer ? 'My Purchases' : 'Incoming Orders'}</span>
                         </Link>
 
                         <Link
-                          to={`/dashboard/negotiations?tab=${userMode === 'BUYER' ? 'buyer' : 'farmer'}`}
+                          to={`/dashboard/negotiations?tab=${isBuyer ? 'buyer' : 'farmer'}`}
                           onClick={() => setIsUserDropdownOpen(false)}
                           className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-brand-50 hover:text-brand-700 rounded-xl transition-colors"
                         >
@@ -420,7 +438,7 @@ export function Navbar() {
                           <span>{t('bargains', 'Bargain & Offers')}</span>
                         </Link>
 
-                        {userMode === 'BUYER' ? (
+                        {isBuyer ? (
                           <Link
                             to="/demands"
                             onClick={() => setIsUserDropdownOpen(false)}
@@ -619,7 +637,7 @@ export function Navbar() {
           )}
 
           {/* Mobile Sell Crop Quick CTA (Farmer Mode) */}
-          {userMode === 'FARMER' && (
+          {!isBuyer && userMode === 'FARMER' && (
             <Link
               to="/sell"
               onClick={() => setIsMobileMenuOpen(false)}
@@ -627,6 +645,18 @@ export function Navbar() {
             >
               <PlusCircle className="w-4 h-4" />
               <span>+ Sell Your Crops / Produce</span>
+            </Link>
+          )}
+
+          {/* Mobile Post Demand Quick CTA (Buyer Mode) */}
+          {isBuyer && (
+            <Link
+              to="/demands"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 text-white text-xs font-black shadow-soft-sm mb-1"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>+ Post Crop Demand</span>
             </Link>
           )}
 
