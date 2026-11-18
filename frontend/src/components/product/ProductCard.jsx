@@ -11,11 +11,19 @@ export function ProductCard({ product }) {
 
   // Find primary image or first available image
   const primaryImage =
-    product.images?.find((img) => img.primary)?.imageUrl ||
+    product.images?.find((img) => img.primary || img.isPrimary)?.imageUrl ||
     product.images?.[0]?.imageUrl ||
-    'https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&q=80&w=600';
+    product.imageUrl ||
+    product.image_url ||
+    product.image ||
+    'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&q=80&w=800';
 
-  const isAvailable = product.quantity > 0 && product.status === 'ACTIVE';
+  const categoryName = product.categoryName || product.category_name || product.category;
+  const sellerName = product.sellerName || product.farmerName || product.seller_name;
+  const price = product.price !== undefined ? product.price : (product.pricePerUnit ?? product.price_per_unit ?? 0);
+  const unit = product.unit || 'unit';
+  const quantity = product.quantity !== undefined ? product.quantity : (product.availableQuantity ?? product.available_quantity ?? 0);
+  const isAvailable = quantity > 0 && (product.status === 'ACTIVE' || !product.status);
 
   const handleNavigateToProduct = (e) => {
     e.preventDefault();
@@ -44,10 +52,10 @@ export function ProductCard({ product }) {
         />
 
         {/* Category Badge */}
-        {product.categoryName && (
+        {categoryName && (
           <div className="absolute top-3 left-3">
             <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-wider bg-white/95 text-brand-800 backdrop-blur-md shadow-soft-xs border border-white/60">
-              {product.categoryName}
+              {categoryName}
             </span>
           </div>
         )}
@@ -81,10 +89,10 @@ export function ProductCard({ product }) {
         <div className="space-y-1.5">
           {/* Seller / Producer & Location */}
           <div className="flex items-center justify-between gap-1 text-[11px]">
-            {product.sellerName ? (
+            {sellerName ? (
               <div className="flex items-center gap-1 text-brand-700 font-semibold truncate max-w-[65%]">
                 <ShieldCheck className="w-3.5 h-3.5 text-brand-600 flex-shrink-0" />
-                <span className="truncate">{product.sellerName}</span>
+                <span className="truncate">{sellerName}</span>
               </div>
             ) : <div />}
 
@@ -132,9 +140,9 @@ export function ProductCard({ product }) {
           <div className="flex flex-col">
             <div className="flex items-baseline gap-1">
               <span className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
-                {formatCurrency(product.price)}
+                {formatCurrency(price)}
               </span>
-              <span className="text-xs text-slate-500 font-semibold">/{product.unit || 'unit'}</span>
+              <span className="text-xs text-slate-500 font-semibold">/{unit}</span>
             </div>
             {product.isRentalAvailable && product.rentalRate && (
               <span className="text-[11px] font-bold text-brand-700 flex items-center gap-1">
@@ -145,7 +153,7 @@ export function ProductCard({ product }) {
           </div>
 
           <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/70 whitespace-nowrap">
-            {formatQuantity(product.quantity, product.unit)}
+            {formatQuantity(quantity, unit)}
           </span>
         </div>
 

@@ -2,9 +2,13 @@ import apiClient from '../api/apiClient';
 
 export const productService = {
   // Get all active marketplace products
-  async getAllProducts() {
-    const response = await apiClient.get('/api/v1/products');
-    return response.data;
+  async getAllProducts(params = {}) {
+    const response = await apiClient.get('/api/v1/products', { params });
+    const data = response.data;
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.products)) return data.products;
+    if (Array.isArray(data?.content)) return data.content;
+    return [];
   },
 
   // Get product by ID

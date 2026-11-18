@@ -184,13 +184,143 @@ const FEATURED_CROPS = [
   },
 ];
 
+// Curated Popular Produce directly matching Marketplace Master Catalog (MASTER_AGRICULTURAL_PRODUCTS & V49)
+const CURATED_MARKETPLACE_PRODUCE = [
+  {
+    id: 'prod-kolar-salad-tomatoes',
+    name: 'Kolar Semi-Ripe Hybrid Salad Tomatoes (Grade A - Fresh Harvest)',
+    description: 'Crisp, firm red hybrid tomatoes harvested at morning breaker stage. High pulp density, uniform size, perfect for culinary and commercial retail.',
+    price: 32,
+    unit: 'KG',
+    quantity: 2500,
+    sellerName: 'Ramesh Gowda',
+    location: 'Kolar, Karnataka',
+    categoryName: 'Harvested Products',
+    badge: 'Farm Gate Fresh',
+    mandiLinkedCommodity: 'Tomato',
+    isMandiLinked: true,
+    status: 'ACTIVE',
+    images: [{ imageUrl: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=800&q=80', primary: true, isPrimary: true }],
+    imageUrl: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    id: 'prod-nashik-red-onions',
+    name: 'Export Grade Nashik Red Onions (Medium-Large 50mm+)',
+    description: 'Freshly sorted Lasalgaon APMC benchmark onions. High pungency, firm skin with long storage shelf-life. Cured under natural shade.',
+    price: 28,
+    unit: 'KG',
+    quantity: 5000,
+    sellerName: 'Sahyadri Farmers Producer Co.',
+    location: 'Nashik, Maharashtra',
+    categoryName: 'Harvested Products',
+    badge: 'Direct Farm Harvest',
+    mandiLinkedCommodity: 'Onion',
+    isMandiLinked: true,
+    status: 'ACTIVE',
+    images: [{ imageUrl: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?auto=format&fit=crop&w=800&q=80', primary: true, isPrimary: true }],
+    imageUrl: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    id: 'prod-alphonso-mango-harvest',
+    name: 'Dharwad Organic Alphonso Mangoes (Carbide-Free Ripened)',
+    description: 'GI-tagged authentic Alphonso (Hapus) mangoes from heritage Dharwad red soil orchards. Naturally straw-ripened, intensely aromatic and rich in natural sugars.',
+    price: 650,
+    unit: 'DOZEN',
+    quantity: 180,
+    sellerName: 'Sahyadri Farmers Producer Co.',
+    location: 'Dharwad, Karnataka',
+    categoryName: 'Harvested Products',
+    badge: 'Naturally Ripened',
+    status: 'ACTIVE',
+    images: [{ imageUrl: 'https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&w=800&q=80', primary: true, isPrimary: true }],
+    imageUrl: 'https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    id: 'prod-sona-masoori-seed',
+    name: 'Organic Sona Masoori Paddy Seeds (BPT-5204)',
+    description: 'Certified foundation seed with 95% germination rate, fine grain, and high resistance to blast and bacterial leaf blight. Matures in 135-140 days.',
+    price: 1450,
+    unit: 'BAG (25KG)',
+    quantity: 250,
+    sellerName: 'Karnataka State Seeds Corporation (KSSC)',
+    location: 'Raichur, Karnataka',
+    categoryName: 'Seeds',
+    badge: 'Govt Certified',
+    status: 'ACTIVE',
+    images: [{ imageUrl: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=800&q=80', primary: true, isPrimary: true }],
+    imageUrl: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    id: 'prod-sharbati-wheat-grain-50kg',
+    name: 'Pure Sharbati Golden Wheat Grain (Cleaned & Destoned - 50kg Bag)',
+    description: 'Famous Sehore / Sharbati variety whole wheat grains. Heavy, golden textured, high dietary fiber for extra soft rotis. Machine cleaned and triple destoned.',
+    price: 2450,
+    unit: 'BAG (50KG)',
+    quantity: 200,
+    sellerName: 'Ludhiana Progressive Grain Producers FPO',
+    location: 'Ludhiana, Punjab',
+    categoryName: 'Harvested Products',
+    badge: 'Triple Cleaned',
+    mandiLinkedCommodity: 'Wheat',
+    isMandiLinked: true,
+    status: 'ACTIVE',
+    images: [{ imageUrl: 'https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&w=800&q=80', primary: true, isPrimary: true }],
+    imageUrl: 'https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    id: 'prod-organic-neem-fert',
+    name: 'Pure Neem Cake Organic Fertilizer (De-Oiled Meal)',
+    description: '100% natural cold-pressed neem cake meal rich in NPK, sulfur, and Azadirachtin. Protects root systems against plant-parasitic nematodes while nourishing soil microbes.',
+    price: 850,
+    unit: 'BAG (50KG)',
+    quantity: 350,
+    sellerName: 'IFFCO Farmer Cooperative Society',
+    location: 'Tumakuru, Karnataka',
+    categoryName: 'Fertilizers',
+    badge: '100% Organic',
+    status: 'ACTIVE',
+    images: [{ imageUrl: 'https://images.unsplash.com/photo-1622383563227-04401ab4e5ea?auto=format&fit=crop&w=800&q=80', primary: true, isPrimary: true }],
+    imageUrl: 'https://images.unsplash.com/photo-1622383563227-04401ab4e5ea?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    id: 'prod-vermicompost-humus',
+    name: 'Premium Enriched Vermicompost (Eisenia Fetida Organic Humus)',
+    description: 'High-grade vermicompost enriched with beneficial mycorrhiza and beneficial bacteria. Improves soil aeration, water retention capacity, and cation exchange.',
+    price: 450,
+    unit: 'BAG (40KG)',
+    quantity: 500,
+    sellerName: 'Sahyadri Farmers Producer Co.',
+    location: 'Mysuru, Karnataka',
+    categoryName: 'Fertilizers',
+    badge: 'Bio-Organic',
+    status: 'ACTIVE',
+    images: [{ imageUrl: 'https://images.unsplash.com/photo-1588964895597-cfccd6e2dbf9?auto=format&fit=crop&w=800&q=80', primary: true, isPrimary: true }],
+    imageUrl: 'https://images.unsplash.com/photo-1588964895597-cfccd6e2dbf9?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    id: 'prod-fwd-basmati-rice-2acres',
+    name: 'Forward Contract: 2-Acre Standing Pusa 1121 Basmati Crop (Oct-Nov Harvest)',
+    description: 'Forward delivery agreement for 2 acres of healthy standing Basmati crop. Guaranteed moisture control under 14% at field-gate threshing. Estimated yield: 38 Quintals.',
+    price: 75000,
+    unit: 'ACRE',
+    quantity: 2,
+    sellerName: 'Ludhiana Progressive Grain Producers FPO',
+    location: 'Ludhiana, Punjab',
+    categoryName: 'Pre-Harvested Products',
+    badge: 'Forward Contract',
+    status: 'ACTIVE',
+    images: [{ imageUrl: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80', primary: true, isPrimary: true }],
+    imageUrl: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80',
+  },
+];
+
 export function HomePage() {
   const navigate = useNavigate();
   const { isAuthenticated, setUserMode } = useAuth();
   const toast = useToast();
   const { latitude, longitude, city, state: geoState, loading: geoLoading, isDefault } = useGeolocation();
 
-  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [featuredProducts, setFeaturedProducts] = useState(CURATED_MARKETPLACE_PRODUCE);
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [crops, setCrops] = useState(FEATURED_CROPS);
   const [mandiRates, setMandiRates] = useState([]);
@@ -281,10 +411,15 @@ export function HomePage() {
 
       // Fetch Products
       try {
-        const prods = await productService.getAllProducts();
-        if (Array.isArray(prods) && prods.length > 0) {
-          const balanced = getBalancedFeaturedProducts(prods);
-          setFeaturedProducts(balanced);
+        const prods = await productService.getAllProducts({ size: 24 });
+        const list = Array.isArray(prods)
+          ? prods
+          : (prods?.products || prods?.content || []);
+        if (list.length > 0) {
+          const balanced = getBalancedFeaturedProducts(list);
+          if (balanced.length > 0) {
+            setFeaturedProducts(balanced);
+          }
         }
       } catch (err) {
         console.warn('Backend products fetch fallback:', err);
