@@ -858,7 +858,7 @@ export const MASTER_AGRICULTURAL_PRODUCTS: RawAgriculturalProduct[] = [
     pinCode: '636102',
     latitude: 11.5986,
     longitude: 78.5997,
-    imageUrl: 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1666818398897-381dd5eb9139?auto=format&fit=crop&w=800&q=80',
     badge: 'High Curcumin 3.8%',
     mandiLinkedCommodity: 'Turmeric',
   },

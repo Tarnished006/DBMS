@@ -5,18 +5,24 @@ import { useAuth } from '@/hooks/useAuth';
 import { formatCurrency, formatQuantity } from '@/utils/formatters';
 import { Button } from '@/components/common/Button';
 
+// Visual Image Corrections for accurate marketplace representation
+const PRODUCT_IMAGE_OVERRIDES = {
+  'prod-salem-golden-turmeric': 'https://images.unsplash.com/photo-1666818398897-381dd5eb9139?auto=format&fit=crop&w=800&q=80',
+};
+
 export function ProductCard({ product }) {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
   // Find primary image or first available image
   const primaryImage =
+    PRODUCT_IMAGE_OVERRIDES[product.id] ||
     product.images?.find((img) => img.primary || img.isPrimary)?.imageUrl ||
     product.images?.[0]?.imageUrl ||
     product.imageUrl ||
     product.image_url ||
     product.image ||
-    'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&q=80&w=800';
+    'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=800';
 
   const categoryName = product.categoryName || product.category_name || product.category;
   const sellerName = product.sellerName || product.farmerName || product.seller_name;
